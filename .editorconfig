@@ -1,0 +1,48 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+max_line_length = 120
+trim_trailing_whitespace = true
+ij_smart_tabs = false
+
+[*.{kt,kts}]
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+ij_kotlin_name_count_to_use_star_import = 10
+ij_kotlin_name_count_to_use_star_import_for_members = 10
+
+# noinspection EditorConfigKeyCorrectness
+ktlint_standard_no-wildcard-imports = disabled
+# noinspection EditorConfigKeyCorrectness
+ktlint_code_style = intellij_idea
+# noinspection EditorConfigKeyCorrectness
+ktlint_standard_no-consecutive-comments = enabled
+# noinspection EditorConfigKeyCorrectness
+ktlint_standard_if-else-wrapping = enabled
+# noinspection EditorConfigKeyCorrectness
+ktlint_standard_try-catch-finally-spacing = enabled
+
+[**/build/**/*.{kt,kts}]
+ij_formatter_enabled = false
+# noinspection EditorConfigKeyCorrectness
+ktlint = disabled
+
+[*.java]
+ij_java_class_count_to_use_import_on_demand = 20
+ij_java_names_count_to_use_import_on_demand = 20
+
+[**/build/**/*.java]
+ij_formatter_enabled = false
+
+[*.{properties,md}]
+ij_properties_keep_blank_lines = true
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.md]
+indent_size = 2
