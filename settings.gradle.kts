@@ -15,7 +15,7 @@ pluginManagement {
 
 @Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     // Use Maven Central as the default repository (where Gradle will download dependencies) in all subprojects.
     repositories {
         mavenCentral()
@@ -32,3 +32,4 @@ plugins {
 // Learn more about structuring projects with Gradle - https://docs.gradle.org/8.7/userguide/multi_project_builds.html
 include(":compiler")
 include(":annotations")
+include(":sample")
