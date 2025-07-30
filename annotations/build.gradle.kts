@@ -1,16 +1,17 @@
-@file:OptIn(ExperimentalAbiValidation::class)
+@file:Suppress("UnstableApiUsage")
+@file:OptIn(ExperimentalAbiValidation::class, ExperimentalWasmDsl::class)
 
-import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
+import com.android.build.api.dsl.androidLibrary
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.dokka)
-    alias(libs.plugins.kotlinxKover)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ktlint)
-    alias(libs.plugins.maven.publish)
+    alias(libs.plugins.mavenPublish)
 }
 
 group = "io.github.kingg22"
@@ -31,8 +32,19 @@ kotlin {
         }
     }
 
-    androidTarget {
-        publishLibraryVariants("release")
+    applyDefaultHierarchyTemplate()
+
+    androidLibrary {
+        namespace = "$group.ktorgen.annotations"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+
+        packaging {
+            resources {
+                excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            }
+        }
+
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_1_8)
         }
@@ -47,50 +59,42 @@ kotlin {
         }
     }
 
-    // tier 2
+    js {
+        nodejs()
+    }
+
+    wasmWasi {
+        nodejs()
+    }
+
+    // Tiers are in accordance with <https://kotlinlang.org/docs/native-target-support.html>
+    // Tier 1
+    macosX64()
+    macosArm64()
+    iosSimulatorArm64()
+    iosX64()
+    iosArm64()
+    // Tier 2
     linuxX64()
     linuxArm64()
-    // tier 3
-    mingwX64()
+    watchosSimulatorArm64()
+    watchosX64()
+    watchosArm32()
+    watchosArm64()
+    tvosSimulatorArm64()
+    tvosX64()
+    tvosArm64()
+    // Tier 3
     androidNativeArm32()
     androidNativeArm64()
-    androidNativeX64()
     androidNativeX86()
-}
-
-android {
-    namespace = "$group.ktorgen"
-    compileSdk =
-        libs.versions.android.compileSdk
-            .get()
-            .toInt()
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    defaultConfig {
-        minSdk =
-            libs.versions.android.minSdk
-                .get()
-                .toInt()
-    }
-    testOptions {
-        unitTests.all {
-            it.useJUnitPlatform()
-        }
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
+    androidNativeX64()
+    mingwX64()
+    watchosDeviceArm64()
 }
 
 ktlint {
-    version.set(
-        libs.versions.ktlint.pinterest
-            .get(),
-    )
+    version.set(libs.versions.ktlint.pinterest.get())
 }
 
 dokka.dokkaSourceSets.configureEach {
@@ -99,18 +103,4 @@ dokka.dokkaSourceSets.configureEach {
     reportUndocumented = true
     enableJdkDocumentationLink = true
     enableKotlinStdLibDocumentationLink = true
-}
-
-kover {
-    reports.total {
-        verify {
-            rule("Basic Line Coverage") {
-                minBound(60, CoverageUnit.LINE)
-            }
-
-            rule("Basic Branch Coverage") {
-                minBound(20, CoverageUnit.BRANCH)
-            }
-        }
-    }
 }
