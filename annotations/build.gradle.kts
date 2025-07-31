@@ -1,15 +1,16 @@
 @file:Suppress("UnstableApiUsage")
-@file:OptIn(ExperimentalAbiValidation::class, ExperimentalWasmDsl::class)
+@file:OptIn(ExperimentalBCVApi::class, ExperimentalWasmDsl::class)
 
 import com.android.build.api.dsl.androidLibrary
+import kotlinx.validation.ExperimentalBCVApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinxBinaryCompatibility)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.mavenPublish)
 }
@@ -17,12 +18,22 @@ plugins {
 group = "io.github.kingg22"
 version = libs.versions.ktorgen.version.get()
 
+apiValidation {
+    // temp disable until publish
+    validationDisabled = true
+    klib {
+        enabled = true
+    }
+}
+
 kotlin {
     compilerOptions {
         extraWarnings.set(true)
         allWarningsAsErrors.set(true)
     }
 
+    /*
+    // after kotlin 2.2.0
     abiValidation {
         enabled.set(true)
         filters {
@@ -31,6 +42,7 @@ kotlin {
             }
         }
     }
+     */
 
     applyDefaultHierarchyTemplate()
 
