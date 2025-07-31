@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.kotlin.poet.ksp)
 
     testImplementation(kotlin("test"))
+    testImplementation(libs.androidx.room.compiler.testing)
 }
 
 ktlint {
