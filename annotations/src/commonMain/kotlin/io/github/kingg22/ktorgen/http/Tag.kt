@@ -1,8 +1,5 @@
-@file:OptIn(InternalKtorGen::class)
-
 package io.github.kingg22.ktorgen.http
 
-import io.github.kingg22.ktorgen.core.InternalKtorGen
 import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
 
 /**

@@ -1,5 +1,3 @@
-@file:OptIn(InternalKtorGen::class)
-
 package io.github.kingg22.ktorgen.core
 
 import kotlin.reflect.KClass
@@ -63,4 +61,10 @@ annotation class KtorGenFunction(
      * Useful to indicate that the class is auto-generated and shouldn't be modified or add custom code.
      */
     val customHeader: String = KTORGEN_DEFAULT_NAME,
+
+    /**
+     * Indicate the visibility modifier of the generated **function**
+     * @see <a href="https://kotlinlang.org/docs/visibility-modifiers.html#packages">Kotlin Visibility Modifiers</a>
+     */
+    val visibilityModifier: String = "public",
 )

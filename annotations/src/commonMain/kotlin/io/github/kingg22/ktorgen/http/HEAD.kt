@@ -1,8 +1,6 @@
 package io.github.kingg22.ktorgen.http
 
-/**
- * Make a HEAD request
- */
+/** Make a HEAD request */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented

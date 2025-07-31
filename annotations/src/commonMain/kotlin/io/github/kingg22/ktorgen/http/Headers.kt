@@ -1,7 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
 /**
- *  Add headers to a request
+ * Add headers to a request
  *
  * ```kotlin
  * @Headers("Accept: application/json","Content-Type: application/json")

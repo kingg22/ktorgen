@@ -3,7 +3,7 @@ package io.github.kingg22.ktorgen.http
 /**
  * Denote name and value parts of a multipart request.
  *
- * If the type is List<PartData> the value will be used directly with its content type.
+ * If the type is `List<PartData>` the value will be used directly with its content type.
  *
  * ```kotlin
  * @POST("upload")

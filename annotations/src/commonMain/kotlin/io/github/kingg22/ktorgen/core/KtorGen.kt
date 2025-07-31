@@ -1,5 +1,3 @@
-@file:OptIn(InternalKtorGen::class)
-
 package io.github.kingg22.ktorgen.core
 
 import kotlin.reflect.KClass
@@ -50,7 +48,7 @@ annotation class KtorGen(
      * This function will allow instantiating the implementation by passing an `HttpClient`.
      * Example: `fun UserRoute(client: HttpClient): UserRoute`
      */
-    val generateTopLevel: Boolean = true,
+    val generateTopLevelFunction: Boolean = true,
 
     /**
      * Whether to generate a `create(client)` function inside the interface's companion object.
@@ -58,7 +56,7 @@ annotation class KtorGen(
      * This requires the annotation to be placed on the companion itself or declared companion object explicit.
      * Example: `UserRoute.create(client)`
      */
-    val generateCompanionFunction: Boolean = false,
+    val generateCompanionExtFunction: Boolean = false,
 
     /**
      * Whether to generate an extension function on `HttpClient` to instantiate the API.
@@ -77,6 +75,9 @@ annotation class KtorGen(
     /** Marks the generated factory function as `@JsExport`, for JavaScript interop in Kotlin/JS. */
     val jsStatic: Boolean = false,
 
+    /** Indicate the generated class, constructor, and functions all are going to be public. */
+    val generatePublic: Boolean = false,
+
     /** If `true`, the processor will attempt to copy supported annotations from the original method into the generated method. */
     val propagateAnnotations: Boolean = true,
 
@@ -93,6 +94,14 @@ annotation class KtorGen(
      * For example, [ExperimentalApi::class], [InternalKtorApi::class]
      */
     val optInAnnotations: Array<KClass<out Annotation>> = [],
+
+    /**
+     * Indicate the visibility modifier of the generated **class**
+     *
+     * For generated function, extension functions, and constructor are controlate by [generatePublic] + this.
+     * @see <a href="https://kotlinlang.org/docs/visibility-modifiers.html#packages">Kotlin Visibility Modifiers</a>
+     */
+    val visibilityModifier: String = "public",
 
     /**
      * Custom header comment inserted at the top of the generated Kotlin file.
