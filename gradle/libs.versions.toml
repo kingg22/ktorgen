@@ -10,16 +10,19 @@ agp = "8.11.1"
 android-compileSdk = "36"
 android-minSdk = "21"
 
+# https://mvnrepository.com/artifact/androidx.room/room-compiler-processing-testing
+androidx-room-compiler-testing = "2.8.0-alpha01"
 # https://github.com/Kotlin/dokka/releases
 dokka = "2.0.0"
 # https://github.com/JetBrains/kotlin/releases
-kotlin = "2.2.0"
+# match according to androidx https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L55
+kotlin = "2.1.21"
 # https://github.com/square/kotlinpoet/releases
 kotlin-poet = "2.2.0"
 # https://github.com/Kotlin/kotlinx-kover/releases
 kover = "0.9.1"
 # https://github.com/google/ksp/releases
-ksp = "2.2.0-2.0.2"
+ksp = "2.1.21-2.0.2"
 # https://github.com/pinterest/ktlint/releases
 ktlint-pinterest = "1.6.0"
 # https://github.com/jlleitschuh/ktlint-gradle/releases
@@ -29,9 +32,11 @@ ktorgen-version = "0.1.0"
 maven-publish = "0.34.0"
 
 [libraries]
+# compiler
 ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
 kotlin-poet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlin-poet" }
 kotlin-poet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlin-poet" }
+androidx-room-compiler-testing = { group = "androidx.room", name = "room-compiler-processing-testing", version.ref = "androidx-room-compiler-testing" }
 
 # Libraries can be bundled together for easier import
 [bundles]
@@ -42,6 +47,7 @@ androidMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library",
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinxBinaryCompatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.18.1" }
 kotlinxKover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }
