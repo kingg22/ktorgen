@@ -11,8 +11,15 @@ class FunctionData(
     val parameterDataList: List<ParameterData>,
     val modifiers: List<KModifier> = emptyList(),
     val nonKtorAnnotations: List<AnnotationSpec>,
+    visibilityModifier: String = "public",
     propagateAnnotations: Boolean = true,
     annotationsToPropagate: Set<FunctionAnnotation> = emptySet(),
     optIns: Set<AnnotationSpec> = emptySet(),
     customHeader: String = KTORG_GENERATED_COMMENT,
-) : GenOptions(propagateAnnotations, annotationsToPropagate, optIns, customHeader)
+) : GenOptions(
+    visibilityModifier = visibilityModifier,
+    propagateAnnotations = propagateAnnotations,
+    annotationsToPropagate = annotationsToPropagate,
+    optIns = optIns,
+    customHeader = customHeader,
+)

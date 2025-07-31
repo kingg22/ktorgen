@@ -6,8 +6,6 @@ import com.google.devtools.ksp.symbol.KSType
 sealed class ParameterAnnotation {
     object Body : ParameterAnnotation()
 
-    object RequestBuilder : ParameterAnnotation()
-
     class Path(val value: String, val encoded: Boolean = false) : ParameterAnnotation()
 
     class Query(val value: String, val encoded: Boolean = false) : ParameterAnnotation()
