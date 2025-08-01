@@ -12,7 +12,8 @@ concurrency:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    # Only release on macOS
+    runs-on: macos-latest
     permissions:
       contents: read
     steps:
