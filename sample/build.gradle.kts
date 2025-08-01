@@ -75,7 +75,21 @@ kotlin {
 }
 
 dependencies {
-    kspCommonMainMetadata(projects.compiler)
+    add("kspCommonMainMetadata", projects.compiler)
+    /*
+    add("kspJvm", projects.compiler)
+    // add("kspJvmTest", projects.compiler)
+    add("kspJs", projects.compiler)
+    // add("kspJsTest", projects.compiler)
+    add("kspAndroidNativeX64", projects.compiler)
+    // add("kspAndroidNativeX64Test", projects.compiler)
+    add("kspAndroidNativeArm64", projects.compiler)
+    // add("kspAndroidNativeArm64Test", projects.compiler)
+    add("kspLinuxX64", projects.compiler)
+    // add("kspLinuxX64Test", project(":test-processor"))
+    add("kspMingwX64", projects.compiler)
+    // add("kspMingwX64Test", project(":test-processor"))
+     */
 }
 
 android {
