@@ -75,10 +75,6 @@ kotlin {
         nodejs()
     }
 
-    wasmWasi {
-        nodejs()
-    }
-
     // Tiers are in accordance with <https://kotlinlang.org/docs/native-target-support.html>
     // Tier 1
     macosX64()
