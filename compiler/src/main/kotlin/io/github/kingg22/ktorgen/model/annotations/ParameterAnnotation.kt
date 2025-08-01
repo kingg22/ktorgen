@@ -1,7 +1,5 @@
 package io.github.kingg22.ktorgen.model.annotations
 
-import com.google.devtools.ksp.symbol.KSType
-
 /** Annotation at a parameter */
 sealed class ParameterAnnotation {
     object Body : ParameterAnnotation()
@@ -19,8 +17,6 @@ sealed class ParameterAnnotation {
     object HeaderMap : ParameterAnnotation()
 
     object Url : ParameterAnnotation()
-
-    class RequestType(val requestType: KSType) : ParameterAnnotation()
 
     class Field(val value: String, val encoded: Boolean = false) : ParameterAnnotation()
 
