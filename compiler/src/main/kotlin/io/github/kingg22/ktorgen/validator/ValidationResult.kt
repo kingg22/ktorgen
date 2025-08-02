@@ -6,6 +6,10 @@ class ValidationResult(
     val errors: MutableList<FatalError> = mutableListOf(),
     val warnings: MutableList<Warning> = mutableListOf(),
 ) {
+    constructor(block: ValidationResult.() -> Unit) : this() {
+        block(this)
+    }
+
     val isOk get() = errors.isEmpty()
 
     fun addError(message: String) {
