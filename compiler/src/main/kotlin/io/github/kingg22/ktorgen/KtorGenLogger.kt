@@ -32,13 +32,46 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
             "$KTOR_GEN Only interfaces and it companion objects can be annotated with @KtorGen"
         const val NO_HTTP_ANNOTATION_AT = "$KTOR_GEN No Http annotation at "
         const val ONLY_ONE_HTTP_METHOD_IS_ALLOWED = "$KTOR_GEN Only one HTTP method is allowed."
+        const val INTERFACE_NOT_HAVE_FILE = "$KTOR_GEN Interface must be in a file, but was null: "
+        const val FUNCTION_NOT_RETURN_TYPE = "$KTOR_GEN Function don't have return type: "
+        const val HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
+            "@HeaderMap parameter type must be Map<String, String(?)> or Pair<String, String(?)>. "
+        const val INVALID_HEADER_FORMAT = "Header have invalid format, e.g. valid format= 'Content-Type: text/plain'. "
+        const val DUPLICATE_HEADER =
+            "@Headers on function + @Header on parameter have duplicate values. Please unique header name is required. "
         const val FUNCTION_OR_PARAMETERS_TYPES_MUST_NOT_INCLUDE_TYPE_VARIABLE_OR_WILDCARD =
-            "$KTOR_GEN Function or parameters types must not include a type variable or wildcard:"
-        const val FORM_URL_ENCODED_CAN_ONLY_BE_SPECIFIED_ON_HTTP_METHODS_WITH_REQUEST_BODY =
-            "$KTOR_GEN FormUrlEncoded can only be specified on HTTP methods with request body (e.g., @POST)."
-        const val MULTIPART_CAN_ONLY_BE_SPECIFIED_ON_HTTP_METHODS =
-            "$KTOR_GEN Multipart can only be specified on HTTP methods with request body (e.g., @POST)"
-        const val GET_METHOD_MUST_NOT_INCLUDE_BODY =
-            " method must not include body. See https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.1"
+            "Function or parameters types must not include a type variable or wildcard: "
+        const val SUSPEND_FUNCTION_OR_FLOW =
+            "The function should be 'suspend' or return a Flow/StateFlow/SharedFlow, but it returns "
+        const val ABSTRACT_FUNCTION_IGNORED = "An abstract function with @KtorGenIgnore is invalid. "
+        const val FORM_ENCODED_MUST_CONTAIN_AT_LEAST_ONE_FIELD =
+            "@FormUrlEncoded must contain at least one @Field or @FieldMap. "
+        const val FORM_ENCODED_ANNOTATION_MISSING_FOUND_FIELD =
+            "@FormUrlEncoded annotation missing, but found at least one @Field or @FieldMap parameter. "
+        const val FORM_ENCODED_ANNOTATION_MISMATCH_HTTP_METHOD =
+            "@FormUrlEncoded as body is accepted only in HTTP methods @POST, @PUT, @PATCH. "
+        const val MULTIPART_ANNOTATION_MISSING_FOUND_PART =
+            "@Multipart annotation missing, but found at least one @Part or @PartMap parameter. "
+        const val MULTIPART_MUST_CONTAIN_AT_LEAST_ONE_PART =
+            "@Multipart method must contain at least one @Part or @PartMap. "
+        const val BODY_USAGE_INVALID_HTTP_METHOD =
+            "A body usage in request with invalid HTTP method, Ktor must be fail. See more detail in https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.1Declaration and/or https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods "
+        const val INVALID_BODY_PARAMETER = "Only one @Body parameter annotation is allowed. "
+        const val CONFLICT_BODY_TYPE = "Only one type of body is allowed, @Body or @FormUrlEncoded or @Multipart. "
+        const val HTTP_METHOD_HEAD_NOT_RETURN_BODY =
+            "@HEAD HTTP method don't return body, only Unit as return type is accepted. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods/HEAD "
+        const val URL_PARAMETER_TYPE_MAY_NOT_BE_NULLABLE = "Url parameter type may not be nullable. "
+        const val PATH_PARAMETER_TYPE_MAY_NOT_BE_NULLABLE = "Path parameter type may not be nullable. "
+        const val PATH_CAN_ONLY_BE_USED_WITH_RELATIVE_URL_ON = "@Path can only be used with placeholder in URL"
+        const val DUPLICATE_PATH_PLACEHOLDER = "@Path placeholder may be unique, found: "
+        const val ONLY_ONE_CONTENT_TYPE_IS_ALLOWED = "Only one Content-Type header (or inferred by body) is allowed. "
+        const val MISSING_PATH_VALUE = "Missing path value, found in path placeholders: "
+        const val MULTIPLE_URL_FOUND = "Multiple @Url annotations found, only one is accepted. "
+        const val URL_WITH_PATH_VALUE = "@Url parameter can only be used with empty path in Http Method. "
+        const val URL_WITH_PATH_PARAMETER = "@Url parameter can't be used with @Path parameters. "
+        const val PARAMETER_WITHOUT_ANNOTATION =
+            "Parameter without annotation of usage is invalid. Please, indicate with annotation the reason or use HttpRequestBuilder. "
+        const val PARAMETER_WITH_LOT_ANNOTATIONS =
+            "Parameter with more than one annotation is invalid. Please, for advance request use HttpRequestBuilder or remove extra annotation on parameter "
     }
 }
