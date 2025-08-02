@@ -53,9 +53,7 @@ class ClassMapper : DeclarationMapper {
             superClasses = filteredSupertypes.toList(),
             properties = properties.toList(),
             modifiers = declaration.modifiers.mapNotNull { it.toKModifier() },
-            ksFile = requireNotNull(declaration.containingFile) {
-                "${KtorGenLogger.KTOR_GEN} Interface $className must be in a file, but was null"
-            },
+            ksFile = requireNotNull(declaration.containingFile) { KtorGenLogger.INTERFACE_NOT_HAVE_FILE + className },
             annotations = declaration.annotations.toSet(),
         )
     }
