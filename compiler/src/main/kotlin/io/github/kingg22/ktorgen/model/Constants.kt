@@ -3,6 +3,10 @@
 
 package io.github.kingg22.ktorgen.model
 
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.LambdaTypeName
+import com.squareup.kotlinpoet.UNIT
+
 // need to be consistent with annotations constant
 const val KTORGEN_DEFAULT_VALUE = "__DEFAULT__"
 
@@ -25,3 +29,10 @@ const val KTOR_CLIENT_PARAMETER = "io.ktor.client.request.parameter"
 const val KTOR_URL_BUILDER = "io.ktor.http.URLBuilder"
 const val KTOR_URL_TAKE_FROM = "io.ktor.http.takeFrom"
 const val KTOR_DECODE_URL_QUERY = "io.ktor.http.decodeURLQueryComponent"
+
+val HttpRequestBuilderTypeName = ClassName("io.ktor.client.request", "HttpRequestBuilder")
+
+val HttpRequestBuilderLambdaTypeName = LambdaTypeName.get(
+    HttpRequestBuilderTypeName,
+    returnType = UNIT,
+)
