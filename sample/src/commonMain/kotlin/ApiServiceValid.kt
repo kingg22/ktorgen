@@ -1,6 +1,7 @@
 package io.github.kingg22.ktorgen.sample
 
 import io.github.kingg22.ktorgen.http.*
+import io.ktor.client.request.HttpRequestBuilder
 
 interface ApiServiceValid {
     @GET("users")
@@ -34,4 +35,10 @@ interface ApiServiceValid {
 
     @GET
     suspend fun dynamicUrl(@Url url: String): Any
+
+    @GET
+    suspend fun dynamicQuery(builder: HttpRequestBuilder.() -> Unit): Any
+
+    @POST
+    suspend fun dynamicQuery(builder: HttpRequestBuilder): Any
 }
