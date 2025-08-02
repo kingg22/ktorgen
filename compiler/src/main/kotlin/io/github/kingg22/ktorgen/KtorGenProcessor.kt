@@ -62,7 +62,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         return emptyList()
     }
 
-    private fun getAnnotatedInterfaceTypes(resolver: Resolver): Set<KSClassDeclaration> =
+    private fun getAnnotatedInterfaceTypes(resolver: Resolver) =
         resolver.getSymbolsWithAnnotation(KtorGen::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
             .mapNotNull { decl ->
@@ -81,9 +81,8 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 }
             }
             .filter { it.classKind == ClassKind.INTERFACE }
-            .toSet()
 
-    private fun getAnnotatedFunctions(resolver: Resolver): List<KSFunctionDeclaration> {
+    private fun getAnnotatedFunctions(resolver: Resolver): Sequence<KSFunctionDeclaration> {
         val getAnnotated = resolver.getSymbolsWithAnnotation(GET::class.qualifiedName!!)
         val postAnnotated = resolver.getSymbolsWithAnnotation(POST::class.qualifiedName!!)
         val putAnnotated = resolver.getSymbolsWithAnnotation(PUT::class.qualifiedName!!)
@@ -104,6 +103,6 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 patchAnnotated +
                 httpAnnotated +
                 genAnnotated
-            ).filterIsInstance<KSFunctionDeclaration>().distinct().toList()
+            ).filterIsInstance<KSFunctionDeclaration>().distinct()
     }
 }
