@@ -2,13 +2,14 @@ package io.github.kingg22.ktorgen.model.annotations
 
 /** Annotation at a function */
 sealed class FunctionAnnotation {
-    class HttpMethodAnnotation(val path: String, val httpMethod: HttpMethod) : FunctionAnnotation()
+    data object Ignore : FunctionAnnotation()
+    data class HttpMethodAnnotation(val path: String, val httpMethod: HttpMethod) : FunctionAnnotation()
 
-    class Headers(val value: List<String>) : FunctionAnnotation()
+    data class Headers(val value: Set<String>) : FunctionAnnotation()
 
-    object FormUrlEncoded : FunctionAnnotation()
+    data object FormUrlEncoded : FunctionAnnotation()
 
-    object Streaming : FunctionAnnotation()
+    data object Streaming : FunctionAnnotation()
 
-    object Multipart : FunctionAnnotation()
+    data object Multipart : FunctionAnnotation()
 }

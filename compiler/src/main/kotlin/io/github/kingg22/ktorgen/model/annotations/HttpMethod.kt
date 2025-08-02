@@ -5,6 +5,8 @@ class HttpMethod(val value: String) {
     val supportsRequestBody: Boolean
         get() = this !in REQUESTS_WITHOUT_BODY
 
+    override fun toString() = value
+
     companion object {
         val Get: HttpMethod = HttpMethod("GET")
         val Post: HttpMethod = HttpMethod("POST")
