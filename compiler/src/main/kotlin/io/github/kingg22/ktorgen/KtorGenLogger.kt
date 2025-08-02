@@ -73,5 +73,7 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
             "Parameter without annotation of usage is invalid. Please, indicate with annotation the reason or use HttpRequestBuilder. "
         const val PARAMETER_WITH_LOT_ANNOTATIONS =
             "Parameter with more than one annotation is invalid. Please, for advance request use HttpRequestBuilder or remove extra annotation on parameter "
+        const val ONLY_ONE_HTTP_REQUEST_BUILDER =
+            "Only one Http Request Builder is allowed per function. Found: "
     }
 }

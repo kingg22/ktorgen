@@ -27,6 +27,10 @@ class ClassLevelValidator : ValidatorStrategy {
                     )
                 }
             }
+
+            if (function.parameterDataList.count { it.isHttpRequestBuilder || it.isHttpRequestBuilderLambda } > 1) {
+                addError(KtorGenLogger.ONLY_ONE_HTTP_REQUEST_BUILDER + addDeclaration(context, function))
+            }
         }
     }
 }
