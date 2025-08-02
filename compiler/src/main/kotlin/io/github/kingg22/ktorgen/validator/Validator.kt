@@ -9,7 +9,20 @@ fun interface Validator {
     fun validate(classData: ClassData, ktorGenOptions: KtorGenOptions, ktorGenLogger: KtorGenLogger): ClassData?
 
     companion object {
-        val DEFAULT by lazy { ValidatorPipeline(listOf(GetMethodNoBodyValidator())) }
+        val DEFAULT by lazy {
+            ValidatorPipeline(
+                ClassLevelValidator(),
+                WildcardParameterValidator(),
+                SuspendOrFlowValidator(),
+                UrlSyntaxValidator(),
+                PathParameterValidator(),
+                HeadReturnNothingValidator(),
+                HeadersValidator(),
+                BodyUsageValidator(),
+                FormUrlBodyValidator(),
+                MultipartValidator(),
+            )
+        }
 
         val NO_OP by lazy { Validator { _, _, _ -> null } }
 
