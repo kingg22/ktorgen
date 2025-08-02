@@ -4,9 +4,12 @@ import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.KtorGenOptions
 import io.github.kingg22.ktorgen.model.ClassData
 
-class ValidatorPipeline(private val validators: List<ValidatorStrategy>) : Validator {
+class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Validator {
+    constructor(vararg validators: ValidatorStrategy) : this(validators.toSet())
     init {
-        require(validators.isNotEmpty()) { "ValidatorPipeline must have at least one validator" }
+        require(validators.isNotEmpty()) {
+            "${KtorGenLogger.KTOR_GEN} ValidatorPipeline must have at least one validator. This is an implementation errors. "
+        }
     }
 
     override fun validate(
@@ -14,10 +17,12 @@ class ValidatorPipeline(private val validators: List<ValidatorStrategy>) : Valid
         ktorGenOptions: KtorGenOptions,
         ktorGenLogger: KtorGenLogger,
     ): ClassData? {
+        // if we don't go to generate it, skip
+        if (classData.goingToGenerate.not()) return null
         val context = ValidationContext(
             className = classData.interfaceName,
             packageName = classData.packageName,
-            functions = classData.functions,
+            functions = classData.functions.filter { it.goingToGenerate },
             superInterfaces = listOf(), // TODO
             baseUrl = null, // TODO
         )
