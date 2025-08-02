@@ -27,7 +27,7 @@ import kotlin.reflect.KClass
  * - Be named with an optional prefix or custom name.
  * - Implement the target interface.
  * - Propagated annotations.
- * - Receive an `HttpClient` as its constructor argument.
+ * - Receive an `HttpClient` as its primary constructor argument.
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
@@ -51,9 +51,9 @@ annotation class KtorGen(
     val generateTopLevelFunction: Boolean = true,
 
     /**
-     * Whether to generate a `create(client)` function inside the interface's companion object.
+     * Whether to generate a `create(client)` extension function of interface's companion object.
      *
-     * This requires the annotation to be placed on the companion itself or declared companion object explicit.
+     * This **requires** the annotation to be placed on the companion itself or **declared companion object explicit**.
      * Example: `UserRoute.create(client)`
      */
     val generateCompanionExtFunction: Boolean = false,
@@ -65,20 +65,8 @@ annotation class KtorGen(
      */
     val generateExtensions: Boolean = false,
 
-    /**
-     * Adds `@JvmStatic` modifier to the companion `create` function (if generated).
-     *
-     * This makes the factory accessible from Java code as a static method.
-     */
-    val jvmStatic: Boolean = false,
-
-    /** Marks the generated factory function as `@JsExport`, for JavaScript interop in Kotlin/JS. */
-    val jsStatic: Boolean = false,
-
-    /** Indicate the generated class, constructor, and functions all are going to be public. */
-    val generatePublic: Boolean = false,
-
     /** If `true`, the processor will attempt to copy supported annotations from the original method into the generated method. */
+    @property:KtorGenExperimental
     val propagateAnnotations: Boolean = true,
 
     /**
@@ -86,6 +74,7 @@ annotation class KtorGen(
      *
      * For example, [JvmSynthetic::class], [Deprecated::class]
      */
+    @property:KtorGenExperimental
     val annotations: Array<KClass<out Annotation>> = [],
 
     /**
@@ -93,14 +82,15 @@ annotation class KtorGen(
      *
      * For example, [ExperimentalApi::class], [InternalKtorApi::class]
      */
+    @property:KtorGenExperimental
     val optInAnnotations: Array<KClass<out Annotation>> = [],
 
     /**
      * Indicate the visibility modifier of the generated **class**
      *
-     * For generated function, extension functions, and constructor are controlate by [generatePublic] + this.
      * @see <a href="https://kotlinlang.org/docs/visibility-modifiers.html#packages">Kotlin Visibility Modifiers</a>
      */
+    @property:KtorGenExperimental
     val visibilityModifier: String = "public",
 
     /**

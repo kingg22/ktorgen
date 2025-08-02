@@ -16,8 +16,8 @@ import kotlin.reflect.KClass
  * interface UserRoutes {
  *     @KtorGenMethod(
  *         propagateAnnotations = true,
- *         annotations = [CustomAnnotation::class],
- *         optInAnnotations = [ExperimentalApi::class], // means= don't propagate, prefer optIn this
+ *         annotations = [CustomAnnotation::class], // required it don't need values, e.g. @JvmOverloads
+ *         optInAnnotations = [ExperimentalApi::class], // means = don't propagate, prefer optIn this
  *     )
  *     @JvmSynthetic
  *     @ExperimentalApi
@@ -39,32 +39,29 @@ import kotlin.reflect.KClass
 @MustBeDocumented
 annotation class KtorGenFunction(
     /** If `true`, the processor will attempt to copy supported annotations from the original method into the generated method. */
+    @property:KtorGenExperimental
     val propagateAnnotations: Boolean = true,
 
     /**
      * Additional annotations or only these annotations to propagate as-is from the interface method to the generated implementation.
      *
-     * For example, [JvmSynthetic::class], [Deprecated::class]
+     * For example, `[JvmSynthetic::class, Deprecated::class]`
      */
+    @property:KtorGenExperimental
     val annotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * Opt-in annotations that should be propagated, usually marked with `@RequiresOptIn`.
+     * Opt-in annotations that should be propagated, usually marked with [@RequiresOptIn][RequiresOptIn].
      *
-     * For example, [ExperimentalApi::class], [InternalKtorApi::class]
+     * For example, `[ExperimentalApi::class, InternalKtorApi::class]`
      */
+    @property:KtorGenExperimental
     val optInAnnotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * Custom KDoc comment or annotations for the generated implementation class.
+     * Custom KDoc comment for the generated implementation class.
      *
-     * Useful to indicate that the class is auto-generated and shouldn't be modified or add custom code.
+     * Useful to indicate that the class is auto-generated and shouldn't be modified.
      */
     val customHeader: String = KTORGEN_DEFAULT_NAME,
-
-    /**
-     * Indicate the visibility modifier of the generated **function**
-     * @see <a href="https://kotlinlang.org/docs/visibility-modifiers.html#packages">Kotlin Visibility Modifiers</a>
-     */
-    val visibilityModifier: String = "public",
 )
