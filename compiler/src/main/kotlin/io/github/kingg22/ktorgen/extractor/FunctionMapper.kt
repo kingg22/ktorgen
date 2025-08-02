@@ -107,9 +107,11 @@ class FunctionMapper : DeclarationFunctionMapper {
             name = name,
             returnType = returnType,
             isSuspend = isSuspend,
+            isImplemented = declaration.isAbstract.not(),
             parameterDataList = parameters,
             httpMethodAnnotation = httpAnnotations.first(),
-            nonKtorGenAnnotations = functionAnnotations,
+            ktorGenAnnotations = functionAnnotations,
+            nonKtorGenAnnotations = emptyList(), // TODO
             modifiers = modifiers,
         )
     }

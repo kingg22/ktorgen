@@ -6,7 +6,6 @@ import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.KModifier
-import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 
 /**
  * Contain all information of source code to generate a class implementing the interface
@@ -24,6 +23,7 @@ class ClassData(
     val properties: List<KSPropertyDeclaration> = emptyList(),
     val modifiers: List<KModifier> = emptyList(),
     val haveCompanionObject: Boolean = false,
+    goingToGenerate: Boolean = true,
     generatedName: String = "_${interfaceName}Impl",
     visibilityModifier: String = "public",
     generateTopLevelFunction: Boolean = true,
@@ -33,11 +33,12 @@ class ClassData(
     jsStatic: Boolean = false,
     generatePublicConstructor: Boolean = false,
     propagateAnnotations: Boolean = true,
-    annotationsToPropagate: Set<FunctionAnnotation> = emptySet(),
+    annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
     optIns: Set<AnnotationSpec> = emptySet(),
     customFileHeader: String = KTORG_GENERATED_FILE_COMMENT,
     customClassHeader: String = KTORG_GENERATED_COMMENT,
 ) : GenOptions.GenTypeOption(
+    goingToGenerate = goingToGenerate,
     generatedName = generatedName,
     visibilityModifier = visibilityModifier,
     generateTopLevelFunction = generateTopLevelFunction,
