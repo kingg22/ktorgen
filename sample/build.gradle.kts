@@ -68,14 +68,35 @@ kotlin {
     mingwX64()
     watchosDeviceArm64()
 
-    sourceSets.commonMain.dependencies {
-        implementation(projects.annotations)
-        implementation(libs.ktor.client.core)
+    sourceSets.commonMain {
+        // indicate to KMP plugin compile the metadata of ksp
+        kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+        dependencies {
+            implementation(projects.annotations)
+            implementation(libs.ktor.client.core)
+        }
     }
 }
 
 dependencies {
-    ksp(projects.compiler)
+    // ksp(projects.compiler) // KMP project don't use this, only jvm or android kotlin projects
+    // apply on common main because in there is my code
+    kspCommonMainMetadata(projects.compiler)
+    /*
+    // If I have more code with annotations on each target, apply on each target ksp
+    add("kspJvm", projects.compiler)
+    // add("kspJvmTest", projects.compiler)
+    add("kspJs", projects.compiler)
+    // add("kspJsTest", projects.compiler)
+    add("kspAndroidNativeX64", projects.compiler)
+    // add("kspAndroidNativeX64Test", projects.compiler)
+    add("kspAndroidNativeArm64", projects.compiler)
+    // add("kspAndroidNativeArm64Test", projects.compiler)
+    add("kspLinuxX64", projects.compiler)
+    // add("kspLinuxX64Test", project(":test-processor"))
+    add("kspMingwX64", projects.compiler)
+    // add("kspMingwX64Test", project(":test-processor"))
+     */
 }
 
 android {
@@ -105,5 +126,16 @@ ktlint {
 }
 
 ksp {
+    // pass argument to compiler
     arg("ktorgen_check_type", "2")
 }
+
+tasks.named("runKtlintCheckOverCommonMainSourceSet") {
+    dependsOn("kspCommonMainKotlinMetadata")
+}
+
+// Workaround kotlin multiplatform with ksp
+tasks.matching { it.name != "kspCommonMainKotlinMetadata" && it.name.startsWith("ksp") }
+    .configureEach {
+        dependsOn("kspCommonMainKotlinMetadata")
+    }
