@@ -6,6 +6,7 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.KtorGenLogger
+import io.github.kingg22.ktorgen.core.KtorGenIgnore
 import io.github.kingg22.ktorgen.extractor.DeclarationParameterMapper.Companion.getArgumentValueByName
 import io.github.kingg22.ktorgen.http.FormUrlEncoded
 import io.github.kingg22.ktorgen.http.HTTP
@@ -59,16 +60,16 @@ class FunctionMapper : DeclarationFunctionMapper {
             }
         }
         val returnType = ReturnType(
-            requireNotNull(declaration.returnType?.resolve()) { "Function $name has no return type" },
+            requireNotNull(declaration.returnType?.resolve()) { KtorGenLogger.FUNCTION_NOT_RETURN_TYPE + name },
         )
         val httpAnnotations = httpAnnotationResolver(declaration)
 
         require(httpAnnotations.isNotEmpty()) { KtorGenLogger.NO_HTTP_ANNOTATION_AT + name }
 
         require(httpAnnotations.size == 1) {
-            "${KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED} Found: ${
-                httpAnnotations.joinToString { it.httpMethod.value }
-            } at $name"
+            "${KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED} Found: ${httpAnnotations.joinToString {
+                it.httpMethod.value
+            }} at $name"
         }
 
         onAddImport(KTOR_HTTP_METHOD)
@@ -113,18 +114,22 @@ class FunctionMapper : DeclarationFunctionMapper {
             ktorGenAnnotations = functionAnnotations,
             nonKtorGenAnnotations = emptyList(), // TODO
             modifiers = modifiers,
+            ksFunctionDeclaration = declaration,
         )
     }
 
     @OptIn(KspExperimental::class)
     private fun getFunctionAnnotations(function: KSFunctionDeclaration) = buildList {
         function.getAnnotationsByType(Headers::class).firstOrNull()?.let { headers ->
-            add(FunctionAnnotation.Headers(headers.value.toList()))
+            add(FunctionAnnotation.Headers(headers.value.toSet()))
         }
         function.getAnnotationsByType(Multipart::class).firstOrNull()?.let { add(FunctionAnnotation.Multipart) }
         function.getAnnotationsByType(Streaming::class).firstOrNull()?.let { add(FunctionAnnotation.Streaming) }
         function.getAnnotationsByType(FormUrlEncoded::class).firstOrNull()?.let {
             add(FunctionAnnotation.FormUrlEncoded)
+        }
+        function.getAnnotationsByType(KtorGenIgnore::class).firstOrNull()?.let {
+            add(FunctionAnnotation.Ignore)
         }
     }
 
