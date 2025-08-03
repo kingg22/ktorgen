@@ -8,7 +8,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 class SuspendOrFlowValidator : ValidatorStrategy {
     override fun validate(context: ValidationContext) = ValidationResult {
         for (function in context.functions) {
-            val returnTypeName = requireNotNull(function.returnType.parameterType.declaration.qualifiedName) {
+            val returnTypeName = requireNotNull(function.returnTypeData.parameterType.declaration.qualifiedName) {
                 "${KtorGenLogger.KTOR_GEN} Return type is not defined. ${addDeclaration(context, function)}"
             }
             val isFlowName = returnTypeName.asString() == "kotlinx.coroutines.flow.Flow"

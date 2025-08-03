@@ -35,7 +35,7 @@ class PathParameterValidator : ValidatorStrategy {
             for (parameter in function.parameterDataList) {
                 val pathValue = parameter.findAnnotationOrNull<ParameterAnnotation.Path>()
                 if (pathValue != null) {
-                    if (parameter.type.parameterType.isMarkedNullable) {
+                    if (parameter.typeData.parameterType.isMarkedNullable) {
                         addError(
                             KtorGenLogger.PATH_PARAMETER_TYPE_MAY_NOT_BE_NULLABLE +
                                 addDeclaration(context, function, parameter),

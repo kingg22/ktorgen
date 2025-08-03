@@ -11,7 +11,7 @@ class HeadReturnNothingValidator : ValidatorStrategy {
     override fun validate(context: ValidationContext) = ValidationResult {
         for (function in context.functions) {
             if (function.httpMethodAnnotation.httpMethod != HttpMethod.Head) continue
-            if (function.returnType.typeName != UNIT) {
+            if (function.returnTypeData.typeName != UNIT) {
                 addError(KtorGenLogger.HTTP_METHOD_HEAD_NOT_RETURN_BODY + addDeclaration(context, function))
             }
         }

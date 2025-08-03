@@ -21,7 +21,7 @@ class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Valida
         if (classData.goingToGenerate.not()) return null
         val context = ValidationContext(
             className = classData.interfaceName,
-            packageName = classData.packageName,
+            packageName = classData.packageNameString,
             functions = classData.functions.filter { it.goingToGenerate },
             superInterfaces = listOf(), // TODO
             baseUrl = null, // TODO

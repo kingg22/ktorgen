@@ -21,7 +21,10 @@ class BodyUsageValidator : ValidatorStrategy {
                 addError(KtorGenLogger.CONFLICT_BODY_TYPE + addDeclaration(context, function))
             }
 
-            if (function.parameterDataList.count { it.hasAnnotation<ParameterAnnotation.Body>() } > 1) {
+            if (function.parameterDataList.count { it.hasAnnotation<ParameterAnnotation.Body>() } > 1 ||
+                function.parameterDataList
+                    .firstOrNull { it.hasAnnotation<ParameterAnnotation.Body>() }?.isVararg == true
+            ) {
                 addError(KtorGenLogger.INVALID_BODY_PARAMETER + addDeclaration(context, function))
             }
         }
