@@ -12,7 +12,7 @@ import io.github.kingg22.ktorgen.extractor.DeclarationParameterMapper.Companion.
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.ParameterData
-import io.github.kingg22.ktorgen.model.ReturnType
+import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import kotlin.contracts.ExperimentalContracts
 
@@ -20,9 +20,10 @@ class ParameterMapper : DeclarationParameterMapper {
     override fun mapToModel(declaration: KSValueParameter): ParameterData {
         val type = declaration.type.resolve()
         return ParameterData(
-            name = declaration.name?.asString().orEmpty(),
-            type = ReturnType(type),
-            annotations = collectParameterAnnotations(declaration),
+            nameString = declaration.name?.asString().orEmpty(),
+            typeData = TypeData(type),
+            ksValueParameter = declaration,
+            ktorgenAnnotations = collectParameterAnnotations(declaration),
             isHttpRequestBuilderLambda = isHttpRequestBuilderLambda(type),
         )
     }

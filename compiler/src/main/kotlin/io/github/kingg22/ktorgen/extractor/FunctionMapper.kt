@@ -23,7 +23,7 @@ import io.github.kingg22.ktorgen.model.KTOR_CLIENT_SET_BODY
 import io.github.kingg22.ktorgen.model.KTOR_ENCODE_URL_PATH
 import io.github.kingg22.ktorgen.model.KTOR_HTTP_METHOD
 import io.github.kingg22.ktorgen.model.KTOR_PARAMETERS
-import io.github.kingg22.ktorgen.model.ReturnType
+import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
@@ -35,7 +35,7 @@ class FunctionMapper : DeclarationFunctionMapper {
             DeclarationParameterMapper.DEFAULT.mapToModel(param)
         }.also {
             for (param in it) {
-                for (annotation in param.annotations) {
+                for (annotation in param.ktorgenAnnotations) {
                     when (annotation) {
                         ParameterAnnotation.Body,
                         is ParameterAnnotation.Part,
@@ -59,7 +59,7 @@ class FunctionMapper : DeclarationFunctionMapper {
                 }
             }
         }
-        val returnType = ReturnType(
+        val returnType = TypeData(
             requireNotNull(declaration.returnType?.resolve()) { KtorGenLogger.FUNCTION_NOT_RETURN_TYPE + name },
         )
         val httpAnnotations = httpAnnotationResolver(declaration)
@@ -99,21 +99,21 @@ class FunctionMapper : DeclarationFunctionMapper {
 
         val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)
 
-        val modifiers = buildList {
+        val modifiers = buildSet {
             add(KModifier.OVERRIDE)
             if (isSuspend) add(KModifier.SUSPEND)
         }
 
         return FunctionData(
             name = name,
-            returnType = returnType,
+            returnTypeData = returnType,
             isSuspend = isSuspend,
             isImplemented = declaration.isAbstract.not(),
             parameterDataList = parameters,
             httpMethodAnnotation = httpAnnotations.first(),
             ktorGenAnnotations = functionAnnotations,
             nonKtorGenAnnotations = emptyList(), // TODO
-            modifiers = modifiers,
+            modifierSet = modifiers,
             ksFunctionDeclaration = declaration,
         )
     }

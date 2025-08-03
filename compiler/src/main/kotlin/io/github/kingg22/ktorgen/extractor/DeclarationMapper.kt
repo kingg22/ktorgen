@@ -9,10 +9,5 @@ fun interface DeclarationMapper {
 
     companion object {
         val DEFAULT: DeclarationMapper by lazy { ClassMapper() }
-        val NO_OP by lazy {
-            DeclarationMapper { declaration ->
-                ClassData("", "", emptyList(), emptySet(), declaration.containingFile!!, emptySet())
-            }
-        }
     }
 }

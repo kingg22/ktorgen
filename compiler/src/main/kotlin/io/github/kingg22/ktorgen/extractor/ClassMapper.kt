@@ -34,8 +34,9 @@ class ClassMapper : DeclarationMapper {
 
         // an operation terminal of sequences must be in one site
         return ClassData(
+            ksClassDeclaration = declaration,
             interfaceName = className,
-            packageName = packageName,
+            packageNameString = packageName,
             functions = functions.toList().also {
                 if (it.isNotEmpty()) {
                     imports.addAll(
@@ -52,9 +53,12 @@ class ClassMapper : DeclarationMapper {
             imports = imports,
             superClasses = filteredSupertypes.toList(),
             properties = properties.toList(),
-            modifiers = declaration.modifiers.mapNotNull { it.toKModifier() },
+            modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
             ksFile = requireNotNull(declaration.containingFile) { KtorGenLogger.INTERFACE_NOT_HAVE_FILE + className },
-            annotations = declaration.annotations.toSet(),
+            annotationSet = declaration.annotations.toSet(),
+            haveCompanionObject = declaration.declarations
+                .filterIsInstance<KSClassDeclaration>()
+                .any { it.isCompanionObject },
         )
     }
 }
