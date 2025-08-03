@@ -1,9 +1,7 @@
 package io.github.kingg22.ktorgen.validator.validators
 
 import io.github.kingg22.ktorgen.KtorGenLogger
-import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
-import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.validator.ValidationContext
@@ -51,34 +49,16 @@ class HeadersValidator : ValidatorStrategy {
 
                 // Validate @HeaderMap
                 parameter.findAnnotationOrNull<ParameterAnnotation.HeaderMap>()?.let {
-                    val decl = parameter.type.parameterType.declaration
-                    val qualifiedName = decl.qualifiedName?.asString()
-
-                    // Pair<String, String> o Map<String, String>
-                    if (qualifiedName == "kotlin.collections.Map" || qualifiedName == "kotlin.Pair") {
-                        validateArgs(parameter, context, function)
-                    } else {
-                        addError(
-                            KtorGenLogger.HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING +
-                                addDeclaration(context, function, parameter),
-                        )
+                    validateMapParameter(
+                        parameter,
+                        context,
+                        function,
+                        KtorGenLogger.HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING,
+                    ) { keys, values ->
+                        keys != Pair("kotlin.String", false) || values.first != "kotlin.String"
                     }
                 }
             }
-        }
-    }
-
-    private fun ValidationResult.validateArgs(
-        parameter: ParameterData,
-        context: ValidationContext,
-        function: FunctionData,
-    ) {
-        val (firstType, secondType) = validateArgsOf(parameter)
-        if (firstType != Pair("kotlin.String", false) || secondType.first != "kotlin.String") {
-            addError(
-                KtorGenLogger.HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING +
-                    addDeclaration(context, function, parameter),
-            )
         }
     }
 }

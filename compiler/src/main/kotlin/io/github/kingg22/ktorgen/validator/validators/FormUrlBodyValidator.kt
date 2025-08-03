@@ -37,6 +37,16 @@ class FormUrlBodyValidator : ValidatorStrategy {
                     KtorGenLogger.FORM_ENCODED_ANNOTATION_MISMATCH_HTTP_METHOD + addDeclaration(context, function),
                 )
             }
+            function.parameterDataList.forEach { parameter ->
+                parameter.findAnnotationOrNull<ParameterAnnotation.FieldMap>()?.let {
+                    validateMapParameter(
+                        parameter,
+                        context,
+                        function,
+                        KtorGenLogger.FIELD_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING,
+                    )
+                }
+            }
         }
     }
 }

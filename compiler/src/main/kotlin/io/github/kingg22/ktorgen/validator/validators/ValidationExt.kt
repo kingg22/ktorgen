@@ -6,6 +6,7 @@ package io.github.kingg22.ktorgen.validator.validators
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.validator.ValidationContext
+import io.github.kingg22.ktorgen.validator.ValidationResult
 
 fun addDeclaration(context: ValidationContext, function: FunctionData, parameter: ParameterData? = null) = buildString {
     appendLine()
@@ -16,33 +17,57 @@ fun addDeclaration(context: ValidationContext, function: FunctionData, parameter
     append(function.name)
     append("(")
     function.parameterDataList.forEachIndexed { index, parameterData ->
-        append(parameterData.annotations)
+        append(parameterData.ktorgenAnnotations)
         append(" ")
+        if (parameterData.isVararg) append("vararg ")
         if (parameter != null && parameter == parameterData) {
             append("**")
-            append(parameterData.name)
+            append(parameterData.nameString)
             append("**")
         } else {
-            append(parameterData.name)
+            append(parameterData.nameString)
         }
         append(": ")
-        append(parameterData.type.parameterType.declaration.simpleName.getShortName())
-        if (parameterData.type.parameterType.isMarkedNullable) append("?")
+        append(parameterData.typeData.parameterType.declaration.simpleName.getShortName())
+        if (parameterData.typeData.parameterType.isMarkedNullable) append("?")
         if (index != function.parameterDataList.indices.last) append(", ")
     }
     append(")")
     append(": ")
-    val returnType = function.returnType.parameterType
+    val returnType = function.returnTypeData.parameterType
     append(returnType.declaration.simpleName.getShortName())
     if (returnType.isMarkedNullable) append("?")
+}
+
+/** Validate a [Map] or [Pair] types */
+fun ValidationResult.validateMapParameter(
+    parameter: ParameterData,
+    context: ValidationContext,
+    function: FunctionData,
+    errorMessage: String,
+    /** Condition to raise error */
+    validation: (Pair<String?, Boolean>, Pair<String?, Boolean>) -> Boolean = { keys, _ ->
+        keys != Pair("kotlin.String", false)
+    },
+) {
+    val decl = parameter.typeData.parameterType.declaration
+    val qualifiedName = decl.qualifiedName?.asString()
+    if (qualifiedName == "kotlin.collections.Map" || qualifiedName == "kotlin.Pair") {
+        val (firstType, secondType) = validateArgsOf(parameter)
+        if (validation(firstType, secondType)) {
+            addError(errorMessage + addDeclaration(context, function, parameter))
+        }
+    } else {
+        addError(errorMessage + addDeclaration(context, function, parameter))
+    }
 }
 
 /**
  * Validate the generic types of the parameter with <*, *>
  * @return Pair (first, second) where is (type, nullability)
  */
-fun validateArgsOf(parameter: ParameterData): Pair<Pair<String?, Boolean>, Pair<String?, Boolean>> {
-    val args = parameter.type.parameterType.arguments
+private fun validateArgsOf(parameter: ParameterData): Pair<Pair<String?, Boolean>, Pair<String?, Boolean>> {
+    val args = parameter.typeData.parameterType.arguments
     val firstType = args.getOrNull(0)?.type?.resolve()?.let {
         Pair(it.declaration.qualifiedName?.asString(), it.isMarkedNullable)
     } ?: Pair(null, false)

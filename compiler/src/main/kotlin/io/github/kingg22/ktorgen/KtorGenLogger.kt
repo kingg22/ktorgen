@@ -75,5 +75,12 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
             "Parameter with more than one annotation is invalid. Please, for advance request use HttpRequestBuilder or remove extra annotation on parameter "
         const val ONLY_ONE_HTTP_REQUEST_BUILDER =
             "Only one Http Request Builder is allowed per function. Found: "
+        const val FIELD_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
+            "@FieldMap parameter type must be Map<String, *(?)> or Pair<String, *(?)>. "
+        const val PART_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
+            "@PartMap parameter type must be Map<String, *(?)> or Pair<String, *(?)>. "
+        const val QUERY_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
+            "@QueryMap parameter type must be Map<String, String> or Pair<String, String>. "
+        const val VARARG_PARAMETER_EXPERIMENTAL = "vararg parameter is an experimental feature."
     }
 }

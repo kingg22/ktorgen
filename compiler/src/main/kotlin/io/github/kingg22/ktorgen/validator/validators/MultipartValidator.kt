@@ -34,6 +34,16 @@ class MultipartValidator : ValidatorStrategy {
                     KtorGenLogger.FORM_ENCODED_ANNOTATION_MISMATCH_HTTP_METHOD + addDeclaration(context, function),
                 )
             }
+            function.parameterDataList.forEach { parameter ->
+                parameter.findAnnotationOrNull<ParameterAnnotation.PartMap>()?.let {
+                    validateMapParameter(
+                        parameter,
+                        context,
+                        function,
+                        KtorGenLogger.PART_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING,
+                    )
+                }
+            }
         }
     }
 }
