@@ -21,7 +21,7 @@ class HeadersValidator : ValidatorStrategy {
                 }
                 Pair(name.trim(), value.trim())
             }?.toMutableMap() ?: mutableMapOf()
-            var haveContentType = headersFunction.any { (key, _) -> key.equals("Content-Type", true) }
+            var haveContentType = headersFunction.any { (key, _) -> key.equals(CONTENT_TYPE_HEADER, true) }
 
             if (haveContentType && (function.isFormUrl || function.isMultipart)) {
                 addError(KtorGenLogger.ONLY_ONE_CONTENT_TYPE_IS_ALLOWED + addDeclaration(context, function))
@@ -30,26 +30,32 @@ class HeadersValidator : ValidatorStrategy {
             for (parameter in function.parameterDataList) {
                 // Validate @Header
                 parameter.findAnnotationOrNull<ParameterAnnotation.Header>()?.let { header ->
-                    val name = header.value.replace("\\s+".toRegex(), "")
+                    val name = header.value.trim().replace("\\s+".toRegex(), "")
                     if (name.isBlank()) {
                         addError(
                             KtorGenLogger.INVALID_HEADER_FORMAT + addDeclaration(context, function, parameter),
                         )
-                    } else if (name.trim() in headersFunction.keys) {
+                    }
+
+                    val isContentType = name.equals(CONTENT_TYPE_HEADER, ignoreCase = true)
+
+                    // Solo valida duplicado si es Content-Type
+                    if (isContentType && headersFunction.keys.any { it.equals(CONTENT_TYPE_HEADER, true) }) {
                         addError(KtorGenLogger.DUPLICATE_HEADER + addDeclaration(context, function, parameter))
                     }
-                    val contentType = name.equals("Content-Type", ignoreCase = true)
-                    if (!haveContentType) haveContentType = contentType
 
-                    if ((function.isFormUrl || function.isMultipart) && contentType) {
+                    if (!haveContentType && isContentType) haveContentType = true
+
+                    if ((function.isFormUrl || function.isMultipart) && isContentType) {
                         addError(
                             KtorGenLogger.ONLY_ONE_CONTENT_TYPE_IS_ALLOWED +
                                 addDeclaration(context, function, parameter),
                         )
                     }
-                    name.trim().takeIf(String::isNotBlank)?.let {
-                        // collect to next parameter verify the accumulative headers
-                        headersFunction.put(it, KTORGEN_DEFAULT_VALUE)
+
+                    name.takeIf(String::isNotBlank)?.let {
+                        // save Content-Type for next iteration
+                        if (isContentType) headersFunction[it] = KTORGEN_DEFAULT_VALUE
                     }
                 }
 
@@ -71,5 +77,9 @@ class HeadersValidator : ValidatorStrategy {
                 addWarning(KtorGenLogger.CONTENT_TYPE_BODY_UNKNOWN + addDeclaration(context, function))
             }
         }
+    }
+
+    companion object {
+        const val CONTENT_TYPE_HEADER = "Content-Type"
     }
 }
