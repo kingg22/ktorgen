@@ -1,21 +1,33 @@
 package io.github.kingg22.ktorgen.http
 
 /**
- * Add a header to a request
+ * Adds a single HTTP header whose value is provided at call time.
+ *
+ * The `value` parameter specifies only the header name.
+ * The header value is taken from the annotated function parameter.
  *
  * ```kotlin
  * @GET("comments")
- * suspend fun request(@Header("Content-Type") name: String): List<Comment>
+ * suspend fun getComments(@Header("Content-Type") name: String): List<Comment>
  *
- * request("Hello World")
- * // Generate header "Content-Type:Hello World"
+ * // Call:
+ * getComments("application/json")
+ * // Resulting header: "Content-Type: application/json"
  * ```
  *
- * Header with null values will be ignored
+ * By default, Headers do not overwrite each other:
+ * all headers with the same name will be included in the request.
+ * Except headers mentioned as _singleton_,
+ * e.g. [Content-Type](https://www.rfc-editor.org/rfc/rfc9110.html#name-content-type)
+ *
  * @see Headers
  * @see HeaderMap
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9110.html">RFC 9110 - HTTP Semantics</a>
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
-annotation class Header(val value: String)
+annotation class Header(
+    /** The header name (without the `:` and value part). */
+    val value: String,
+)
