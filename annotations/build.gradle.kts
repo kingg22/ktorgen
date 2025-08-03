@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.kotlinxBinaryCompatibility)
+    // alias(libs.plugins.kotlinxBinaryCompatibility)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.mavenPublish)
 }
@@ -18,6 +18,7 @@ plugins {
 group = "io.github.kingg22"
 version = libs.versions.ktorgen.version.get()
 
+/*
 apiValidation {
     // temp disable until publish
     validationDisabled = true
@@ -25,6 +26,7 @@ apiValidation {
         enabled = true
     }
 }
+ */
 
 kotlin {
     compilerOptions {
@@ -111,4 +113,39 @@ dokka.dokkaSourceSets.configureEach {
     reportUndocumented = true
     enableJdkDocumentationLink = true
     enableKotlinStdLibDocumentationLink = true
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+
+    signAllPublications()
+
+    coordinates(group.toString(), "ktorgen-annotations", version.toString())
+
+    pom {
+        name = "KtorGen - Annotations"
+        description =
+            "Kotlin annotations for generating Ktor Client interface implementations using the KtorGen KSP processor."
+        inceptionYear = "2025"
+        url = "https://github.com/kingg22/ktorgen"
+        licenses {
+            license {
+                name = "The Apache Software License, Version 2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0"
+                distribution = "repo"
+            }
+        }
+        developers {
+            developer {
+                id = "kingg22"
+                name = "Rey Acosta (Kingg22)"
+                url = "https://github.com/kingg22"
+            }
+        }
+        scm {
+            url = "https://github.com/kingg22/ktorgen"
+            connection = "scm:git:git://github.com/kingg22/ktorgen.git"
+            developerConnection = "scm:git:ssh://git@github.com/kingg22/ktorgen.git"
+        }
+    }
 }
