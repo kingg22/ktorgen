@@ -1,5 +1,6 @@
 package io.github.kingg22.ktorgen.validator.validators
 
+import com.squareup.kotlinpoet.ANY
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
@@ -10,6 +11,12 @@ class ClassLevelValidator : ValidatorStrategy {
         for (function in context.functions) {
             if (function.isImplemented.not() && function.goingToGenerate.not()) {
                 addError(KtorGenLogger.ABSTRACT_FUNCTION_IGNORED + addDeclaration(context, function))
+            }
+
+            if (function.returnTypeData.typeName == ANY ||
+                function.returnTypeData.typeName == ANY.copy(nullable = true)
+            ) {
+                addError(KtorGenLogger.ANY_TYPE_INVALID + addDeclaration(context, function))
             }
 
             for (parameter in function.parameterDataList) {
@@ -28,6 +35,9 @@ class ClassLevelValidator : ValidatorStrategy {
                 }
                 if (parameter.isVararg) {
                     addWarning(KtorGenLogger.VARARG_PARAMETER_EXPERIMENTAL)
+                }
+                if (parameter.typeData.typeName == ANY || parameter.typeData.typeName == ANY.copy(nullable = true)) {
+                    addError(KtorGenLogger.ANY_TYPE_INVALID + addDeclaration(context, function, parameter))
                 }
             }
 

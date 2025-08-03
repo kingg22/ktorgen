@@ -82,5 +82,7 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val QUERY_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
             "@QueryMap parameter type must be Map<String, String> or Pair<String, String>. "
         const val VARARG_PARAMETER_EXPERIMENTAL = "vararg parameter is an experimental feature."
+        const val CONTENT_TYPE_BODY_UNKNOWN = "Content-Type for @Body maybe is unknown. "
+        const val ANY_TYPE_INVALID = "'Any' type is not valid, break validation and serialization."
     }
 }
