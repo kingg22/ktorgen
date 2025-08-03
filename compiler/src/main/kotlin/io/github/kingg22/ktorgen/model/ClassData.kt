@@ -1,11 +1,13 @@
 package io.github.kingg22.ktorgen.model
 
 import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ksp.toClassName
 
 /**
  * Contain all information of source code to generate a class implementing the interface
@@ -13,15 +15,16 @@ import com.squareup.kotlinpoet.KModifier
  * @param superClasses qualifiedNames of interface
  */
 class ClassData(
-    val packageName: String,
+    val packageNameString: String,
     val interfaceName: String,
     val functions: List<FunctionData>,
     val imports: Set<String>,
     val ksFile: KSFile,
-    val annotations: Set<KSAnnotation>,
+    val annotationSet: Set<KSAnnotation>,
+    ksClassDeclaration: KSClassDeclaration,
     val superClasses: List<KSTypeReference> = emptyList(),
     val properties: List<KSPropertyDeclaration> = emptyList(),
-    val modifiers: List<KModifier> = emptyList(),
+    val modifierSet: Set<KModifier> = emptySet(),
     val haveCompanionObject: Boolean = false,
     goingToGenerate: Boolean = true,
     generatedName: String = "_${interfaceName}Impl",
@@ -36,7 +39,7 @@ class ClassData(
     annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
     optIns: Set<AnnotationSpec> = emptySet(),
     customFileHeader: String = KTORG_GENERATED_FILE_COMMENT,
-    customClassHeader: String = KTORG_GENERATED_COMMENT,
+    customClassHeader: String = "",
 ) : GenOptions.GenTypeOption(
     goingToGenerate = goingToGenerate,
     generatedName = generatedName,
@@ -52,4 +55,10 @@ class ClassData(
     optIns = optIns,
     customFileHeader = customFileHeader,
     customClassHeader = customClassHeader,
-)
+),
+    KSClassDeclaration by ksClassDeclaration {
+
+    val haveHttpClientProperty by lazy {
+        properties.any { it.type.resolve().toClassName() == HttpRequestBuilderTypeName }
+    }
+}

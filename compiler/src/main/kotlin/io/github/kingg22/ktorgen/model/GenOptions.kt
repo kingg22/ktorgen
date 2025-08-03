@@ -2,13 +2,14 @@ package io.github.kingg22.ktorgen.model
 
 import com.squareup.kotlinpoet.AnnotationSpec
 
+/** Options on each function */
 open class GenOptions(
     val goingToGenerate: Boolean = true,
     val visibilityModifier: String = "public",
     val propagateAnnotations: Boolean = true,
     val annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
     val optIns: Set<AnnotationSpec> = emptySet(),
-    val customHeader: String = KTORG_GENERATED_COMMENT,
+    val customHeader: String = "",
 ) {
     /** Options on Interface or Companion Object */
     open class GenTypeOption(
@@ -25,7 +26,7 @@ open class GenOptions(
         annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
         optIns: Set<AnnotationSpec> = emptySet(),
         customFileHeader: String = KTORG_GENERATED_FILE_COMMENT,
-        customClassHeader: String = KTORG_GENERATED_COMMENT,
+        customClassHeader: String = "",
     ) : GenOptions(
         goingToGenerate = goingToGenerate,
         visibilityModifier = visibilityModifier,

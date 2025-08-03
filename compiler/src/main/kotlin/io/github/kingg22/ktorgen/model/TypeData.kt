@@ -4,4 +4,4 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.ksp.toTypeName
 
-class ReturnType(val parameterType: KSType, val typeName: TypeName = parameterType.toTypeName())
+class TypeData(val parameterType: KSType, val typeName: TypeName = parameterType.toTypeName())
