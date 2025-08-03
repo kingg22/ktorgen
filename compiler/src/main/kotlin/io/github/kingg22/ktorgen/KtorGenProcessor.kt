@@ -1,6 +1,8 @@
 package io.github.kingg22.ktorgen
 
+import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.closestClassDeclaration
+import com.google.devtools.ksp.getKotlinClassByName
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
@@ -8,6 +10,7 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.extractor.DeclarationMapper
@@ -24,12 +27,21 @@ import io.github.kingg22.ktorgen.validator.Validator
 
 class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val ktorGenOptions: KtorGenOptions) :
     SymbolProcessor {
+    companion object {
+        lateinit var listType: KSType
+        lateinit var arrayType: KSType
+    }
     private val logger = KtorGenLogger(env.logger, ktorGenOptions.errorsLoggingType)
     private var invoked = false
 
+    @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (invoked) return emptyList()
         invoked = true
+        listType = resolver.getKotlinClassByName("kotlin.collections.List")
+            ?.asStarProjectedType()
+            ?: error("${KtorGenLogger.KTOR_GEN} List not found")
+        arrayType = resolver.builtIns.arrayType
 
         // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
         val annotatedFunctionsGroupedByClass = getAnnotatedFunctions(resolver).groupBy { it.closestClassDeclaration() }

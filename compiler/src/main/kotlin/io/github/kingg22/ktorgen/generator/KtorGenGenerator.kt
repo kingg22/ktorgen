@@ -12,56 +12,60 @@ fun interface KtorGenGenerator {
     fun generate(classData: ClassData): FileSpec
 
     companion object {
-        val DEFAULT by lazy { TODO_GENERATOR }
+        val DEFAULT: KtorGenGenerator by lazy { CodeGenerator() }
 
-        val TODO_GENERATOR = KtorGenGenerator { classData ->
-            val interfaceName = classData.interfaceName
+        val TODO_GENERATOR by lazy {
+            KtorGenGenerator { classData ->
+                val interfaceName = classData.interfaceName
 
-            val classBuilder = TypeSpec.classBuilder(classData.generatedName)
-                .addModifiers(KModifier.PUBLIC)
-                .addSuperinterface(ClassName(classData.packageNameString, interfaceName))
-                .addKdoc(classData.customHeader)
+                val classBuilder = TypeSpec.classBuilder(classData.generatedName)
+                    .addModifiers(KModifier.PUBLIC)
+                    .addSuperinterface(ClassName(classData.packageNameString, interfaceName))
+                    .addKdoc(classData.customHeader)
 
-            classData.functions.forEach { func ->
-                val funBuilder = FunSpec.builder(func.name)
-                    .addModifiers(func.modifierSet)
-                    .returns(func.returnTypeData.typeName)
-                    .addAnnotations(func.nonKtorGenAnnotations)
-                    .addKdoc(func.customHeader)
+                classData.functions.forEach { func ->
+                    val funBuilder = FunSpec.builder(func.name)
+                        .addModifiers(func.modifierSet)
+                        .returns(func.returnTypeData.typeName)
+                        .addAnnotations(func.nonKtorGenAnnotations)
+                        .addKdoc(func.customHeader)
 
-                if (func.isSuspend) funBuilder.addModifiers(KModifier.SUSPEND)
+                    if (func.isSuspend) funBuilder.addModifiers(KModifier.SUSPEND)
 
-                func.parameterDataList.forEach { param ->
-                    funBuilder.addParameter(
-                        param.nameString,
-                        param.typeData.typeName,
-                        buildList {
-                            if (param.isVararg) add(KModifier.VARARG)
-                            if (param.isCrossInline) add(KModifier.CROSSINLINE)
-                            if (param.isNoInline) add(KModifier.NOINLINE)
-                        },
-                    )
+                    func.parameterDataList.forEach { param ->
+                        funBuilder.addParameter(
+                            param.nameString,
+                            param.typeData.typeName,
+                            buildList {
+                                if (param.isVararg) add(KModifier.VARARG)
+                                if (param.isCrossInline) add(KModifier.CROSSINLINE)
+                                if (param.isNoInline) add(KModifier.NOINLINE)
+                            },
+                        )
+                    }
+
+                    funBuilder.addCode("return TODO()")
+
+                    classBuilder.addFunction(funBuilder.build())
                 }
 
-                funBuilder.addCode("return TODO()")
+                val fileBuilder = FileSpec.builder(classData.packageNameString, classData.generatedName)
+                    .addFileComment(classData.customHeader)
+                    .addAnnotation(
+                        AnnotationSpec.builder(Suppress::class)
+                            .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
+                            .addMember("%S", "REDUNDANT_VISIBILITY_MODIFIER")
+                            .addMember("%S", "unused")
+                            .addMember("%S", "UNUSED_IMPORT")
+                            .build(),
+                    )
 
-                classBuilder.addFunction(funBuilder.build())
+                classData.imports.forEach {
+                    fileBuilder.addImport(it.substringBeforeLast("."), it.substringAfterLast("."))
+                }
+
+                fileBuilder.addType(classBuilder.build()).build()
             }
-
-            val fileBuilder = FileSpec.builder(classData.packageNameString, classData.generatedName)
-                .addFileComment(classData.customHeader)
-                .addAnnotation(
-                    AnnotationSpec.builder(Suppress::class)
-                        .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
-                        .addMember("%S", "REDUNDANT_VISIBILITY_MODIFIER")
-                        .addMember("%S", "unused")
-                        .addMember("%S", "UNUSED_IMPORT")
-                        .build(),
-                )
-
-            classData.imports.forEach { fileBuilder.addImport(it.substringBeforeLast("."), it.substringAfterLast(".")) }
-
-            fileBuilder.addType(classBuilder.build()).build()
         }
 
         val NO_OP by lazy {
