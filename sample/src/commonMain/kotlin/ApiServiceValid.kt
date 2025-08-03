@@ -48,5 +48,5 @@ interface ApiServiceValid {
     suspend fun dynamicQuery(builder: HttpRequestBuilder.() -> Unit): IssueData
 
     @POST
-    suspend fun dynamicQuery(builder: HttpRequestBuilder): IssueData
+    suspend fun dynamicQuery(builder: HttpRequestBuilder, @Tag tagValue: String): IssueData
 }
