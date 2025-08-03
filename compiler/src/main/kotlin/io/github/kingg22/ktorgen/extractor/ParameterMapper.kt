@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalContracts::class, KtorGenExperimental::class)
-
 package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
@@ -8,7 +6,6 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
-import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.extractor.DeclarationParameterMapper.Companion.getArgumentValueByName
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
@@ -16,6 +13,8 @@ import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 class ParameterMapper : DeclarationParameterMapper {
     override fun mapToModel(declaration: KSValueParameter): ParameterData {
@@ -176,11 +175,15 @@ class ParameterMapper : DeclarationParameterMapper {
     }
 
     /** Callbacks are invoked when the annotation is present, else NO OP */
-    @OptIn(KspExperimental::class)
+    @OptIn(KspExperimental::class, ExperimentalContracts::class)
     private inline fun <reified A : Annotation> KSValueParameter.getAnnotation(
         crossinline manualExtraction: (KSAnnotation) -> Unit,
         crossinline mapFromAnnotation: (A) -> Unit,
     ) {
+        contract {
+            callsInPlace(manualExtraction, InvocationKind.AT_MOST_ONCE)
+            callsInPlace(mapFromAnnotation, InvocationKind.AT_MOST_ONCE)
+        }
         try {
             this.getAnnotationsByType(A::class).firstOrNull()?.let(mapFromAnnotation)
         } catch (_: Exception) {
