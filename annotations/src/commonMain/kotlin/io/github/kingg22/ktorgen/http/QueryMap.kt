@@ -7,6 +7,7 @@ package io.github.kingg22.ktorgen.http
  *
  * @see Query
  * @see QueryName
+ * @see <a href="https://ktor.io/docs/client-requests.html#query_parameters">Ktor Client Request - Query parameter</a>
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)

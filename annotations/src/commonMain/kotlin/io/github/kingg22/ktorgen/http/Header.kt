@@ -23,6 +23,7 @@ package io.github.kingg22.ktorgen.http
  * @see Headers
  * @see HeaderMap
  * @see <a href="https://www.rfc-editor.org/rfc/rfc9110.html">RFC 9110 - HTTP Semantics</a>
+ * @see <a href="https://ktor.io/docs/client-requests.html#headers">Ktor Client Request - Headers</a>
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)

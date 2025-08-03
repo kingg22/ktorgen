@@ -16,6 +16,8 @@ import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
  * foo.getPosts(25)
  * // Generate post/25
  * ```
+ *
+ * @see <a href="https://ktor.io/docs/client-requests.html#path_segments">Ktor Client Request - Path segment</a>
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)

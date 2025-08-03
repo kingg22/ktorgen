@@ -2,6 +2,8 @@ package io.github.kingg22.ktorgen.http
 
 /**
  * Query parameter appended to the URL that has no value.
+ *
+ * @see <a href="https://ktor.io/docs/client-requests.html#query_parameters">Ktor Client Request - Query parameter</a>
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)

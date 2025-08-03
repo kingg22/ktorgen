@@ -8,6 +8,8 @@ package io.github.kingg22.ktorgen.http
  * @POST("create")
  * suspend fun upload(@Body issue: Issue)
  * ```
+ *
+ * @see <a href="https://ktor.io/docs/client-requests.html#objects">Ktor Client Request - Objects</a>
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)

@@ -7,6 +7,8 @@ package io.github.kingg22.ktorgen.http
  * @HTTP(method = "CUSTOM", path = "custom/endpoint/")
  * suspend fun customEndpoint(): Response
  * ```
+ *
+ * @see <a href="https://ktor.io/docs/client-requests.html#http-method">Ktor Client Request - Http Method</a>
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
