@@ -1,3 +1,5 @@
+@file:OptIn(KtorGenExperimental::class)
+
 package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
@@ -6,6 +8,7 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.KtorGenLogger
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.core.KtorGenIgnore
 import io.github.kingg22.ktorgen.extractor.DeclarationParameterMapper.Companion.getArgumentValueByName
 import io.github.kingg22.ktorgen.http.FormUrlEncoded
@@ -20,6 +23,8 @@ import io.github.kingg22.ktorgen.model.KTOR_CLIENT_FORM_DATA_CONTENT
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_HEADERS
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_MULTI_PART_FORM_DATA_CONTENT
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_SET_BODY
+import io.github.kingg22.ktorgen.model.KTOR_CONTENT_TYPE
+import io.github.kingg22.ktorgen.model.KTOR_CONTENT_TYPE_ADD
 import io.github.kingg22.ktorgen.model.KTOR_ENCODE_URL_PATH
 import io.github.kingg22.ktorgen.model.KTOR_HTTP_METHOD
 import io.github.kingg22.ktorgen.model.KTOR_PARAMETERS
@@ -42,7 +47,15 @@ class FunctionMapper : DeclarationFunctionMapper {
                         is ParameterAnnotation.PartMap,
                         is ParameterAnnotation.Field,
                         is ParameterAnnotation.FieldMap,
-                        -> onAddImport(KTOR_CLIENT_SET_BODY)
+                        -> {
+                            onAddImport(KTOR_CLIENT_SET_BODY)
+                            onAddImport(KTOR_CONTENT_TYPE)
+                            onAddImport(KTOR_CONTENT_TYPE_ADD)
+                            onAddImport(KTOR_CLIENT_FORM_DATA_CONTENT)
+                            onAddImport(KTOR_CLIENT_MULTI_PART_FORM_DATA_CONTENT)
+                            onAddImport(KTOR_CLIENT_FORM_DATA)
+                            onAddImport(KTOR_PARAMETERS)
+                        }
 
                         is ParameterAnnotation.Header, ParameterAnnotation.HeaderMap -> onAddImport(KTOR_CLIENT_HEADERS)
                         is ParameterAnnotation.Path -> if (!annotation.encoded) onAddImport(KTOR_ENCODE_URL_PATH)
@@ -86,7 +99,9 @@ class FunctionMapper : DeclarationFunctionMapper {
                     annotation is FunctionAnnotation.Multipart ||
                     parameters.any { param ->
                         param.hasAnnotation<ParameterAnnotation.Field>() ||
-                            param.hasAnnotation<ParameterAnnotation.Part>()
+                            param.hasAnnotation<ParameterAnnotation.FieldMap>() ||
+                            param.hasAnnotation<ParameterAnnotation.Part>() ||
+                            param.hasAnnotation<ParameterAnnotation.PartMap>()
                     }
                 ) {
                     onAddImport(KTOR_CLIENT_FORM_DATA_CONTENT)
