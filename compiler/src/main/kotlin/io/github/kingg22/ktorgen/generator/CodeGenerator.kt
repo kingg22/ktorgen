@@ -137,6 +137,7 @@ class CodeGenerator : KtorGenGenerator {
             .addUrl(func)
             .addHeaders(func)
             .addBody(func)
+            .addAttributes(func.parameterDataList)
         endControlFlow()
         // } End with get body if return type != Unit
         if (func.returnTypeData.typeName != UNIT) add(".body()")
@@ -227,6 +228,30 @@ class CodeGenerator : KtorGenGenerator {
         }
         if (func.isMultipart) add(getPartsCodeBlock(func.parameterDataList, listType, arrayType))
         if (func.isFormUrl) add(getFieldArgumentsCodeBlock(func.parameterDataList, listType, arrayType))
+    }
+
+    private fun CodeBlock.Builder.addAttributes(parameterDataList: List<ParameterData>) = apply {
+        val builder = this
+
+        parameterDataList
+            .filter { it.hasAnnotation<ParameterAnnotation.Tag>() }
+            .forEach { param ->
+                val tag = param.findAnnotationOrNull<ParameterAnnotation.Tag>()!!
+
+                if (param.typeData.parameterType.isMarkedNullable) {
+                    builder.addStatement(
+                        "%N?.let { this.attributes.put(AttributeKey(%S), it) }",
+                        param.nameString,
+                        tag.value,
+                    )
+                } else {
+                    builder.addStatement(
+                        "this.attributes.put(AttributeKey(%S), %N)",
+                        tag.value,
+                        param.nameString,
+                    )
+                }
+            }
     }
 
     // -- header --
