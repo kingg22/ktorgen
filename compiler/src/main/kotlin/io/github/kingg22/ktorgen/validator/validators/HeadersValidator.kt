@@ -11,6 +11,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 class HeadersValidator : ValidatorStrategy {
     override fun validate(context: ValidationContext) = ValidationResult {
         for (function in context.functions) {
+            var haveHeadersMap = function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
             val headersFunction = function.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.map {
                 it.replace("\\s+".toRegex(), "")
             }?.toSet()?.associate {
@@ -20,7 +21,9 @@ class HeadersValidator : ValidatorStrategy {
                 }
                 Pair(name.trim(), value.trim())
             }?.toMutableMap() ?: mutableMapOf()
-            if (headersFunction.any { (key, _) -> key.equals("Content-Type", true) } && function.isBodyInferred) {
+            var haveContentType = headersFunction.any { (key, _) -> key.equals("Content-Type", true) }
+
+            if (haveContentType && (function.isFormUrl || function.isMultipart)) {
                 addError(KtorGenLogger.ONLY_ONE_CONTENT_TYPE_IS_ALLOWED + addDeclaration(context, function))
             }
 
@@ -35,7 +38,10 @@ class HeadersValidator : ValidatorStrategy {
                     } else if (name.trim() in headersFunction.keys) {
                         addError(KtorGenLogger.DUPLICATE_HEADER + addDeclaration(context, function, parameter))
                     }
-                    if (function.isBodyInferred && name.equals("Content-Type", ignoreCase = true)) {
+                    val contentType = name.equals("Content-Type", ignoreCase = true)
+                    if (!haveContentType) haveContentType = contentType
+
+                    if ((function.isFormUrl || function.isMultipart) && contentType) {
                         addError(
                             KtorGenLogger.ONLY_ONE_CONTENT_TYPE_IS_ALLOWED +
                                 addDeclaration(context, function, parameter),
@@ -49,6 +55,7 @@ class HeadersValidator : ValidatorStrategy {
 
                 // Validate @HeaderMap
                 parameter.findAnnotationOrNull<ParameterAnnotation.HeaderMap>()?.let {
+                    haveHeadersMap = true
                     validateMapParameter(
                         parameter,
                         context,
@@ -58,6 +65,10 @@ class HeadersValidator : ValidatorStrategy {
                         keys != Pair("kotlin.String", false) || values.first != "kotlin.String"
                     }
                 }
+            }
+
+            if (function.isBody && !haveHeadersMap && !haveContentType) {
+                addWarning(KtorGenLogger.CONTENT_TYPE_BODY_UNKNOWN + addDeclaration(context, function))
             }
         }
     }
