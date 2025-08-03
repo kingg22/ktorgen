@@ -9,7 +9,7 @@ interface ApiServiceWithWarnings {
 
     // ⚠️ @Field sin @FormUrlEncoded
     @POST("submit")
-    suspend fun submitDataWithoutForm(@Field("value") value: String): Any
+    suspend fun submitDataWithoutForm(@Field("value") vararg value: String): Any
 
     // ⚠️ @Part sin @Multipart
     @POST("upload")
