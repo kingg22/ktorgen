@@ -12,27 +12,35 @@ fun interface KtorGenGenerator {
     fun generate(classData: ClassData): FileSpec
 
     companion object {
-        val DEFAULT by lazy { rawKtorGenGenerator }
+        val DEFAULT by lazy { TODO_GENERATOR }
 
-        val rawKtorGenGenerator = KtorGenGenerator { classData ->
+        val TODO_GENERATOR = KtorGenGenerator { classData ->
             val interfaceName = classData.interfaceName
 
             val classBuilder = TypeSpec.classBuilder(classData.generatedName)
                 .addModifiers(KModifier.PUBLIC)
-                .addSuperinterface(ClassName(classData.packageName, interfaceName))
+                .addSuperinterface(ClassName(classData.packageNameString, interfaceName))
                 .addKdoc(classData.customHeader)
 
             classData.functions.forEach { func ->
                 val funBuilder = FunSpec.builder(func.name)
-                    .addModifiers(func.modifiers)
-                    .returns(func.returnType.typeName)
+                    .addModifiers(func.modifierSet)
+                    .returns(func.returnTypeData.typeName)
                     .addAnnotations(func.nonKtorGenAnnotations)
                     .addKdoc(func.customHeader)
 
                 if (func.isSuspend) funBuilder.addModifiers(KModifier.SUSPEND)
 
                 func.parameterDataList.forEach { param ->
-                    funBuilder.addParameter(param.name, param.type.typeName)
+                    funBuilder.addParameter(
+                        param.nameString,
+                        param.typeData.typeName,
+                        buildList {
+                            if (param.isVararg) add(KModifier.VARARG)
+                            if (param.isCrossInline) add(KModifier.CROSSINLINE)
+                            if (param.isNoInline) add(KModifier.NOINLINE)
+                        },
+                    )
                 }
 
                 funBuilder.addCode("return TODO()")
@@ -40,7 +48,7 @@ fun interface KtorGenGenerator {
                 classBuilder.addFunction(funBuilder.build())
             }
 
-            val fileBuilder = FileSpec.builder(classData.packageName, classData.generatedName)
+            val fileBuilder = FileSpec.builder(classData.packageNameString, classData.generatedName)
                 .addFileComment(classData.customHeader)
                 .addAnnotation(
                     AnnotationSpec.builder(Suppress::class)
@@ -58,7 +66,7 @@ fun interface KtorGenGenerator {
 
         val NO_OP by lazy {
             KtorGenGenerator { data ->
-                FileSpec.builder(data.packageName, data.generatedName)
+                FileSpec.builder(data.packageNameString, data.generatedName)
                     .addFileComment(
                         "This class is generated to test the KtorGen compiler. It does not contain any code and should not be used.",
                     )
