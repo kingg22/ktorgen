@@ -59,6 +59,6 @@ class ClassData(
     KSClassDeclaration by ksClassDeclaration {
 
     val haveHttpClientProperty by lazy {
-        properties.any { it.type.resolve().toClassName() == HttpRequestBuilderTypeName }
+        properties.any { it.type.resolve().toClassName() == HttpClientClassName }
     }
 }

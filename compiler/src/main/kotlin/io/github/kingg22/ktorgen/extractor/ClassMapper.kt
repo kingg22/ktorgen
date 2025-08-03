@@ -8,10 +8,9 @@ import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.model.ClassData
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_HTTP_REQUEST_BUILDER
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_PARAMETER
+import io.github.kingg22.ktorgen.model.KTOR_CLIENT_CALL_BODY
+import io.github.kingg22.ktorgen.model.KTOR_CLIENT_REQUEST
 import io.github.kingg22.ktorgen.model.KTOR_DECODE_URL_QUERY
-import io.github.kingg22.ktorgen.model.KTOR_URL_BUILDER
 import io.github.kingg22.ktorgen.model.KTOR_URL_TAKE_FROM
 
 class ClassMapper : DeclarationMapper {
@@ -41,9 +40,8 @@ class ClassMapper : DeclarationMapper {
                 if (it.isNotEmpty()) {
                     imports.addAll(
                         arrayOf(
-                            KTOR_CLIENT_HTTP_REQUEST_BUILDER,
-                            KTOR_CLIENT_PARAMETER,
-                            KTOR_URL_BUILDER,
+                            KTOR_CLIENT_CALL_BODY,
+                            KTOR_CLIENT_REQUEST,
                             KTOR_URL_TAKE_FROM,
                             KTOR_DECODE_URL_QUERY,
                         ),
