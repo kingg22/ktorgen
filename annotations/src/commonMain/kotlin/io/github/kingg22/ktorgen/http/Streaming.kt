@@ -1,5 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
+
 /**
  * Treat the response body on methods returning HttpStatement
  *
@@ -9,6 +11,7 @@ package io.github.kingg22.ktorgen.http
  *  suspend fun getPostsAsStreaming(): HttpStatement
  * ```
  */
+@KtorGenExperimental
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented

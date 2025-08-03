@@ -1,6 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
 import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
 
 /**
  * Adds the argument instance as a request tag using the type as AttributeKey.
@@ -12,6 +13,7 @@ import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
  *
  * Tag arguments may be `null` which will omit them from the request.
  */
+@KtorGenExperimental
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
