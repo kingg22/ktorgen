@@ -14,7 +14,7 @@ package io.github.kingg22.ktorgen.http
  * e.g. [Content-Type](https://www.rfc-editor.org/rfc/rfc9110.html#name-content-type)
  *
  * @see Header
- * @see Headers
+ * @see HeaderParam
  * @see <a href="https://www.rfc-editor.org/rfc/rfc9110.html">RFC 9110 - HTTP Semantics</a>
  * @see <a href="https://ktor.io/docs/client-requests.html#headers">Ktor Client Request - Headers</a>
  */
