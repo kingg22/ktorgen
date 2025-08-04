@@ -35,8 +35,10 @@ package io.github.kingg22.ktorgen.http
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
 annotation class Headers(
-    /** One or more header strings in `"Name: Value"` format. */
-    vararg val value: String,
+    /** One header string in `"Name: Value"` format. */
+    val value: String,
+    /** More header strings in `"Name: Value"` format. */
+    vararg val values: String,
 ) {
     /**
      * Contain most used headers **name**
