@@ -63,16 +63,15 @@ class KotlinpoetGenerator : KtorGenGenerator {
         var httpClientName = "_httpClient"
 
         // --- Paso 1: HttpClient ---
-        if (classData.haveHttpClientProperty) {
-            val httpProp = classData.properties.first { it.type.toTypeName() == HttpClientClassName }
-            httpClientName = httpProp.simpleName.asString()
+        classData.httpClientProperty?.let {
+            httpClientName = it.simpleName.asString()
 
             primaryConstructorBuilder.addParameter(httpClientName, HttpClientClassName)
             propertiesToAdd += PropertySpec.builder(httpClientName, HttpClientClassName)
                 .addModifiers(KModifier.OVERRIDE)
                 .initializer("%L", httpClientName)
                 .build()
-        } else {
+        } ?: run {
             primaryConstructorBuilder.addParameter(httpClientName, HttpClientClassName)
             propertiesToAdd += PropertySpec.builder(httpClientName, HttpClientClassName)
                 .addModifiers(KModifier.PRIVATE)
@@ -176,10 +175,10 @@ class KotlinpoetGenerator : KtorGenGenerator {
     private fun CodeBlock.Builder.addUrl(func: FunctionData) = this.apply {
         beginControlFlow("this.url")
             .apply {
-                if (func.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Url>() }) {
+                func.parameterDataList.firstOrNull { it.hasAnnotation<ParameterAnnotation.Url>() }?.let {
                     addStatement(
                         "this.takeFrom(%L)",
-                        func.parameterDataList.first { it.hasAnnotation<ParameterAnnotation.Url>() }.nameString,
+                        it.nameString,
                     )
                 }
             }.addStatement(
@@ -243,7 +242,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
         if (func.isBody) {
             addStatement(
                 "this.setBody(%L)",
-                func.parameterDataList.first { it.hasAnnotation<ParameterAnnotation.Body>() }.nameString,
+                func.parameterDataList.firstOrNull { it.hasAnnotation<ParameterAnnotation.Body>() }?.nameString
+                    ?: error("Not found body"), // imposible after isBody and validations
             )
         }
         if (func.isMultipart) add(getPartsCodeBlock(func.parameterDataList, listType, arrayType))

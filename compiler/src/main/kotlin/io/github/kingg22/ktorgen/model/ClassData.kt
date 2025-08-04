@@ -56,5 +56,7 @@ class ClassData(
     customFileHeader = customFileHeader,
     customClassHeader = customClassHeader,
 ) {
-    val haveHttpClientProperty by lazy { properties.any { it.type.resolve().toClassName() == HttpClientClassName } }
+    val httpClientProperty by lazy {
+        properties.firstOrNull { it.type.resolve().toClassName() == HttpClientClassName }
+    }
 }
