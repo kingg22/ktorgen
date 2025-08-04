@@ -12,7 +12,7 @@ interface ApiServiceValid {
     var valorCambiante: Boolean
 
     @GET("users")
-    suspend fun getUsers(@Query("page") page: Int): List<IssueData>
+    suspend fun getUsers(@Query("page", true) page: Int): List<IssueData>
 
     @GET("users/{id}")
     suspend fun getUserById(@Path("id") id: String): IssueData
@@ -20,12 +20,12 @@ interface ApiServiceValid {
     @POST("users")
     suspend fun createUser(@Body user: IssueData): IssueData
 
-    @Headers("Content-Type: application/json")
+    @Headers("${Headers.ContentType}: ${Headers.ContentTypes.Application.Json}")
     @PUT("users/{id}")
     suspend fun updateUser(@Path("id") id: String, @Body user: IssueData): IssueData
 
     @DELETE("users/{id}")
-    suspend fun deleteUser(@Path("id") id: String)
+    suspend fun deleteUser(@Path("id") id: String, @Header(Headers.Authorization) token: String)
 
     @PATCH("users/{id}/status")
     suspend fun updateStatus(@Path("id") id: String, @Body status: IssueData): IssueData
@@ -47,6 +47,6 @@ interface ApiServiceValid {
     @GET
     suspend fun dynamicQuery(builder: HttpRequestBuilder.() -> Unit): IssueData
 
-    @POST
+    @HTTP("TRACE", "media/download")
     suspend fun dynamicQuery(builder: HttpRequestBuilder, @Tag tagValue: String): IssueData
 }
