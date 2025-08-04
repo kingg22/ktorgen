@@ -20,12 +20,13 @@ interface ApiServiceValid {
     @POST("users")
     suspend fun createUser(@Body user: IssueData): IssueData
 
-    @Headers("${Headers.ContentType}: ${Headers.ContentTypes.Application.Json}")
+    @Header(name = "Accept", value = Header.ContentTypes.Application.Json)
+    @Header(name = Header.ContentType, value = Header.ContentTypes.Application.Json)
     @PUT("users/{id}")
     suspend fun updateUser(@Path("id") id: String, @Body user: IssueData): IssueData
 
     @DELETE("users/{id}")
-    suspend fun deleteUser(@Path("id") id: String, @Header(Headers.Authorization) token: String)
+    suspend fun deleteUser(@Path("id") id: String, @HeaderParam(name = Header.Authorization) token: String)
 
     @PATCH("users/{id}/status")
     suspend fun updateStatus(@Path("id") id: String, @Body status: IssueData): IssueData
