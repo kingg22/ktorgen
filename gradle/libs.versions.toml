@@ -14,6 +14,8 @@ android-minSdk = "21"
 androidx-room-compiler-testing = "2.8.0-alpha01"
 # https://github.com/Kotlin/dokka/releases
 dokka = "2.0.0"
+# https://github.com/JetBrains/java-annotations/releases
+jetbrains-jvm-annotations = "26.0.2"
 # https://github.com/JetBrains/kotlin/releases
 # match according to androidx https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L55
 kotlin = "2.1.21"
@@ -34,6 +36,8 @@ ktorgen-version = "0.1.0-SNAPSHOT"
 maven-publish = "0.34.0"
 
 [libraries]
+# annotation
+jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrains-jvm-annotations" }
 # compiler
 ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
 kotlin-poet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlin-poet" }
