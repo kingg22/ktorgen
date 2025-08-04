@@ -1,18 +1,25 @@
 package io.github.kingg22.ktorgen.generator
 
+import com.google.devtools.ksp.processing.CodeGenerator
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.ksp.writeTo
 import io.github.kingg22.ktorgen.model.ClassData
 
 fun interface KtorGenGenerator {
     fun generate(classData: ClassData): FileSpec
 
     companion object {
-        val DEFAULT: KtorGenGenerator by lazy { CodeGenerator() }
+        /** Generate the Impl class using [KotlinpoetGenerator] of ksp */
+        fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator) {
+            DEFAULT.generate(classData).writeTo(codeGenerator, false)
+        }
+
+        val DEFAULT: KtorGenGenerator by lazy { KotlinpoetGenerator() }
 
         val TODO_GENERATOR by lazy {
             KtorGenGenerator { classData ->
@@ -36,11 +43,7 @@ fun interface KtorGenGenerator {
                         funBuilder.addParameter(
                             param.nameString,
                             param.typeData.typeName,
-                            buildList {
-                                if (param.isVararg) add(KModifier.VARARG)
-                                if (param.isCrossInline) add(KModifier.CROSSINLINE)
-                                if (param.isNoInline) add(KModifier.NOINLINE)
-                            },
+                            buildList { if (param.isVararg) add(KModifier.VARARG) },
                         )
                     }
 

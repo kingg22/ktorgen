@@ -13,13 +13,14 @@ import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 
-class CodeGenerator : KtorGenGenerator {
+class KotlinpoetGenerator : KtorGenGenerator {
     override fun generate(classData: ClassData): FileSpec {
         // class
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
             .addModifiers(KModifier.PUBLIC) // TODO add visibility of user want
             .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
             .addKdoc(classData.customHeader)
+            .addOriginatingKSFile(classData.ksFile)
 
         // constructor with properties
         val (constructor, properties, httpClient) =
@@ -103,7 +104,6 @@ class CodeGenerator : KtorGenGenerator {
 
     private fun generateFunction(func: FunctionData, httpClientName: MemberName): FunSpec {
         val funBuilder = FunSpec.builder(func.name)
-            .addOriginatingKSFile(func.containingFile!!)
             .addModifiers(func.modifierSet)
             .returns(func.returnTypeData.typeName)
             .addAnnotations(func.nonKtorGenAnnotations)
@@ -115,9 +115,7 @@ class CodeGenerator : KtorGenGenerator {
             funBuilder.addParameter(
                 name = param.nameString,
                 type = param.typeData.typeName,
-                modifiers = buildList {
-                    if (param.isVararg) add(KModifier.VARARG)
-                },
+                modifiers = buildList { if (param.isVararg) add(KModifier.VARARG) },
                 // TODO add propagate annotations
             )
         }
@@ -458,7 +456,7 @@ class CodeGenerator : KtorGenGenerator {
                     block.addStatement(
                         "%L.appendAll(%P, emptyList())",
                         if (encoded) "this.encodedParameters" else "this.parameters",
-                        "\$$name",
+                        "$$name",
                     )
                 }
             }

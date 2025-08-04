@@ -14,7 +14,7 @@ import com.google.devtools.ksp.symbol.KSType
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.extractor.DeclarationMapper
-import io.github.kingg22.ktorgen.generator.KtorGenKspGenerator
+import io.github.kingg22.ktorgen.generator.KtorGenGenerator
 import io.github.kingg22.ktorgen.http.DELETE
 import io.github.kingg22.ktorgen.http.GET
 import io.github.kingg22.ktorgen.http.HEAD
@@ -68,7 +68,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
         // 6. Generamos el código
         for (classData in fullClassList) {
-            KtorGenKspGenerator().generate(classData, env.codeGenerator)
+            KtorGenGenerator.generateKsp(classData, env.codeGenerator)
         }
 
         return emptyList()
