@@ -208,27 +208,18 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
         if (func.isFormUrl) addStatement("this.contentType(%L)", "ContentType.Application.FormUrlEncoded")
 
-        if (func.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Header>() }) {
-            addHeaderFuncAnnotation(func.parameterDataList)
-        }
+        addHeaderFuncAnnotation(func.parameterDataList)
 
-        if (func.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }) {
-            addHeaderMap(func.parameterDataList)
-        }
+        addHeaderMap(func.parameterDataList)
 
-        if (func.hasAnnotation<FunctionAnnotation.Headers>()) {
-            func.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.map {
-                it.replace("\\s+".toRegex(), "")
-            }?.toSet()?.associate {
-                val (name, value) = it.split(":", limit = 2)
-                name.trim() to value.trim()
-            }?.let {
-                beginControlFlow("this.headers")
-                for ((key, value) in it) {
-                    addStatement("this.append(%S, %S)", key, value)
-                }
-                endControlFlow()
+        func.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.map { (name, value) ->
+            name.trim().replace("\\s+".toRegex(), "") to value.trim().replace("\\s+".toRegex(), "")
+        }?.toSet()?.takeIf(Set<*>::isNotEmpty)?.let {
+            beginControlFlow("this.headers")
+            for ((key, value) in it) {
+                addStatement("this.append(%S, %S)", key, value)
             }
+            endControlFlow()
         }
     }
 
@@ -277,11 +268,12 @@ class KotlinpoetGenerator : KtorGenGenerator {
     // -- header --
     private fun CodeBlock.Builder.addHeaderFuncAnnotation(parameterDataList: List<ParameterData>) = apply {
         val headerCode = this
-        beginControlFlow("this.headers")
 
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.Header>() }
-            .forEach { parameterData ->
+            .takeIf(List<*>::isNotEmpty)
+            ?.also { beginControlFlow("this.headers") }
+            ?.forEach { parameterData ->
                 val paramName = parameterData.nameString
                 val headerName = parameterData.findAnnotationOrNull<ParameterAnnotation.Header>()?.value.orEmpty()
 
@@ -335,8 +327,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                         }
                     }
                 }
-            }
-        endControlFlow()
+            }?.also { endControlFlow() }
     }
 
     private fun CodeBlock.Builder.addHeaderMap(parameterDataList: List<ParameterData>) = apply {
