@@ -1,6 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
 import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
+import org.intellij.lang.annotations.Language
 
 /**
  * Named replacement in a URL path segment
@@ -24,6 +25,7 @@ import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
 @MustBeDocumented
 annotation class Path(
     /** Name of the placeholder to replace. Default the name of the _function parameter_ */
+    @Language("http-url-reference")
     val value: String = KTORGEN_DEFAULT_NAME,
     /** Specifies whether the argument value to the annotated method parameter is already URL encoded. */
     val encoded: Boolean = false,

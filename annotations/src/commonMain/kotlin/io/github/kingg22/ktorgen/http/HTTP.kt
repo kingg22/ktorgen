@@ -1,5 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
+import org.intellij.lang.annotations.Language
+
 /**
  * Make a request with a custom HTTP verb.
  *
@@ -15,6 +17,7 @@ package io.github.kingg22.ktorgen.http
 @MustBeDocumented
 annotation class HTTP(
     /** HTTP method verb. */
+    @Language("http-method-reference")
     val method: String,
     /**
      * Relative or absolute URL of the endpoint.
@@ -22,6 +25,7 @@ annotation class HTTP(
      * Is optional, when is empty or blank, evaluate the [Url] annotation, otherwise the base URL is used instead.
      * @see io.github.kingg22.ktorgen.http.Url
      */
+    @Language("http-url-reference")
     val path: String = "",
     /** Override default rules, e.g., GET is not allowed to have a body */
     val hasBody: Boolean = false,

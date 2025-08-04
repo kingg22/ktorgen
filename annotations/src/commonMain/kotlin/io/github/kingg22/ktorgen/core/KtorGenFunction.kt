@@ -63,5 +63,5 @@ annotation class KtorGenFunction(
      *
      * Useful to indicate that the class is auto-generated and shouldn't be modified.
      */
-    val customHeader: String = KTORGEN_DEFAULT_NAME,
+    val customHeader: String = "",
 )

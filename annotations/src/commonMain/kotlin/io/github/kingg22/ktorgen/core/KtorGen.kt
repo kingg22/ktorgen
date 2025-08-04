@@ -1,5 +1,6 @@
 package io.github.kingg22.ktorgen.core
 
+import org.intellij.lang.annotations.Language
 import kotlin.reflect.KClass
 
 /**
@@ -41,6 +42,9 @@ annotation class KtorGen(
      * Example: `name = "UserRoutes"` → class `_UserRoutesImpl` will be generated.
      */
     val name: String = KTORGEN_DEFAULT_NAME,
+
+    @Language("http-url-reference")
+    val basePath: String = "",
 
     /**
      * Whether to generate a top-level function in the same package as the interface.
@@ -106,5 +110,5 @@ annotation class KtorGen(
      *
      * Useful to indicate that the class is auto-generated and shouldn't be modified or annotate with custom code.
      */
-    val customClassHeader: String = KTORGEN_DEFAULT_NAME,
+    val customClassHeader: String = "",
 )

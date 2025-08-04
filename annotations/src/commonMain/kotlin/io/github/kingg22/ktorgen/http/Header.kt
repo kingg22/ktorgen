@@ -1,5 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
+import org.intellij.lang.annotations.Language
+
 /**
  * Adds a single HTTP header whose value is provided at call time.
  *
@@ -8,11 +10,13 @@ package io.github.kingg22.ktorgen.http
  *
  * ```kotlin
  * @GET("comments")
- * suspend fun getComments(@Header("Content-Type") name: String): List<Comment>
+ * suspend fun getComments(
+ *     @Header(Headers.Authorization) token: String, // type safe
+ * ): List<Comment>
  *
  * // Call:
- * getComments("application/json")
- * // Resulting header: "Content-Type: application/json"
+ * getComments(token = "Bearer superSecureToken")
+ * // Resulting header: "Authorization: Bearer superSecureToken"
  * ```
  *
  * By default, Headers do not overwrite each other:
@@ -21,6 +25,7 @@ package io.github.kingg22.ktorgen.http
  * e.g. [Content-Type](https://www.rfc-editor.org/rfc/rfc9110.html#name-content-type)
  *
  * @see Headers
+ * @see Headers.Companion
  * @see HeaderMap
  * @see <a href="https://www.rfc-editor.org/rfc/rfc9110.html">RFC 9110 - HTTP Semantics</a>
  * @see <a href="https://ktor.io/docs/client-requests.html#headers">Ktor Client Request - Headers</a>
@@ -30,5 +35,6 @@ package io.github.kingg22.ktorgen.http
 @MustBeDocumented
 annotation class Header(
     /** The header name (without the `:` and value part). */
+    @Language("http-header-reference")
     val value: String,
 )

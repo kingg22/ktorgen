@@ -101,6 +101,10 @@ kotlin {
     androidNativeX64()
     mingwX64()
     watchosDeviceArm64()
+
+    sourceSets.commonMain.dependencies {
+        implementation(libs.jetbrains.annotations)
+    }
 }
 
 ktlint {

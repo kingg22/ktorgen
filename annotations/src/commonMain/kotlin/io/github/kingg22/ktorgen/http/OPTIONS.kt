@@ -1,5 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
+import org.intellij.lang.annotations.Language
+
 /**
  * Make an OPTIONS request
  *
@@ -18,5 +20,6 @@ annotation class OPTIONS(
      * Is optional, when is empty or blank, evaluate the [Url] annotation, otherwise the base URL is used instead.
      * @see Url
      */
+    @Language("http-url-reference")
     val value: String = "",
 )
