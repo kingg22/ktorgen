@@ -55,10 +55,6 @@ class ClassData(
     optIns = optIns,
     customFileHeader = customFileHeader,
     customClassHeader = customClassHeader,
-),
-    KSClassDeclaration by ksClassDeclaration {
-
-    val haveHttpClientProperty by lazy {
-        properties.any { it.type.resolve().toClassName() == HttpClientClassName }
-    }
+) {
+    val haveHttpClientProperty by lazy { properties.any { it.type.resolve().toClassName() == HttpClientClassName } }
 }

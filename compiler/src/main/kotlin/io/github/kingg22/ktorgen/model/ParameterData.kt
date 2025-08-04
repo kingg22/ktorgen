@@ -6,11 +6,13 @@ import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 class ParameterData(
     val nameString: String,
     val typeData: TypeData,
-    ksValueParameter: KSValueParameter,
+    val ksValueParameter: KSValueParameter,
     val ktorgenAnnotations: List<ParameterAnnotation> = emptyList(),
     val isHttpRequestBuilderLambda: Boolean = false,
     val isHttpRequestBuilder: Boolean = typeData.typeName == HttpRequestBuilderTypeName,
-) : KSValueParameter by ksValueParameter {
+) {
+    val isVararg: Boolean = ksValueParameter.isVararg
+
     inline fun <reified T : ParameterAnnotation> findAnnotationOrNull(): T? =
         this.ktorgenAnnotations.filterIsInstance<T>().firstOrNull()
 

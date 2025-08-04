@@ -16,7 +16,7 @@ class FunctionData(
     val ktorGenAnnotations: List<FunctionAnnotation>,
     val nonKtorGenAnnotations: List<AnnotationSpec>,
     val isImplemented: Boolean = false,
-    ksFunctionDeclaration: KSFunctionDeclaration,
+    val ksFunctionDeclaration: KSFunctionDeclaration,
     goingToGenerate: Boolean = ktorGenAnnotations.contains(FunctionAnnotation.Ignore).not(),
     visibilityModifier: String = "public",
     propagateAnnotations: Boolean = true,
@@ -30,9 +30,7 @@ class FunctionData(
     annotationsToPropagate = annotationsToPropagate,
     optIns = optIns,
     customHeader = customHeader,
-),
-    KSFunctionDeclaration by ksFunctionDeclaration {
-
+) {
     val urlTemplate by lazy { parseUrlTemplate(httpMethodAnnotation.path) }
     val isBody by lazy { parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Body>() } }
     val isFormUrl by lazy {
