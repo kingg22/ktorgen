@@ -36,9 +36,9 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val FUNCTION_NOT_RETURN_TYPE = "$KTOR_GEN Function don't have return type: "
         const val HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
             "@HeaderMap parameter type must be Map<String, String(?)> or Pair<String, String(?)>. "
-        const val INVALID_HEADER_FORMAT = "Header have invalid format, e.g. valid format= 'Content-Type: text/plain'. "
+        const val INVALID_HEADER = "The header name or value is blank on @Header or @HeaderParam."
         const val DUPLICATE_HEADER =
-            "@Headers on function + @Header on parameter have duplicate values. Please unique header name is required. "
+            "@Header on function + @HeaderParam on parameter(s) have duplicate values. Please unique header name is required for 'Content-Type'. "
         const val FUNCTION_OR_PARAMETERS_TYPES_MUST_NOT_INCLUDE_TYPE_VARIABLE_OR_WILDCARD =
             "Function or parameters types must not include a type variable or wildcard: "
         const val SUSPEND_FUNCTION_OR_FLOW =
@@ -81,7 +81,8 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
             "@PartMap parameter type must be Map<String, *(?)> or Pair<String, *(?)>. "
         const val QUERY_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
             "@QueryMap parameter type must be Map<String, String> or Pair<String, String>. "
-        const val VARARG_PARAMETER_EXPERIMENTAL = "vararg parameter is an experimental feature."
+        const val VARARG_PARAMETER_EXPERIMENTAL =
+            "vararg parameter is an experimental feature, currently only @HeaderMap support it."
         const val CONTENT_TYPE_BODY_UNKNOWN = "Content-Type for @Body maybe is unknown. "
         const val ANY_TYPE_INVALID = "'Any' type is not valid, break validation and serialization."
     }

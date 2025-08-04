@@ -40,6 +40,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         invoked = true
 
         val timer = Timer("KtorGen Annotations Processor")
+        var fatalError = false
         try {
             timer.start()
 
@@ -91,16 +92,23 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 .distinctBy { it.interfaceName }
                 .also { timer.markStepCompleted("After filter declarations, have ${it.size} to validate") }
                 .mapNotNull {
-                    Validator.validate(it, ktorGenOptions, logger)
+                    Validator.DEFAULT.validate(it, ktorGenOptions, logger) {
+                        fatalError = true
+                    }
                 }
-            timer.markStepCompleted("Valid class data ${fullClassList.size}, going to generate all")
+            timer.markStepCompleted(
+                "Valid class data ${fullClassList.size}, going to generate all. Have fatal error: $fatalError",
+            )
 
             // 6. Generamos el código
             for (classData in fullClassList) {
                 KtorGenGenerator.generateKsp(classData, env.codeGenerator)
             }
-            timer.markStepCompleted("Generate all classes")
-        } catch (e: Throwable) {
+            timer.markStepCompleted("Generated all classes")
+
+            // deferred errors, util for debug, maybe not util for final users
+            if (fatalError) throw Throwable(KtorGenLogger.KTOR_GEN + "See errors above")
+        } catch (e: Exception) {
             logger.exception(
                 IllegalStateException(
                     "${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e",

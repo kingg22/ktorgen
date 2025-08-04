@@ -16,6 +16,7 @@ class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Valida
         classData: ClassData,
         ktorGenOptions: KtorGenOptions,
         ktorGenLogger: KtorGenLogger,
+        onFatalError: () -> Unit,
     ): ClassData? {
         // if we don't go to generate it, skip
         if (classData.goingToGenerate.not()) return null
@@ -26,7 +27,14 @@ class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Valida
             superInterfaces = listOf(), // TODO
             baseUrl = null, // TODO
         )
-        return run(context, ktorGenLogger).let { if (it.isOk) classData else null }
+        return run(context, ktorGenLogger).let {
+            if (it.isOk) {
+                classData
+            } else {
+                onFatalError()
+                null
+            }
+        }
     }
 
     private fun run(context: ValidationContext, logger: KtorGenLogger): ValidationResult {
