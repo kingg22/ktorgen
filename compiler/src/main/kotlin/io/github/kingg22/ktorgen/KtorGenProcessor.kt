@@ -39,40 +39,67 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         if (invoked) return emptyList()
         invoked = true
 
+        val timer = Timer("KtorGen Annotations Processor")
         try {
+            timer.start()
+
             listType = resolver.getKotlinClassByName("kotlin.collections.List")
                 ?.asStarProjectedType()
                 ?: error("${KtorGenLogger.KTOR_GEN} List not found")
             arrayType = resolver.builtIns.arrayType
+            timer.markStepCompleted("Retrieve KSTypes")
 
             // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
             val annotatedFunctionsGroupedByClass =
                 getAnnotatedFunctions(resolver).groupBy { it.closestClassDeclaration() }
+            timer.markStepCompleted(
+                "Retrieve all functions with annotations. Count: ${annotatedFunctionsGroupedByClass.size}",
+            )
 
             // 2. Mapeamos las clases con funciones válidas
             val classDataWithMethods = annotatedFunctionsGroupedByClass.mapNotNull { (classDec) ->
-                if (classDec == null) null else DeclarationMapper.DEFAULT.mapToModel(classDec)
+                if (classDec == null) {
+                    null
+                } else {
+                    DeclarationMapper.DEFAULT.mapToModel(classDec).also {
+                        timer.markStepCompleted("Mapped $it")
+                    }
+                }
             }
+            timer.markStepCompleted(
+                "Process all class data obtained by functions. Count: ${annotatedFunctionsGroupedByClass.size}",
+            )
 
             // 3. También obtenemos todas las clases anotadas con @KtorGen (aunque no tengan métodos)
             val annotatedClasses = getAnnotatedInterfaceTypes(resolver)
+            timer.markStepCompleted("Retrieve with KtorGen. Detail: $annotatedClasses")
 
             // 4. Filtramos aquellas clases que no están en `groupedByClass` → no tienen funciones válidas
             val classWithoutMethods = annotatedClasses
                 .filter { it !in annotatedFunctionsGroupedByClass.keys }
+                .also {
+                    timer.markStepCompleted("After sum functions + ktorGen types, count of ktorGen is: $it")
+                }
                 .map { DeclarationMapper.DEFAULT.mapToModel(it) }
+            timer.markStepCompleted(
+                "Process all interfaces and companion with @KtorGen. Detail: $classWithoutMethods.\n" +
+                    "Sum of both: ${classDataWithMethods + classWithoutMethods}",
+            )
 
             // 5. Unimos todas las clases a validar (las que tienen y no tienen funciones)
             val fullClassList = (classDataWithMethods + classWithoutMethods)
                 .distinctBy { it.interfaceName }
+                .also { timer.markStepCompleted("After filter declarations, have ${it.size} to validate") }
                 .mapNotNull {
                     Validator.validate(it, ktorGenOptions, logger)
                 }
+            timer.markStepCompleted("Valid class data ${fullClassList.size}, going to generate all")
 
             // 6. Generamos el código
             for (classData in fullClassList) {
                 KtorGenGenerator.generateKsp(classData, env.codeGenerator)
             }
+            timer.markStepCompleted("Generate all classes")
         } catch (e: Throwable) {
             logger.exception(
                 IllegalStateException(
@@ -80,6 +107,9 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                     e,
                 ),
             )
+            throw e
+        } finally {
+            timer.finishAndPrint(logger)
         }
 
         return emptyList()
