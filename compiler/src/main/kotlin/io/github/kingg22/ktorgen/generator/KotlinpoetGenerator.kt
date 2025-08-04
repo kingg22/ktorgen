@@ -3,6 +3,7 @@ package io.github.kingg22.ktorgen.generator
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
+import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
@@ -25,7 +26,9 @@ class KotlinpoetGenerator : KtorGenGenerator {
         // constructor with properties
         val (constructor, properties, httpClient) =
             generatePrimaryConstructorAndProperties(classData)
-        classBuilder.primaryConstructor(constructor).addProperties(properties)
+        classBuilder
+            .addSuperInterfacesAndConstructor(classData, constructor)
+            .addProperties(properties)
 
         // override functions
         classData.functions.forEach { function -> classBuilder.addFunction(generateFunction(function, httpClient)) }
@@ -54,7 +57,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
     /** @return FunSpec del constructor, propiedades y nombre de la propiedad httpClient */
     private fun generatePrimaryConstructorAndProperties(
         classData: ClassData,
-    ): Triple<FunSpec, List<PropertySpec>, MemberName> {
+    ): Triple<FunSpec.Builder, List<PropertySpec>, MemberName> {
         val primaryConstructorBuilder = FunSpec.constructorBuilder().addModifiers(KModifier.PUBLIC)
         val propertiesToAdd = mutableListOf<PropertySpec>()
         var httpClientName = "_httpClient"
@@ -96,10 +99,29 @@ class KotlinpoetGenerator : KtorGenGenerator {
             }
 
         return Triple(
-            primaryConstructorBuilder.build(),
+            primaryConstructorBuilder,
             propertiesToAdd,
             MemberName(classData.packageNameString, httpClientName),
         )
+    }
+
+    private fun TypeSpec.Builder.addSuperInterfacesAndConstructor(
+        classData: ClassData,
+        primaryConstructor: FunSpec.Builder,
+    ) = apply {
+        classData.superClasses
+            .filterNot { ref -> ref.annotations.any { it.shortName.getShortName() == "KtorGenIgnore" } }
+            .forEach { ref ->
+                val ksType = ref.resolve()
+                val decl = ksType.declaration
+                val className = ksType.toClassName()
+                val name = decl.simpleName.asString()
+                val parameterName = name.replaceFirstChar { it.lowercase() }
+
+                primaryConstructor.addParameter(parameterName, className)
+                addSuperinterface(className, CodeBlock.of(parameterName))
+            }
+        primaryConstructor(primaryConstructor.build())
     }
 
     private fun generateFunction(func: FunctionData, httpClientName: MemberName): FunSpec {
@@ -456,7 +478,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     block.addStatement(
                         "%L.appendAll(%P, emptyList())",
                         if (encoded) "this.encodedParameters" else "this.parameters",
-                        "$$name",
+                        "\$$name",
                     )
                 }
             }
@@ -481,7 +503,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                         "%L(%S, %P)",
                         if (encoded) "this.encodedParameters.append" else "this.parameters.append",
                         query.value,
-                        "\$it",
+                        if (encoded) "\${\"\$it\".decodeURLQueryComponent()}" else "\$it",
                     )
                     block.endControlFlow()
                 } else {
@@ -490,7 +512,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                         "%L(%S, %P)",
                         if (encoded) "this.encodedParameters.append" else "this.parameters.append",
                         query.value,
-                        "\$it",
+                        if (encoded) "\${\"\$it\".decodeURLQueryComponent()}" else "\$it",
                     )
                     block.endControlFlow()
                 }
