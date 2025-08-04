@@ -144,15 +144,15 @@ class ParameterMapper : DeclarationParameterMapper {
             manualExtraction = { _ -> add(ParameterAnnotation.Body) },
         ) { _ -> add(ParameterAnnotation.Body) }
 
-        declaration.getAnnotation<Header>(
+        declaration.getAnnotation<HeaderParam>(
             manualExtraction = {
                 add(
                     ParameterAnnotation.Header(
-                        it.getArgumentValueByName<String>("value") ?: declaration.name.safeString(),
+                        it.getArgumentValueByName<String>("name") ?: declaration.name.safeString(),
                     ),
                 )
             },
-        ) { add(ParameterAnnotation.Header(it.value)) }
+        ) { add(ParameterAnnotation.Header(it.name)) }
 
         declaration.getAnnotation<HeaderMap>(
             manualExtraction = { _ -> add(ParameterAnnotation.HeaderMap) },

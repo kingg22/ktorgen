@@ -14,7 +14,7 @@ import io.github.kingg22.ktorgen.core.KtorGenIgnore
 import io.github.kingg22.ktorgen.extractor.DeclarationParameterMapper.Companion.getArgumentValueByName
 import io.github.kingg22.ktorgen.http.FormUrlEncoded
 import io.github.kingg22.ktorgen.http.HTTP
-import io.github.kingg22.ktorgen.http.Headers
+import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.Multipart
 import io.github.kingg22.ktorgen.http.Streaming
 import io.github.kingg22.ktorgen.model.FunctionData
@@ -178,16 +178,9 @@ class FunctionMapper : DeclarationFunctionMapper {
             timer.markStepCompleted("FormUrlEncoded found")
         }
         timer.markStepCompleted("Going to get Headers")
-        function.getAnnotationsByType(Headers::class).firstOrNull()?.let { headers ->
-            timer.markStepCompleted("Headers found")
-            val firstHeader = headers.value
-            val otherHeaders = try {
-                headers.values.toSet()
-            } catch (e: NoSuchElementException) {
-                timer.markStepCompleted("Headers vararg cause exception, but is expected: $e")
-                emptySet()
-            }
-            add(FunctionAnnotation.Headers(setOf(firstHeader, *otherHeaders.toTypedArray())))
+        function.getAnnotationsByType(Header::class).map { it.name to it.value }.toSet().let { headers ->
+            timer.markStepCompleted("Header found")
+            add(FunctionAnnotation.Headers(headers))
         }
         timer.markStepCompleted("Finish collection of KtorGen annotations")
     }
