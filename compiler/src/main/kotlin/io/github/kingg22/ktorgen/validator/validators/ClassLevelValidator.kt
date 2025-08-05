@@ -28,14 +28,18 @@ class ClassLevelValidator : ValidatorStrategy {
                         KtorGenLogger.PARAMETER_WITHOUT_ANNOTATION + addDeclaration(context, function, parameter),
                     )
                 }
-                if (parameter.ktorgenAnnotations.size > 1) {
+
+                // mix annotations on parameter like @HeaderParam @Cookie @Body is not allowed
+                if (parameter.ktorgenAnnotations.filterNot { it.isRepeatable }.size > 1) {
                     addError(
                         KtorGenLogger.PARAMETER_WITH_LOT_ANNOTATIONS + addDeclaration(context, function, parameter),
                     )
                 }
+
                 if (parameter.isVararg) {
                     addWarning(KtorGenLogger.VARARG_PARAMETER_EXPERIMENTAL)
                 }
+
                 if (parameter.typeData.typeName == ANY || parameter.typeData.typeName == ANY.copy(nullable = true)) {
                     addError(KtorGenLogger.ANY_TYPE_INVALID + addDeclaration(context, function, parameter))
                 }
