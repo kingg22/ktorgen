@@ -4,6 +4,7 @@ import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
@@ -15,8 +16,8 @@ class HeadersValidator : ValidatorStrategy {
             var haveHeadersMap = function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
             val headersFunction =
                 function.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.map { (name, value) ->
-                    name.trim().replace("\\s+".toRegex(), "") to value.trim().replace("\\s+".toRegex(), "")
-                }?.toSet()?.associate {
+                    name.removeWhitespace() to value.removeWhitespace()
+                }?.associate {
                     val (name, value) = it
                     if (name.isBlank() || value.isBlank()) {
                         addError(KtorGenLogger.INVALID_HEADER + addDeclaration(context, function))
@@ -29,10 +30,19 @@ class HeadersValidator : ValidatorStrategy {
                 addError(KtorGenLogger.ONLY_ONE_CONTENT_TYPE_IS_ALLOWED + addDeclaration(context, function))
             }
 
-            for (parameter in function.parameterDataList) {
+            for (parameter in function.parameterDataList.filter {
+                it.hasAnnotation<ParameterAnnotation.Header>() ||
+                    it.hasAnnotation<ParameterAnnotation.HeaderMap>()
+            }) {
                 // Validate @HeaderParam
-                parameter.findAnnotationOrNull<ParameterAnnotation.Header>()?.let { header ->
-                    val name = header.value.trim().replace("\\s+".toRegex(), "")
+                if (parameter.isVararg && parameter.ktorgenAnnotations.count { it is ParameterAnnotation.Header } > 1) {
+                    addWarning(
+                        KtorGenLogger.VARARG_PARAMETER_WITH_LOT_ANNOTATIONS +
+                            addDeclaration(context, function, parameter),
+                    )
+                }
+                parameter.findAllAnnotations<ParameterAnnotation.Header>().forEach { header ->
+                    val name = header.value.removeWhitespace()
                     if (name.isBlank()) {
                         addError(
                             KtorGenLogger.INVALID_HEADER + addDeclaration(context, function, parameter),
@@ -72,7 +82,7 @@ class HeadersValidator : ValidatorStrategy {
                         function,
                         KtorGenLogger.HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING,
                     ) { keys, values ->
-                        keys != Pair("kotlin.String", false) || values.first != "kotlin.String"
+                        keys != Pair(KOTLIN_STRING, false) || values.first != KOTLIN_STRING
                     }
                 }
             }
