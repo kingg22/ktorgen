@@ -11,8 +11,10 @@ import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.HttpClientClassName
 import io.github.kingg22.ktorgen.model.ParameterData
+import io.github.kingg22.ktorgen.model.annotations.CookieValues
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 
 class KotlinpoetGenerator : KtorGenGenerator {
     override fun generate(classData: ClassData): FileSpec {
@@ -155,6 +157,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             .addStatement("this.method = HttpMethod.parse(%S)", func.httpMethodAnnotation.httpMethod.value)
             .addUrl(func)
             .addHeaders(func)
+            .addCookies(func)
             .addBody(func)
             .addAttributes(func.parameterDataList)
         endControlFlow()
@@ -163,7 +166,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
     }.build()
 
     // -- core parts --
-    private fun CodeBlock.Builder.addBuilderCall(parameterList: List<ParameterData>) = this.apply {
+    private fun CodeBlock.Builder.addBuilderCall(parameterList: List<ParameterData>) = apply {
         parameterList.firstOrNull { it.isHttpRequestBuilder }?.let {
             addStatement("this.takeFrom(%L)", it.nameString)
         }
@@ -172,7 +175,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         }
     }
 
-    private fun CodeBlock.Builder.addUrl(func: FunctionData) = this.apply {
+    private fun CodeBlock.Builder.addUrl(func: FunctionData) = apply {
         beginControlFlow("this.url")
             .apply {
                 func.parameterDataList.firstOrNull { it.hasAnnotation<ParameterAnnotation.Url>() }?.let {
@@ -208,19 +211,92 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
         if (func.isFormUrl) addStatement("this.contentType(%L)", "ContentType.Application.FormUrlEncoded")
 
-        addHeaderFuncAnnotation(func.parameterDataList)
+        addHeaderParameter(func.parameterDataList)
 
         addHeaderMap(func.parameterDataList)
 
         func.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.map { (name, value) ->
-            name.trim().replace("\\s+".toRegex(), "") to value.trim().replace("\\s+".toRegex(), "")
-        }?.toSet()?.takeIf(Set<*>::isNotEmpty)?.let {
+            name.removeWhitespace() to value.removeWhitespace()
+        }?.takeIf(List<*>::isNotEmpty)?.let {
             beginControlFlow("this.headers")
             for ((key, value) in it) {
                 addStatement("this.append(%S, %S)", key, value)
             }
             endControlFlow()
         }
+    }
+
+    private fun CodeBlock.Builder.addCookies(func: FunctionData) = apply {
+        (
+            // Cookies en función
+            func.ktorGenAnnotations.filterIsInstance<FunctionAnnotation.Cookies>()
+                .flatMap { it.value } + // plus
+                // Cookies en parámetros (no vararg)
+                func.parameterDataList
+                    .filterNot { it.isVararg }
+                    .flatMap { p ->
+                        p.ktorgenAnnotations.filterIsInstance<ParameterAnnotation.Cookies>().map { it.value }
+                    }
+                    .flatten()
+            )
+            .forEach { cookieValues ->
+                addCookieStatement(cookieValues)
+            }
+
+        // Cookies en parámetros (vararg) → foreach
+        func.parameterDataList
+            .filter { it.isVararg }
+            .forEach { p ->
+                p.ktorgenAnnotations.filterIsInstance<ParameterAnnotation.Cookies>()
+                    .map { it.value }
+                    .flatten()
+                    .forEach { cookieValues ->
+                        beginControlFlow("%L.forEach", p.nameString)
+                        addCookieStatement(cookieValues, useVarargItem = true)
+                        endControlFlow()
+                    }
+            }
+    }
+
+    private fun CodeBlock.Builder.addCookieStatement(cookieValues: CookieValues, useVarargItem: Boolean = false) {
+        addStatement(
+            """
+        |this.cookie(
+          |name = %S,
+          |value = %P,
+          |maxAge = %L,
+          |expires = %L,
+          |domain = %L,
+          |path = %L,
+          |secure = %L,
+          |httpOnly = %L,
+          |extensions = %L,
+        |)
+            """.trimMargin(),
+            cookieValues.name,
+            if (cookieValues.isValueParameter) {
+                if (useVarargItem) "\$it" else "$${cookieValues.value}"
+            } else {
+                cookieValues.value
+            },
+            cookieValues.maxAge,
+            cookieValues.expiresTimestamp?.let { CodeBlock.of("GMTDate(%L)", it) },
+            cookieValues.domain,
+            cookieValues.path,
+            cookieValues.secure,
+            cookieValues.httpOnly,
+            cookieValues.extensions.takeIf(Map<*, *>::isNotEmpty)?.let { extensions ->
+                CodeBlock.builder().apply {
+                    add("%M(\n", MemberName("kotlin.collections", "mapOf"))
+                    indent()
+                    extensions.forEach { (key, value) ->
+                        add("%S to %L,\n", key, value?.let { CodeBlock.of("%S", it) })
+                    }
+                    unindent()
+                    add(")")
+                }.build()
+            } ?: "emptyMap()",
+        )
     }
 
     private fun CodeBlock.Builder.addQuery(params: List<ParameterData>) = apply {
@@ -242,21 +318,19 @@ class KotlinpoetGenerator : KtorGenGenerator {
     }
 
     private fun CodeBlock.Builder.addAttributes(parameterDataList: List<ParameterData>) = apply {
-        val builder = this
-
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.Tag>() }
             .forEach { param ->
                 val tag = param.findAnnotationOrNull<ParameterAnnotation.Tag>()!!
 
                 if (param.typeData.parameterType.isMarkedNullable) {
-                    builder.addStatement(
+                    addStatement(
                         "%N?.let { this.attributes.put(AttributeKey(%S), it) }",
                         param.nameString,
                         tag.value,
                     )
                 } else {
-                    builder.addStatement(
+                    addStatement(
                         "this.attributes.put(AttributeKey(%S), %N)",
                         tag.value,
                         param.nameString,
@@ -266,64 +340,73 @@ class KotlinpoetGenerator : KtorGenGenerator {
     }
 
     // -- header --
-    private fun CodeBlock.Builder.addHeaderFuncAnnotation(parameterDataList: List<ParameterData>) = apply {
-        val headerCode = this
-
+    private fun CodeBlock.Builder.addHeaderParameter(parameterDataList: List<ParameterData>) = apply {
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.Header>() }
             .takeIf(List<*>::isNotEmpty)
             ?.also { beginControlFlow("this.headers") }
             ?.forEach { parameterData ->
                 val paramName = parameterData.nameString
-                val headerName = parameterData.findAnnotationOrNull<ParameterAnnotation.Header>()?.value.orEmpty()
 
+                val headers = parameterData.findAllAnnotations<ParameterAnnotation.Header>()
                 val starProj = parameterData.typeData.parameterType?.starProjection()
                 val isList = starProj?.isAssignableFrom(listType) ?: false
                 val isArray = starProj?.isAssignableFrom(arrayType) ?: false
                 val isVararg = parameterData.isVararg
 
-                when {
-                    isList || isArray -> {
-                        val typeArg = (parameterData.typeData.typeName as? ParameterizedTypeName)
-                            ?.typeArguments?.firstOrNull()
-                        val isStringListOrArray = typeArg?.toString()?.removeSuffix("?") == "kotlin.String"
-                        val hasNullableInnerType = typeArg?.isNullable == true
+                headers.forEach { headerAnn ->
+                    val headerName = headerAnn.value
 
-                        // Bloque para listas/arrays
-                        val paramAccess = if (parameterData.typeData.parameterType.isMarkedNullable) {
-                            CodeBlock.of("%L?", paramName)
-                        } else {
-                            CodeBlock.of("%L", paramName)
-                        }
+                    when {
+                        isList || isArray -> {
+                            val typeArg = (parameterData.typeData.typeName as? ParameterizedTypeName)
+                                ?.typeArguments?.firstOrNull()
+                            val isStringListOrArray = typeArg?.toString()?.removeSuffix("?") == "kotlin.String"
+                            val hasNullableInnerType = typeArg?.isNullable == true
 
-                        val listExpr = CodeBlock.builder().add(paramAccess)
-                        if (hasNullableInnerType) {
-                            listExpr.add(".filterNotNull()")
-                            if (parameterData.typeData.parameterType.isMarkedNullable) {
-                                listExpr.add("?")
+                            val paramAccess = if (parameterData.typeData.parameterType.isMarkedNullable) {
+                                CodeBlock.of("%L?", paramName)
+                            } else {
+                                CodeBlock.of("%L", paramName)
                             }
+
+                            val listExpr = CodeBlock.builder().add(paramAccess)
+                            if (hasNullableInnerType) {
+                                listExpr.add(".filterNotNull()")
+                                if (parameterData.typeData.parameterType.isMarkedNullable) {
+                                    listExpr.add("?")
+                                }
+                            }
+
+                            beginControlFlow("%L.forEach", listExpr.build())
+                                .addStatement(
+                                    "append(%S, %L)",
+                                    headerName,
+                                    if (isStringListOrArray) CodeBlock.of("it") else CodeBlock.of("\"\$it\""),
+                                )
+                                .endControlFlow()
                         }
 
-                        headerCode.beginControlFlow("%L.forEach", listExpr.build())
-                            .addStatement(
-                                "append(%S, %L)",
-                                headerName,
-                                if (isStringListOrArray) CodeBlock.of("it") else CodeBlock.of("\"\$it\""),
-                            )
-                            .endControlFlow()
-                    }
-
-                    isVararg -> {}
-
-                    else -> {
-                        val headerValue = CodeBlock.of("\"$%L\"", paramName)
-
-                        if (parameterData.typeData.parameterType.isMarkedNullable) {
-                            headerCode.beginControlFlow("%L?.let", paramName)
-                                .addStatement("append(%S, %L)", headerName, headerValue)
+                        isVararg -> {
+                            // Tratamos el vararg como lista
+                            beginControlFlow("%L.forEach", paramName)
+                                .addStatement(
+                                    "append(%S, %L)",
+                                    headerName,
+                                    CodeBlock.of("\"\$it\""),
+                                )
                                 .endControlFlow()
-                        } else {
-                            headerCode.addStatement("append(%S, %L)", headerName, headerValue)
+                        }
+
+                        else -> {
+                            val headerValue = CodeBlock.of("\"$%L\"", paramName)
+                            if (parameterData.typeData.parameterType.isMarkedNullable) {
+                                beginControlFlow("%L?.let", paramName)
+                                    .addStatement("append(%S, %L)", headerName, headerValue)
+                                    .endControlFlow()
+                            } else {
+                                addStatement("append(%S, %L)", headerName, headerValue)
+                            }
                         }
                     }
                 }
@@ -331,11 +414,11 @@ class KotlinpoetGenerator : KtorGenGenerator {
     }
 
     private fun CodeBlock.Builder.addHeaderMap(parameterDataList: List<ParameterData>) = apply {
-        val headerMapCode = this
-
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
-            .forEach { parameterData ->
+            .takeIf(List<*>::isNotEmpty)
+            ?.also { beginControlFlow("this.headers") }
+            ?.forEach { parameterData ->
                 val typeName = parameterData.typeData.typeName
                 val paramName = parameterData.nameString
 
@@ -358,12 +441,17 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 }
 
                 when {
-                    isMap -> {
-                        headerMapCode.beginControlFlow("%L.forEach", paramAccess)
-                        if (valueIsNullable) {
-                            headerMapCode.beginControlFlow("it.value?.let { value ->")
+                    isMap || isVarargMap -> {
+                        if (isVarargMap) {
+                            beginControlFlow("%L.forEach", paramAccess)
+                            beginControlFlow("it.forEach")
+                        } else {
+                            beginControlFlow("%L.forEach", paramAccess)
                         }
-                        headerMapCode.addStatement(
+                        if (valueIsNullable) {
+                            beginControlFlow("it.value?.let { value ->")
+                        }
+                        addStatement(
                             "append(it.key, %L)",
                             if (valueIsString) {
                                 if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.value")
@@ -371,40 +459,22 @@ class KotlinpoetGenerator : KtorGenGenerator {
                                 if (valueIsNullable) CodeBlock.of("\"\$value\"") else CodeBlock.of("\"\${it.value}\"")
                             },
                         )
-                        if (valueIsNullable) headerMapCode.endControlFlow()
-                        headerMapCode.endControlFlow()
-                    }
-
-                    isVarargMap -> {
-                        headerMapCode.beginControlFlow("%L.asIterable().forEach", paramAccess)
-                        headerMapCode.beginControlFlow("it.forEach")
-                        if (valueIsNullable) {
-                            headerMapCode.beginControlFlow("it.value?.let { value ->")
-                        }
-                        headerMapCode.addStatement(
-                            "append(it.key, %L)",
-                            if (valueIsString) {
-                                if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.value")
-                            } else {
-                                if (valueIsNullable) CodeBlock.of("\"\$value\"") else CodeBlock.of("\"\${it.value}\"")
-                            },
-                        )
-                        if (valueIsNullable) headerMapCode.endControlFlow()
-                        headerMapCode.endControlFlow() // end inner forEach
-                        headerMapCode.endControlFlow() // end outer forEach
+                        if (valueIsNullable) endControlFlow()
+                        endControlFlow() // end inner forEach
+                        if (isVarargMap) endControlFlow() // end outer forEach
                     }
 
                     isPair || isVarargPair -> {
                         val forEachExpr = if (isVarargPair) {
-                            CodeBlock.of("%L.asIterable()", paramName)
+                            CodeBlock.of("%L", paramName)
                         } else {
                             CodeBlock.of("listOf(%L)", paramName)
                         }
-                        headerMapCode.beginControlFlow("%L.forEach", forEachExpr)
-                        if (valueIsNullable) {
-                            headerMapCode.beginControlFlow("it.second?.let { value ->")
-                        }
-                        headerMapCode.addStatement(
+                        beginControlFlow("%L.forEach", forEachExpr)
+
+                        if (valueIsNullable) beginControlFlow("it.second?.let { value ->")
+
+                        addStatement(
                             "append(it.first, %L)",
                             if (valueIsString) {
                                 if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.second")
@@ -412,11 +482,12 @@ class KotlinpoetGenerator : KtorGenGenerator {
                                 if (valueIsNullable) CodeBlock.of("\"\$value\"") else CodeBlock.of("\"\${it.second}\"")
                             },
                         )
-                        if (valueIsNullable) headerMapCode.endControlFlow()
-                        headerMapCode.endControlFlow()
+
+                        if (valueIsNullable) endControlFlow()
+                        endControlFlow()
                     }
                 }
-            }
+            }?.also { endControlFlow() }
     }
 
     // -- query --
@@ -443,73 +514,71 @@ class KotlinpoetGenerator : KtorGenGenerator {
         return block.build()
     }
 
-    private fun getQueryNameTextBlock(params: List<ParameterData>, listType: KSType, arrayType: KSType): CodeBlock {
-        val block = CodeBlock.builder()
-        params
-            .filter { it.hasAnnotation<ParameterAnnotation.QueryName>() }
-            .forEach { parameterData ->
-                val queryName = parameterData.findAnnotationOrNull<ParameterAnnotation.QueryName>()
-                    ?: error("QueryName annotation not found")
-                val encoded = queryName.encoded
-                val name = parameterData.nameString
+    private fun getQueryNameTextBlock(params: List<ParameterData>, listType: KSType, arrayType: KSType) =
+        CodeBlock.builder().apply {
+            params
+                .filter { it.hasAnnotation<ParameterAnnotation.QueryName>() }
+                .forEach { parameterData ->
+                    val queryName = parameterData.findAnnotationOrNull<ParameterAnnotation.QueryName>()
+                        ?: error("QueryName annotation not found")
+                    val encoded = queryName.encoded
+                    val name = parameterData.nameString
 
-                val starProj = parameterData.typeData.parameterType.starProjection()
-                val isList = starProj.isAssignableFrom(listType)
-                val isArray = starProj.isAssignableFrom(arrayType)
+                    val starProj = parameterData.typeData.parameterType.starProjection()
+                    val isList = starProj.isAssignableFrom(listType)
+                    val isArray = starProj.isAssignableFrom(arrayType)
 
-                if (isList || isArray) {
-                    block.beginControlFlow("%L?.filterNotNull()?.forEach", name)
-                    block.addStatement(
-                        "%L.appendAll(%P, emptyList())",
-                        if (encoded) "this.encodedParameters" else "this.parameters",
-                        "\$it",
-                    )
-                    block.endControlFlow()
-                } else {
-                    block.addStatement(
-                        "%L.appendAll(%P, emptyList())",
-                        if (encoded) "this.encodedParameters" else "this.parameters",
-                        "\$$name",
-                    )
+                    if (isList || isArray) {
+                        beginControlFlow("%L?.filterNotNull()?.forEach", name)
+                        addStatement(
+                            "%L.appendAll(%P, emptyList())",
+                            if (encoded) "this.encodedParameters" else "this.parameters",
+                            "\$it",
+                        )
+                        endControlFlow()
+                    } else {
+                        addStatement(
+                            "%L.appendAll(%P, emptyList())",
+                            if (encoded) "this.encodedParameters" else "this.parameters",
+                            "\$$name",
+                        )
+                    }
                 }
-            }
-        return block.build()
-    }
+        }.build()
 
-    private fun getQueryTextBlock(params: List<ParameterData>, listType: KSType, arrayType: KSType): CodeBlock {
-        val block = CodeBlock.builder()
-        params
-            .filter { it.hasAnnotation<ParameterAnnotation.Query>() }
-            .forEach { parameterData ->
-                val query = parameterData.findAnnotationOrNull<ParameterAnnotation.Query>()
-                    ?: error("Query annotation not found")
-                val encoded = query.encoded
-                val starProj = parameterData.typeData.parameterType?.starProjection()
-                val isList = starProj?.isAssignableFrom(listType) ?: false
-                val isArray = starProj?.isAssignableFrom(arrayType) ?: false
+    private fun getQueryTextBlock(params: List<ParameterData>, listType: KSType, arrayType: KSType) =
+        CodeBlock.builder().apply {
+            params
+                .filter { it.hasAnnotation<ParameterAnnotation.Query>() }
+                .forEach { parameterData ->
+                    val query = parameterData.findAnnotationOrNull<ParameterAnnotation.Query>()
+                        ?: error("Query annotation not found")
+                    val encoded = query.encoded
+                    val starProj = parameterData.typeData.parameterType?.starProjection()
+                    val isList = starProj?.isAssignableFrom(listType) ?: false
+                    val isArray = starProj?.isAssignableFrom(arrayType) ?: false
 
-                if (isList || isArray) {
-                    block.beginControlFlow("%L?.filterNotNull()?.forEach", parameterData.nameString)
-                    block.addStatement(
-                        "%L(%S, %P)",
-                        if (encoded) "this.encodedParameters.append" else "this.parameters.append",
-                        query.value,
-                        if (encoded) "\${\"\$it\".decodeURLQueryComponent()}" else "\$it",
-                    )
-                    block.endControlFlow()
-                } else {
-                    block.beginControlFlow("%L?.let", parameterData.nameString)
-                    block.addStatement(
-                        "%L(%S, %P)",
-                        if (encoded) "this.encodedParameters.append" else "this.parameters.append",
-                        query.value,
-                        if (encoded) "\${\"\$it\".decodeURLQueryComponent()}" else "\$it",
-                    )
-                    block.endControlFlow()
+                    if (isList || isArray) {
+                        beginControlFlow("%L?.filterNotNull()?.forEach", parameterData.nameString)
+                        addStatement(
+                            "%L(%S, %P)",
+                            if (encoded) "this.encodedParameters.append" else "this.parameters.append",
+                            query.value,
+                            "\$it",
+                        )
+                        endControlFlow()
+                    } else {
+                        beginControlFlow("%L?.let", parameterData.nameString)
+                        addStatement(
+                            "%L(%S, %P)",
+                            if (encoded) "this.encodedParameters.append" else "this.parameters.append",
+                            query.value,
+                            "\$it",
+                        )
+                        endControlFlow()
+                    }
                 }
-            }
-        return block.build()
-    }
+        }.build()
 
     // -- body --
     fun getPartsCodeBlock(
