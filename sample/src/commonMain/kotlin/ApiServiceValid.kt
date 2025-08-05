@@ -11,8 +11,21 @@ interface ApiServiceValid {
     val otraCosa: Boolean
     var valorCambiante: Boolean
 
+    @Cookie(
+        name = "session_id",
+        value = "abc123",
+        maxAge = 3600,
+        expiresTimestamp = 1735689600000, // 01/01/2025 00:00:00 GMT
+        secure = true,
+        httpOnly = true,
+        extensions = [Cookie.PairString(Cookie.SameSite, Cookie.SameSites.Strict)],
+    )
+    @Cookie("session_id", "abc123")
     @GET("users")
-    suspend fun getUsers(@Query("page", true) page: Int): List<IssueData>
+    suspend fun getUsers(
+        @Query("page", true) page: Int,
+        @Cookie("session_id") @Cookie("session") session: Int,
+    ): List<IssueData>
 
     @GET("users/{id}")
     suspend fun getUserById(@Path("id") id: String): IssueData
@@ -43,7 +56,11 @@ interface ApiServiceValid {
     suspend fun ping(@QueryName hola: String)
 
     @GET
-    suspend fun dynamicUrl(@Url url: String): IssueData
+    suspend fun dynamicUrl(
+        @Url url: String,
+        @HeaderMap headers: Map<String, String>,
+        @HeaderMap vararg others: Pair<String, String?>,
+    ): IssueData
 
     @GET
     suspend fun dynamicQuery(builder: HttpRequestBuilder.() -> Unit): IssueData

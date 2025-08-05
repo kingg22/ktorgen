@@ -21,5 +21,15 @@ interface ApiServiceWithWarnings {
     @GET("/redundant/slash")
     suspend fun endpointWithLeadingSlash(): IssueData
 
+    // ⚠️ multiple Header with vararg, can have duplicates
+    @POST("/redundant")
+    suspend fun endpointWithHeaderVararg(
+        @HeaderParam(Header.Authorization) @HeaderParam("X-User-Agent") vararg token: String,
+    ): IssueData
+
+    // ⚠️ multiple cookie with vararg, can have duplicates
+    @POST("/redundant")
+    suspend fun endpointWithCookieVararg(@Cookie(Cookie.Auth) @Cookie(Cookie.Csrf) vararg token: String): IssueData
+
     companion object
 }
