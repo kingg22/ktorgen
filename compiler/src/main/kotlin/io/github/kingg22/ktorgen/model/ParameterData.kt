@@ -13,8 +13,10 @@ class ParameterData(
 ) {
     val isVararg: Boolean = ksValueParameter.isVararg
 
-    inline fun <reified T : ParameterAnnotation> findAnnotationOrNull(): T? =
-        this.ktorgenAnnotations.filterIsInstance<T>().firstOrNull()
+    inline fun <reified T : ParameterAnnotation> findAnnotationOrNull() =
+        ktorgenAnnotations.filterIsInstance<T>().firstOrNull()
 
-    inline fun <reified T : ParameterAnnotation> hasAnnotation(): Boolean = this.findAnnotationOrNull<T>() != null
+    inline fun <reified T : ParameterAnnotation> findAllAnnotations() = ktorgenAnnotations.filterIsInstance<T>()
+
+    inline fun <reified T : ParameterAnnotation> hasAnnotation() = findAnnotationOrNull<T>() != null
 }
