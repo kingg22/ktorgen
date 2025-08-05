@@ -2,17 +2,18 @@ package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
 import io.github.kingg22.ktorgen.Timer
-import io.github.kingg22.ktorgen.extractor.DeclarationParameterMapper.Companion.getArgumentValueByName
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import io.github.kingg22.ktorgen.model.annotations.toCookieValues
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -43,6 +44,7 @@ class ParameterMapper : DeclarationParameterMapper {
         }
     }
 
+    @OptIn(KspExperimental::class)
     private fun collectParameterAnnotations(declaration: KSValueParameter): List<ParameterAnnotation> = buildList {
         declaration.getAnnotation<Path>(
             manualExtraction = {
@@ -144,7 +146,7 @@ class ParameterMapper : DeclarationParameterMapper {
             manualExtraction = { _ -> add(ParameterAnnotation.Body) },
         ) { _ -> add(ParameterAnnotation.Body) }
 
-        declaration.getAnnotation<HeaderParam>(
+        declaration.getAllAnnotation<HeaderParam>(
             manualExtraction = {
                 add(
                     ParameterAnnotation.Header(
@@ -173,6 +175,12 @@ class ParameterMapper : DeclarationParameterMapper {
                 )
             },
         ) { add(ParameterAnnotation.Tag(it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()))) }
+
+        declaration.getAnnotationsByType(Cookie::class)
+            .map { it.toCookieValues(declaration.name.safeString()) }
+            .toList()
+            .takeIf(List<*>::isNotEmpty)
+            ?.let { cookies -> add(ParameterAnnotation.Cookies(cookies)) }
     }
 
     private fun isHttpRequestBuilderLambda(type: KSType): Boolean {
@@ -189,9 +197,11 @@ class ParameterMapper : DeclarationParameterMapper {
             returnType == "kotlin.Unit"
     }
 
+    // try-catch because default values is not working for KMP builds https://github.com/google/ksp/issues/2356
+
     /** Callbacks are invoked when the annotation is present, else NO OP */
     @OptIn(KspExperimental::class, ExperimentalContracts::class)
-    private inline fun <reified A : Annotation> KSValueParameter.getAnnotation(
+    inline fun <reified A : Annotation> KSAnnotated.getAnnotation(
         crossinline manualExtraction: (KSAnnotation) -> Unit,
         crossinline mapFromAnnotation: (A) -> Unit,
     ) {
@@ -203,6 +213,19 @@ class ParameterMapper : DeclarationParameterMapper {
             this.getAnnotationsByType(A::class).firstOrNull()?.let(mapFromAnnotation)
         } catch (_: Exception) {
             this.annotations.firstOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
+        }
+    }
+
+    /** Callbacks are invoked when one or more annotation is present, else NO OP */
+    @OptIn(KspExperimental::class)
+    inline fun <reified A : Annotation> KSAnnotated.getAllAnnotation(
+        crossinline manualExtraction: (KSAnnotation) -> Unit,
+        crossinline mapFromAnnotation: (A) -> Unit,
+    ) {
+        try {
+            this.getAnnotationsByType(A::class).forEach(mapFromAnnotation)
+        } catch (_: Exception) {
+            this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.forEach(manualExtraction)
         }
     }
 

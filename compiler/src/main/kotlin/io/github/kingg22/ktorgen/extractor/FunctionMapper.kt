@@ -11,7 +11,7 @@ import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.Timer
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.core.KtorGenIgnore
-import io.github.kingg22.ktorgen.extractor.DeclarationParameterMapper.Companion.getArgumentValueByName
+import io.github.kingg22.ktorgen.http.Cookie
 import io.github.kingg22.ktorgen.http.FormUrlEncoded
 import io.github.kingg22.ktorgen.http.HTTP
 import io.github.kingg22.ktorgen.http.Header
@@ -19,6 +19,7 @@ import io.github.kingg22.ktorgen.http.Multipart
 import io.github.kingg22.ktorgen.http.Streaming
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_ATTRIBUTE_KEY
+import io.github.kingg22.ktorgen.model.KTOR_CLIENT_COOKIE
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_FORM_DATA
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_FORM_DATA_CONTENT
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_HEADERS
@@ -27,12 +28,14 @@ import io.github.kingg22.ktorgen.model.KTOR_CLIENT_SET_BODY
 import io.github.kingg22.ktorgen.model.KTOR_CONTENT_TYPE
 import io.github.kingg22.ktorgen.model.KTOR_CONTENT_TYPE_ADD
 import io.github.kingg22.ktorgen.model.KTOR_ENCODE_URL_PATH
+import io.github.kingg22.ktorgen.model.KTOR_GMT_DATE
 import io.github.kingg22.ktorgen.model.KTOR_HTTP_METHOD
 import io.github.kingg22.ktorgen.model.KTOR_PARAMETERS
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import io.github.kingg22.ktorgen.model.annotations.toCookieValues
 
 class FunctionMapper : DeclarationFunctionMapper {
     override fun mapToModel(declaration: KSFunctionDeclaration, onAddImport: (String) -> Unit): FunctionData {
@@ -68,6 +71,10 @@ class FunctionMapper : DeclarationFunctionMapper {
 
                         is ParameterAnnotation.Path -> if (!annotation.encoded) onAddImport(KTOR_ENCODE_URL_PATH)
                         is ParameterAnnotation.Tag -> onAddImport(KTOR_CLIENT_ATTRIBUTE_KEY)
+                        is ParameterAnnotation.Cookies -> {
+                            onAddImport(KTOR_CLIENT_COOKIE)
+                            onAddImport(KTOR_GMT_DATE)
+                        }
 
                         is ParameterAnnotation.Query,
                         is ParameterAnnotation.QueryMap,
@@ -108,6 +115,11 @@ class FunctionMapper : DeclarationFunctionMapper {
                         annotation is FunctionAnnotation.FormUrlEncoded
                     ) {
                         onAddImport(KTOR_CLIENT_HEADERS)
+                    }
+
+                    if (annotation is FunctionAnnotation.Cookies) {
+                        onAddImport(KTOR_CLIENT_COOKIE)
+                        onAddImport(KTOR_GMT_DATE)
                     }
 
                     if (annotation is FunctionAnnotation.FormUrlEncoded ||
@@ -162,26 +174,45 @@ class FunctionMapper : DeclarationFunctionMapper {
             add(FunctionAnnotation.Ignore)
             timer.markStepCompleted("Ignore found")
         }
+
         timer.markStepCompleted("Going to get Multipart")
         function.getAnnotationsByType(Multipart::class).firstOrNull()?.let {
             add(FunctionAnnotation.Multipart)
             timer.markStepCompleted("Multipart found")
         }
+
         timer.markStepCompleted("Going to get Streaming")
         function.getAnnotationsByType(Streaming::class).firstOrNull()?.let {
             add(FunctionAnnotation.Streaming)
             timer.markStepCompleted("Streaming found")
         }
+
         timer.markStepCompleted("Going to get FormUrlEncoded")
         function.getAnnotationsByType(FormUrlEncoded::class).firstOrNull()?.let {
             add(FunctionAnnotation.FormUrlEncoded)
             timer.markStepCompleted("FormUrlEncoded found")
         }
+
         timer.markStepCompleted("Going to get Headers")
-        function.getAnnotationsByType(Header::class).map { it.name to it.value }.toSet().let { headers ->
-            timer.markStepCompleted("Header found")
-            add(FunctionAnnotation.Headers(headers))
-        }
+        function.getAnnotationsByType(Header::class)
+            .map { it.name to it.value }
+            .toList()
+            .takeIf(List<*>::isNotEmpty)
+            ?.let { headers ->
+                timer.markStepCompleted("Header found")
+                add(FunctionAnnotation.Headers(headers))
+            }
+
+        timer.markStepCompleted("Going to get Cookies")
+        function.getAnnotationsByType(Cookie::class)
+            .map(Cookie::toCookieValues)
+            .toList()
+            .takeIf(List<*>::isNotEmpty)
+            ?.let { cookies ->
+                timer.markStepCompleted("Cookies found")
+                add(FunctionAnnotation.Cookies(cookies))
+            }
+
         timer.markStepCompleted("Finish collection of KtorGen annotations")
     }
 
@@ -196,8 +227,7 @@ class FunctionMapper : DeclarationFunctionMapper {
                     FunctionAnnotation.HttpMethodAnnotation(it.path, HttpMethod.parse(it.method.uppercase()))
                 }
             } else {
-                val path = annotation.getArgumentValueByName<Any?>("value")
-                val value = when (path) {
+                val value = when (val path = annotation.getArgumentValueByName<Any?>("value")) {
                     is String -> path
                     is ArrayList<*> -> path.firstOrNull() as? String
                     else -> null
