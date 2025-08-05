@@ -34,6 +34,8 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val ONLY_ONE_HTTP_METHOD_IS_ALLOWED = "$KTOR_GEN Only one HTTP method is allowed."
         const val INTERFACE_NOT_HAVE_FILE = "$KTOR_GEN Interface must be in a file, but was null: "
         const val FUNCTION_NOT_RETURN_TYPE = "$KTOR_GEN Function don't have return type: "
+        const val COOKIE_ON_FUNCTION_WITHOUT_VALUE =
+            "$KTOR_GEN @Cookie on function requires value, only on parameter is not needed."
         const val HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
             "@HeaderMap parameter type must be Map<String, String(?)> or Pair<String, String(?)>. "
         const val INVALID_HEADER = "The header name or value is blank on @Header or @HeaderParam."
@@ -72,7 +74,9 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val PARAMETER_WITHOUT_ANNOTATION =
             "Parameter without annotation of usage is invalid. Please, indicate with annotation the reason or use HttpRequestBuilder. "
         const val PARAMETER_WITH_LOT_ANNOTATIONS =
-            "Parameter with more than one annotation is invalid. Please, for advance request use HttpRequestBuilder or remove extra annotation on parameter "
+            "Parameter with more than one annotation is invalid. Please, for advance request use HttpRequestBuilder or don't mix annotations on parameter."
+        const val VARARG_PARAMETER_WITH_LOT_ANNOTATIONS =
+            "vararg parameter with more than one repeatable annotation can be invalid. Use Map or ignore if you are sure."
         const val ONLY_ONE_HTTP_REQUEST_BUILDER =
             "Only one Http Request Builder is allowed per function. Found: "
         const val FIELD_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
@@ -82,7 +86,7 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val QUERY_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
             "@QueryMap parameter type must be Map<String, String> or Pair<String, String>. "
         const val VARARG_PARAMETER_EXPERIMENTAL =
-            "vararg parameter is an experimental feature, currently only @HeaderMap support it."
+            "vararg parameter is an experimental feature, currently only @HeaderMap, @HeaderParam, @Cookie support it."
         const val CONTENT_TYPE_BODY_UNKNOWN = "Content-Type for @Body maybe is unknown. "
         const val ANY_TYPE_INVALID = "'Any' type is not valid, break validation and serialization."
     }

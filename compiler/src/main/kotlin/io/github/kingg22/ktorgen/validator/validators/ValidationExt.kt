@@ -8,6 +8,8 @@ import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 
+const val KOTLIN_STRING = "kotlin.String"
+
 fun addDeclaration(context: ValidationContext, function: FunctionData, parameter: ParameterData? = null) = buildString {
     appendLine()
     append("Declaration: ")
@@ -47,7 +49,7 @@ fun ValidationResult.validateMapParameter(
     errorMessage: String,
     /** Condition to raise error */
     validation: (Pair<String?, Boolean>, Pair<String?, Boolean>) -> Boolean = { keys, _ ->
-        keys != Pair("kotlin.String", false)
+        keys != Pair(KOTLIN_STRING, false)
     },
 ) {
     val decl = parameter.typeData.parameterType.declaration

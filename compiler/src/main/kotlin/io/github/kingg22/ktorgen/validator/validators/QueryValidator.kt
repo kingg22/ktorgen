@@ -18,7 +18,7 @@ class QueryValidator : ValidatorStrategy {
                         KtorGenLogger.QUERY_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING,
                     ) { keys, values ->
                         // <String, String>
-                        keys != Pair("kotlin.String", false) || values != Pair("kotlin.String", false)
+                        keys != Pair(KOTLIN_STRING, false) || values != Pair(KOTLIN_STRING, false)
                     }
                 }
             }
