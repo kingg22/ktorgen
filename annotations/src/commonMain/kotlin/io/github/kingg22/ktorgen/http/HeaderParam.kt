@@ -35,6 +35,7 @@ import org.intellij.lang.annotations.Language
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)
+@Repeatable
 @MustBeDocumented
 annotation class HeaderParam(
     /** The header name */
