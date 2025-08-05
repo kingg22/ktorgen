@@ -31,7 +31,7 @@ ktlint-pinterest = "1.6.0"
 ktlint-plugin = "13.0.0"
 # https://github.com/ktorio/ktor/releases
 ktor = "3.2.3"
-ktorgen-version = "0.1.0-SNAPSHOT"
+ktorgen-version = "0.2.0-SNAPSHOT"
 # https://github.com/vanniktech/gradle-maven-publish-plugin/releases
 maven-publish = "0.34.0"
 
