@@ -11,21 +11,19 @@ class FunctionData(
     val returnTypeData: TypeData,
     val httpMethodAnnotation: FunctionAnnotation.HttpMethodAnnotation,
     val parameterDataList: List<ParameterData>,
-    val isSuspend: Boolean = false,
-    val modifierSet: Set<KModifier> = emptySet(),
     val ktorGenAnnotations: List<FunctionAnnotation>,
     val nonKtorGenAnnotations: List<AnnotationSpec>,
-    val isImplemented: Boolean = false,
     val ksFunctionDeclaration: KSFunctionDeclaration,
-    goingToGenerate: Boolean = ktorGenAnnotations.contains(FunctionAnnotation.Ignore).not(),
-    visibilityModifier: String = "public",
+    val isSuspend: Boolean = false,
+    val modifierSet: Set<KModifier> = emptySet(),
+    val isImplemented: Boolean = false,
+    goingToGenerate: Boolean = true, // TODO
     propagateAnnotations: Boolean = true,
     annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
     optIns: Set<AnnotationSpec> = emptySet(),
     customHeader: String = "",
 ) : GenOptions(
     goingToGenerate = goingToGenerate,
-    visibilityModifier = visibilityModifier,
     propagateAnnotations = propagateAnnotations,
     annotationsToPropagate = annotationsToPropagate,
     optIns = optIns,
@@ -52,7 +50,10 @@ class FunctionData(
 
     inline fun <reified T : FunctionAnnotation> hasAnnotation() = this.findAnnotationOrNull<T>() != null
 
-    data class UrlTemplateResult(val template: String, val keys: List<String>)
+    data class UrlTemplateResult(val template: String, val keys: List<String>) {
+        val isEmpty = template.isBlank() && keys.isEmpty()
+        val isNotEmpty = !isEmpty
+    }
 
     private fun parseUrlTemplate(url: String): UrlTemplateResult {
         val regex = "\\{([^}]+)}".toRegex()

@@ -25,7 +25,7 @@ open class GenOptions(
         propagateAnnotations: Boolean = true,
         annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
         optIns: Set<AnnotationSpec> = emptySet(),
-        customFileHeader: String = KTORG_GENERATED_FILE_COMMENT,
+        val customFileHeader: String = KTORG_GENERATED_FILE_COMMENT,
         customClassHeader: String = "",
     ) : GenOptions(
         goingToGenerate = goingToGenerate,
