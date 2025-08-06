@@ -1,38 +1,44 @@
 package io.github.kingg22.ktorgen.validator
 
+import com.google.devtools.ksp.symbol.KSNode
+import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.KtorGenLogger
+import io.github.kingg22.ktorgen.model.FunctionData
+import io.github.kingg22.ktorgen.model.ParameterData
 
-class ValidationResult(
-    val errors: MutableList<FatalError> = mutableListOf(),
-    val warnings: MutableList<Warning> = mutableListOf(),
-) {
-    constructor(block: ValidationResult.() -> Unit) : this() {
+/** This a container of errors and warnings, not couple the validation strategies with diagnostic sender */
+class ValidationResult(block: ValidationResult.() -> Unit) {
+    private val errors: MutableList<FatalError> = mutableListOf()
+    private val warnings: MutableList<Warning> = mutableListOf()
+
+    val errorCount: Int get() = errors.size
+
+    init {
         block(this)
     }
 
-    val isOk get() = errors.isEmpty()
-
-    fun addError(message: String) {
-        if (!message.startsWith(KtorGenLogger.KTOR_GEN)) {
-            errors.add(FatalError("${KtorGenLogger.KTOR_GEN} $message"))
-        } else {
-            errors.add(FatalError(message))
-        }
+    fun addError(message: String, functionData: FunctionData) = addError(message, functionData.ksFunctionDeclaration)
+    fun addError(message: String, parameterData: ParameterData) = addError(message, parameterData.ksValueParameter)
+    fun addError(message: String, symbol: KSNode? = null) {
+        errors.add(FatalError(message.removePrefix(KtorGenLogger.KTOR_GEN), symbol))
     }
 
-    fun addWarning(message: String) {
-        warnings.add(Warning(message))
+    fun addWarning(message: String, functionData: FunctionData) =
+        addWarning(message, functionData.ksFunctionDeclaration)
+    fun addWarning(message: String, parameterData: ParameterData) = addWarning(message, parameterData.ksValueParameter)
+    fun addWarning(message: String, symbol: KSNode? = null) {
+        warnings.add(Warning(message.removePrefix(KtorGenLogger.KTOR_GEN), symbol))
     }
 
-    fun dump(logger: KtorGenLogger = KtorGenLogger.instance) {
+    fun dump(logger: DiagnosticTimer.DiagnosticSender) {
         if (errors.isNotEmpty()) {
-            errors.forEach { logger.exception(IllegalArgumentException(it.message)) }
+            errors.forEach { logger.addError(it.message, it.symbol) }
         }
         if (warnings.isNotEmpty()) {
-            warnings.forEach { logger.error(it.message) }
+            warnings.forEach { logger.addWarning(it.message, it.symbol) }
         }
     }
 
-    class FatalError(val message: String)
-    class Warning(val message: String)
+    private class FatalError(val message: String, val symbol: KSNode?)
+    private class Warning(val message: String, val symbol: KSNode?)
 }

@@ -39,8 +39,9 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         if (invoked) return emptyList()
         invoked = true
 
-        val timer = Timer("KtorGen Annotations Processor")
+        val timer = DiagnosticTimer("KtorGen Annotations Processor", logger)
         var fatalError = false
+
         try {
             timer.start()
 
@@ -48,66 +49,81 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 ?.asStarProjectedType()
                 ?: error("${KtorGenLogger.KTOR_GEN} List not found")
             arrayType = resolver.builtIns.arrayType
-            timer.markStepCompleted("Retrieve KSTypes")
+            timer.addStep("Retrieve KSTypes")
 
             // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
             val annotatedFunctionsGroupedByClass =
                 getAnnotatedFunctions(resolver).groupBy { it.closestClassDeclaration() }
-            timer.markStepCompleted(
+            timer.addStep(
                 "Retrieve all functions with annotations. Count: ${annotatedFunctionsGroupedByClass.size}",
             )
 
             // 2. Mapeamos las clases con funciones válidas
+            val mapperPhase = timer.createPhase("Extraction and Mapper")
+            mapperPhase.start()
+
             val classDataWithMethods = annotatedFunctionsGroupedByClass.mapNotNull { (classDec) ->
-                if (classDec == null) {
-                    null
-                } else {
-                    DeclarationMapper.DEFAULT.mapToModel(classDec).also {
-                        timer.markStepCompleted("Mapped $it")
-                    }
-                }
+                if (classDec == null) return@mapNotNull null
+                DeclarationMapper.DEFAULT.mapToModel(classDec) { mapperPhase.createTask(it) }
             }
-            timer.markStepCompleted(
+            timer.addStep(
                 "Process all class data obtained by functions. Count: ${annotatedFunctionsGroupedByClass.size}",
             )
 
             // 3. También obtenemos todas las clases anotadas con @KtorGen (aunque no tengan métodos)
             val annotatedClasses = getAnnotatedInterfaceTypes(resolver)
-            timer.markStepCompleted("Retrieve with KtorGen. Detail: $annotatedClasses")
+            timer.addStep("Retrieve with KtorGen. Count: ${annotatedClasses.count()}")
 
             // 4. Filtramos aquellas clases que no están en `groupedByClass` → no tienen funciones válidas
             val classWithoutMethods = annotatedClasses
                 .filter { it !in annotatedFunctionsGroupedByClass.keys }
                 .also {
-                    timer.markStepCompleted("After sum functions + ktorGen types, count of ktorGen is: $it")
+                    timer.addStep(
+                        "After sum (functions + ktorGen interfaces (or its companion)) - already extracted, count: ${it.count()}",
+                    )
                 }
-                .map { DeclarationMapper.DEFAULT.mapToModel(it) }
-            timer.markStepCompleted(
-                "Process all interfaces and companion with @KtorGen. Detail: $classWithoutMethods.\n" +
-                    "Sum of both: ${classDataWithMethods + classWithoutMethods}",
+                .map { classDeclaration ->
+                    DeclarationMapper.DEFAULT.mapToModel(classDeclaration) { mapperPhase.createTask(it) }
+                }
+            timer.addStep(
+                "Processed all interfaces and companion with @KtorGen. Count: ${classDataWithMethods.size + classWithoutMethods.count()}",
             )
+            mapperPhase.finish()
 
             // 5. Unimos todas las clases a validar (las que tienen y no tienen funciones)
+            val validationPhase = timer.createPhase("Validation")
+
             val fullClassList = (classDataWithMethods + classWithoutMethods)
                 .distinctBy { it.interfaceName }
-                .also { timer.markStepCompleted("After filter declarations, have ${it.size} to validate") }
-                .mapNotNull {
-                    Validator.DEFAULT.validate(it, ktorGenOptions, logger) {
+                .also {
+                    timer.addStep("After filter declarations, have ${it.size} to validate")
+                    validationPhase.start()
+                }
+                .mapNotNull { classData ->
+                    Validator.DEFAULT.validate(classData, ktorGenOptions, { validationPhase.createTask(it) }) {
                         fatalError = true
                     }
                 }
-            timer.markStepCompleted(
+            timer.addStep(
                 "Valid class data ${fullClassList.size}, going to generate all. Have fatal error: $fatalError",
             )
+            validationPhase.finish()
 
             // 6. Generamos el código
             for (classData in fullClassList) {
-                KtorGenGenerator.generateKsp(classData, env.codeGenerator)
+                KtorGenGenerator.generateKsp(classData, env.codeGenerator, timer.createPhase("Code Generation"))
             }
-            timer.markStepCompleted("Generated all classes")
+            timer.addStep("Generated all classes")
 
-            // deferred errors, util for debug, maybe not util for final users
-            if (fatalError) throw Throwable(KtorGenLogger.KTOR_GEN + "See errors above")
+            // deferred errors, util for debug and accumulative errors
+            if (fatalError) {
+                timer.dumpErrorsAndWarnings()
+                throw Throwable(KtorGenLogger.KTOR_GEN + "See errors above")
+            }
+            timer.finish()
+            timer.dumpWarnings()
+
+            return emptyList()
         } catch (e: Exception) {
             logger.exception(
                 IllegalStateException(
@@ -117,10 +133,13 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             )
             throw e
         } finally {
-            timer.finishAndPrint(logger)
+            try {
+                if (!timer.isFinish()) timer.finish()
+                timer.dumpReport()
+            } catch (e: Throwable) {
+                logger.error("Failed in diagnostic report $e")
+            }
         }
-
-        return emptyList()
     }
 
     private fun getAnnotatedInterfaceTypes(resolver: Resolver) =

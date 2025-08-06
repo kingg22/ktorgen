@@ -5,7 +5,7 @@ import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
-import io.github.kingg22.ktorgen.Timer
+import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.ParameterData
@@ -14,29 +14,22 @@ import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
 
 class ParameterMapper : DeclarationParameterMapper {
-    override fun mapToModel(declaration: KSValueParameter): ParameterData {
-        val timer = Timer("KtorGen [Parameter Mapper] for ${declaration.name?.asString() ?: "unknow"}").start()
-        try {
-            val type = declaration.type.resolve()
-            return ParameterData(
-                nameString = declaration.name?.asString().orEmpty(),
-                typeData = TypeData(type),
-                ksValueParameter = declaration,
-                ktorgenAnnotations = collectParameterAnnotations(declaration).also {
-                    timer.markStepCompleted("Processed annotations")
-                },
-                isHttpRequestBuilderLambda = isHttpRequestBuilderLambda(type).also {
-                    timer.markStepCompleted("Processed is http builder lambda: $it")
-                },
-            ).also {
-                timer.markStepCompleted("End for ${it.nameString}")
-            }
-        } catch (e: Throwable) {
-            timer.markStepCompleted("Error on parameter")
-            throw e
-        } finally {
-            timer.finishAndPrint()
-        }
+    override fun mapToModel(
+        declaration: KSValueParameter,
+        timer: (String) -> DiagnosticTimer.DiagnosticSender,
+    ): ParameterData = timer("Parameter Mapper for [${declaration.name?.asString() ?: "unknow"}]").work { timer ->
+        val type = declaration.type.resolve()
+        ParameterData(
+            nameString = declaration.name?.asString().orEmpty(),
+            typeData = TypeData(type),
+            ksValueParameter = declaration,
+            ktorgenAnnotations = collectParameterAnnotations(declaration).also {
+                timer.addStep("Processed annotations")
+            },
+            isHttpRequestBuilderLambda = isHttpRequestBuilderLambda(type).also {
+                timer.addStep("Processed is http builder lambda: $it")
+            },
+        )
     }
 
     @OptIn(KspExperimental::class)

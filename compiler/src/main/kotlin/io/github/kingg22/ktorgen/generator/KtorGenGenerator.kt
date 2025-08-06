@@ -8,21 +8,22 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
+import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.model.ClassData
 
 fun interface KtorGenGenerator {
-    fun generate(classData: ClassData): FileSpec
+    fun generate(classData: ClassData, timer: DiagnosticTimer.DiagnosticSender): FileSpec
 
     companion object {
         /** Generate the Impl class using [KotlinpoetGenerator] of ksp */
-        fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator) {
-            DEFAULT.generate(classData).writeTo(codeGenerator, false)
+        fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator, timer: DiagnosticTimer.DiagnosticSender) {
+            DEFAULT.generate(classData, timer).writeTo(codeGenerator, false)
         }
 
         val DEFAULT: KtorGenGenerator by lazy { KotlinpoetGenerator() }
 
         val TODO_GENERATOR by lazy {
-            KtorGenGenerator { classData ->
+            KtorGenGenerator { classData, _ ->
                 val interfaceName = classData.interfaceName
 
                 val classBuilder = TypeSpec.classBuilder(classData.generatedName)
@@ -72,7 +73,7 @@ fun interface KtorGenGenerator {
         }
 
         val NO_OP by lazy {
-            KtorGenGenerator { data ->
+            KtorGenGenerator { data, _ ->
                 FileSpec.builder(data.packageNameString, data.generatedName)
                     .addFileComment(
                         "This class is generated to test the KtorGen compiler. It does not contain any code and should not be used.",

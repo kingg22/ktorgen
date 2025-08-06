@@ -9,6 +9,8 @@ import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
 class MultipartValidator : ValidatorStrategy {
+    override val name: String = "Multipart Body"
+
     override fun validate(context: ValidationContext) = ValidationResult {
         for (function in context.functions) {
             var isMultiPart = function.hasAnnotation<FunctionAnnotation.Multipart>()
@@ -18,28 +20,24 @@ class MultipartValidator : ValidatorStrategy {
                 }
             ) {
                 isMultiPart = true
-                addWarning(KtorGenLogger.MULTIPART_ANNOTATION_MISSING_FOUND_PART + addDeclaration(context, function))
+                addWarning(KtorGenLogger.MULTIPART_ANNOTATION_MISSING_FOUND_PART, function)
             }
             if (isMultiPart &&
                 function.parameterDataList.none {
                     it.hasAnnotation<ParameterAnnotation.Part>() || it.hasAnnotation<ParameterAnnotation.PartMap>()
                 }
             ) {
-                addError(KtorGenLogger.MULTIPART_MUST_CONTAIN_AT_LEAST_ONE_PART + addDeclaration(context, function))
+                addError(KtorGenLogger.MULTIPART_MUST_CONTAIN_AT_LEAST_ONE_PART, function)
             }
             if (isMultiPart &&
                 function.httpMethodAnnotation.httpMethod !in listOf(HttpMethod.Post, HttpMethod.Put, HttpMethod.Patch)
             ) {
-                addWarning(
-                    KtorGenLogger.FORM_ENCODED_ANNOTATION_MISMATCH_HTTP_METHOD + addDeclaration(context, function),
-                )
+                addWarning(KtorGenLogger.FORM_ENCODED_ANNOTATION_MISMATCH_HTTP_METHOD, function)
             }
             function.parameterDataList.forEach { parameter ->
                 parameter.findAnnotationOrNull<ParameterAnnotation.PartMap>()?.let {
                     validateMapParameter(
                         parameter,
-                        context,
-                        function,
                         KtorGenLogger.PART_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING,
                     )
                 }

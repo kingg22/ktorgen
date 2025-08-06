@@ -7,14 +7,16 @@ import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
 class QueryValidator : ValidatorStrategy {
+    override val name: String = "URL Query"
+
     override fun validate(context: ValidationContext) = ValidationResult {
         for (function in context.functions) {
-            function.parameterDataList.forEach { parameter ->
+            function.parameterDataList.filter {
+                it.hasAnnotation<ParameterAnnotation.QueryMap>()
+            }.forEach { parameter ->
                 parameter.findAnnotationOrNull<ParameterAnnotation.QueryMap>()?.let {
                     validateMapParameter(
                         parameter,
-                        context,
-                        function,
                         KtorGenLogger.QUERY_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING,
                     ) { keys, values ->
                         // <String, String>

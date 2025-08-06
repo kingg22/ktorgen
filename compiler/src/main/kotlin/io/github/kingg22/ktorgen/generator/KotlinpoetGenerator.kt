@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
 import io.github.kingg22.ktorgen.model.ClassData
@@ -19,25 +20,32 @@ import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 
 class KotlinpoetGenerator : KtorGenGenerator {
-    override fun generate(classData: ClassData): FileSpec {
+    override fun generate(classData: ClassData, timer: DiagnosticTimer.DiagnosticSender): FileSpec {
         // class
+        timer.start()
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
-            .addModifiers(KModifier.PUBLIC) // TODO add visibility of user want
+            .addModifiers(KModifier.valueOf(classData.visibilityModifier.uppercase()))
             .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
             .addKdoc(classData.customHeader)
             .addOriginatingKSFile(classData.ksFile)
+        timer.addStep("Creating class for ${classData.interfaceName} to ${classData.generatedName}")
 
         // constructor with properties
         val (constructor, properties, httpClient) =
             generatePrimaryConstructorAndProperties(classData)
+        timer.addStep("Generated primary constructor and properties, going to generate functions")
         classBuilder
             .addSuperInterfacesAndConstructor(classData, constructor)
             .addProperties(properties)
 
         // override functions
-        classData.functions.forEach { function -> classBuilder.addFunction(generateFunction(function, httpClient)) }
+        classData.functions.forEach { function ->
+            classBuilder.addFunction(generateFunction(function, httpClient))
+            timer.addStep("Generated implementation function for ${function.name}")
+        }
 
         // file
+        timer.addStep("Creating file with all")
         val fileBuilder = FileSpec.builder(classData.packageNameString, classData.generatedName)
             .addAnnotation(
                 AnnotationSpec.builder(Suppress::class) // suppress annotations
@@ -53,10 +61,12 @@ class KotlinpoetGenerator : KtorGenGenerator {
             .addFileComment(classData.customFileHeader) // add a header file
 
         // add imports
+        timer.addStep("Processed file, adding required imports")
         classData.imports.forEach { fileBuilder.addImport(it.substringBeforeLast("."), it.substringAfterLast(".")) }
 
         // add class to file and build all
-        return fileBuilder.addType(classBuilder.build()).build()
+        timer.addStep("Finished file generation")
+        return fileBuilder.addType(classBuilder.build()).build().also { timer.finish() }
     }
 
     /** @return FunSpec del constructor, propiedades y nombre de la propiedad httpClient */

@@ -8,12 +8,14 @@ import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
 class HeadReturnNothingValidator : ValidatorStrategy {
+    override val name: String = "HTTP method 'Head'"
+
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
-            if (function.httpMethodAnnotation.httpMethod != HttpMethod.Head) continue
-            if (function.returnTypeData.typeName != UNIT) {
-                addError(KtorGenLogger.HTTP_METHOD_HEAD_NOT_RETURN_BODY + addDeclaration(context, function))
-            }
+        context.functions.filter {
+            it.httpMethodAnnotation.httpMethod == HttpMethod.Head &&
+                it.returnTypeData.typeName != UNIT
+        }.forEach { function ->
+            addError(KtorGenLogger.HTTP_METHOD_HEAD_NOT_RETURN_BODY, function)
         }
     }
 }
