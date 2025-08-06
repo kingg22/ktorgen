@@ -62,7 +62,7 @@ interface ApiServiceValid {
         @HeaderMap vararg others: Pair<String, String?>,
     ): IssueData
 
-    @GET
+    @Fragment("header")
     suspend fun dynamicQuery(builder: HttpRequestBuilder.() -> Unit): IssueData
 
     @HTTP("TRACE", "media/download")
