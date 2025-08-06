@@ -5,6 +5,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Visibility
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -28,7 +29,7 @@ class ClassData(
     val haveCompanionObject: Boolean = false,
     goingToGenerate: Boolean = true,
     generatedName: String = "_${interfaceName}Impl",
-    visibilityModifier: String = "public",
+    visibilityModifier: Visibility = Visibility.PUBLIC,
     generateTopLevelFunction: Boolean = true,
     generateCompanionFunction: Boolean = false,
     generateExtensions: Boolean = false,
@@ -43,7 +44,7 @@ class ClassData(
 ) : GenOptions.GenTypeOption(
     goingToGenerate = goingToGenerate,
     generatedName = generatedName,
-    visibilityModifier = visibilityModifier,
+    visibilityModifier = visibilityModifier.name,
     generateTopLevelFunction = generateTopLevelFunction,
     generateCompanionFunction = generateCompanionFunction,
     generateExtensions = generateExtensions,

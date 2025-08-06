@@ -2,6 +2,7 @@ package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getDeclaredProperties
+import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.ksp.toKModifier
@@ -67,6 +68,7 @@ class ClassMapper : DeclarationMapper {
                     KtorGenLogger.INTERFACE_NOT_HAVE_FILE + className
                 },
                 annotationSet = declaration.annotations.toSet(),
+                visibilityModifier = declaration.getVisibility(),
                 haveCompanionObject = companionObject,
             ).also {
                 timer.markStepCompleted("Mapper complete of ${it.interfaceName} to ${it.generatedName}")
