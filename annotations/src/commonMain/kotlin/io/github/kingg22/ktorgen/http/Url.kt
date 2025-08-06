@@ -5,8 +5,6 @@ package io.github.kingg22.ktorgen.http
  *
  * Can be type of: `String`, Ktor `Url`, Ktor `UrlBuilder`. More detail, see [Url.takeFrom](https://api.ktor.io/ktor-http/io.ktor.http/take-from.html)
  *
- * _Note_: Currently **requires** defining the http method.
- *
  * ```kotlin
  * @GET
  * suspend fun request(@Url url: String): List<Comment>

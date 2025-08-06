@@ -18,6 +18,9 @@ class HttpMethod(val value: String) {
         val Head: HttpMethod = HttpMethod("HEAD")
         val Options: HttpMethod = HttpMethod("OPTIONS")
 
+        // custom when the annotation is not present and is obtained in other way
+        val Absent: HttpMethod = HttpMethod("")
+
         fun parse(method: String): HttpMethod = when (method) {
             Get.value -> Get
             Post.value -> Post
