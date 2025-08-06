@@ -10,9 +10,11 @@ import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.HttpClientClassName
+import io.github.kingg22.ktorgen.model.KTORG_GENERATED_COMMENT
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.annotations.CookieValues
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
+import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 
@@ -47,7 +49,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     .addMember("%S", "RemoveSingleExpressionStringTemplate")
                     .build(),
             )
-            .addFileComment(classData.customHeader) // add a header file
+            .indent("    ") // use 4 spaces https://pinterest.github.io/ktlint/latest/rules/standard/#indentation
+            .addFileComment(classData.customFileHeader) // add a header file
 
         // add imports
         classData.imports.forEach { fileBuilder.addImport(it.substringBeforeLast("."), it.substringAfterLast(".")) }
@@ -111,7 +114,6 @@ class KotlinpoetGenerator : KtorGenGenerator {
         primaryConstructor: FunSpec.Builder,
     ) = apply {
         classData.superClasses
-            .filterNot { ref -> ref.annotations.any { it.shortName.getShortName() == "KtorGenIgnore" } }
             .forEach { ref ->
                 val ksType = ref.resolve()
                 val decl = ksType.declaration
@@ -130,7 +132,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             .addModifiers(func.modifierSet)
             .returns(func.returnTypeData.typeName)
             .addAnnotations(func.nonKtorGenAnnotations)
-            .addKdoc(func.customHeader)
+            .addKdoc(func.customHeader.ifEmpty { KTORG_GENERATED_COMMENT })
 
         if (func.isSuspend) funBuilder.addModifiers(KModifier.SUSPEND)
 
@@ -150,24 +152,29 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
     private fun generateFunctionBody(func: FunctionData, httpClient: MemberName) = CodeBlock.builder().apply {
         if (func.returnTypeData.typeName != UNIT) add("return ")
+        addRequest(func, httpClient)
+        // End with get body if return type != Unit
+        if (func.returnTypeData.typeName != UNIT) add(".body()")
+    }.build()
+
+    // -- Complete request is here --
+    private fun CodeBlock.Builder.addRequest(func: FunctionData, httpClient: MemberName) = apply {
         // Start with httpClient.request {
         beginControlFlow("this.%M.request", httpClient)
             // First invoke builders
             .addBuilderCall(func.parameterDataList)
-            .addStatement("this.method = HttpMethod.parse(%S)", func.httpMethodAnnotation.httpMethod.value)
+            .addHttpMethod(func)
             .addUrl(func)
             .addHeaders(func)
             .addCookies(func)
             .addBody(func)
             .addAttributes(func.parameterDataList)
         endControlFlow()
-        // } End with get body if return type != Unit
-        if (func.returnTypeData.typeName != UNIT) add(".body()")
-    }.build()
+    }
 
     // -- core parts --
     private fun CodeBlock.Builder.addBuilderCall(parameterList: List<ParameterData>) = apply {
-        parameterList.firstOrNull { it.isHttpRequestBuilder }?.let {
+        parameterList.firstOrNull { it.isValidTakeFrom }?.let {
             addStatement("this.takeFrom(%L)", it.nameString)
         }
         parameterList.firstOrNull { it.isHttpRequestBuilderLambda }?.let { param ->
@@ -175,35 +182,53 @@ class KotlinpoetGenerator : KtorGenGenerator {
         }
     }
 
-    private fun CodeBlock.Builder.addUrl(func: FunctionData) = apply {
-        beginControlFlow("this.url")
-            .apply {
-                func.parameterDataList.firstOrNull { it.hasAnnotation<ParameterAnnotation.Url>() }?.let {
-                    addStatement(
-                        "this.takeFrom(%L)",
-                        it.nameString,
-                    )
-                }
-            }.addStatement(
-                "this.takeFrom(%P)",
-                func.urlTemplate.let { (template, keys) ->
-                    val values = keys.map { key ->
-                        val param = func.parameterDataList
-                            .firstOrNull { it.findAnnotationOrNull<ParameterAnnotation.Path>()?.value == key }
-                            ?: error("Missing @Path parameter for {$key}") // after validation is never throw
+    private fun CodeBlock.Builder.addHttpMethod(func: FunctionData) = apply {
+        if (func.httpMethodAnnotation.httpMethod != HttpMethod.Absent) {
+            addStatement("this.method = HttpMethod.parse(%S)", func.httpMethodAnnotation.httpMethod.value)
+        }
+    }
 
-                        val (path, encoded) = param.findAnnotationOrNull<ParameterAnnotation.Path>()!!
-                        if (encoded) {
-                            CodeBlock.of("$%L", path).toString() // ${id}
-                        } else {
-                            CodeBlock.of("\${\"$%L\".encodeURLPath()}", path).toString() // ${"$id".encodeURLPath()}
-                        }
-                    }
-                    template.format(*values.toTypedArray())
-                },
-            )
-            .addQuery(func.parameterDataList)
-        endControlFlow()
+    private fun CodeBlock.Builder.addUrl(func: FunctionData) = apply {
+        val content = CodeBlock.builder().apply {
+            // Url takeFrom
+            func.parameterDataList.firstOrNull { it.hasAnnotation<ParameterAnnotation.Url>() }?.let {
+                addStatement("this.takeFrom(%L)", it.nameString)
+            }
+
+            // Url template of the http method
+            if (func.urlTemplate.isNotEmpty) {
+                addStatement(
+                    "this.takeFrom(%P)",
+                    func.urlTemplate.let { (template, keys) ->
+                        val values = keys.map { key ->
+                            val param = func.parameterDataList
+                                .firstOrNull { it.findAnnotationOrNull<ParameterAnnotation.Path>()?.value == key }
+                                ?: error("Missing @Path parameter for {$key}") // after validation is never throw
+
+                            val (path, encoded) = param.findAnnotationOrNull<ParameterAnnotation.Path>()!!
+                            if (encoded) {
+                                CodeBlock.of("$%L", path).toString() // ${id}
+                            } else {
+                                CodeBlock.of("\${\"$%L\".encodeURLPath()}", path).toString() // ${"$id".encodeURLPath()}
+                            }
+                        }.toTypedArray()
+                        template.format(*values)
+                    },
+                )
+            }
+
+            // Query of the url like ?a=1&hello
+            addQuery(func.parameterDataList)
+
+            // Add fragment like end of the url #header or #function
+            add(getFragmentTextBlock(func))
+        }
+
+        if (content.isNotEmpty()) {
+            beginControlFlow("this.url")
+                .add(content.build())
+            endControlFlow()
+        }
     }
 
     private fun CodeBlock.Builder.addHeaders(func: FunctionData) = apply {
@@ -579,6 +604,12 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     }
                 }
         }.build()
+
+    private fun getFragmentTextBlock(func: FunctionData) = CodeBlock.builder().apply {
+        func.findAnnotationOrNull<FunctionAnnotation.Fragment>()?.let {
+            addStatement("this.%L = %S", if (it.encoded) "encodedFragment" else "fragment", it.value)
+        }
+    }.build()
 
     // -- body --
     fun getPartsCodeBlock(
