@@ -43,6 +43,18 @@ annotation class KtorGen(
      */
     val name: String = KTORGEN_DEFAULT_NAME,
 
+    /** Indicate the annotated interface going to generate the code or not. */
+    val generate: Boolean = true,
+
+    /**
+     * Set a base path (or URL) for the current interface, all generated function going to init with this + it path.
+     *
+     * By default, Ktor Client handle base url for the `HttpClient`.
+     *
+     * Invalid syntax like `https://github.com///path` _(triple slash where is not common to use)_ throw errors.
+     * @see io.github.kingg22.ktorgen.http.Url
+     * @see io.github.kingg22.ktorgen.http.HTTP.path
+     */
     @Language("http-url-reference")
     val basePath: String = "",
 
@@ -67,7 +79,7 @@ annotation class KtorGen(
      *
      * Example: `fun HttpClient.userRoute(): UserRoute`
      */
-    val generateExtensions: Boolean = false,
+    val generateHttpClientExtension: Boolean = false,
 
     /** If `true`, the processor will attempt to copy supported annotations from the original method into the generated method. */
     @property:KtorGenExperimental
@@ -98,10 +110,11 @@ annotation class KtorGen(
     val visibilityModifier: String = "public",
 
     /**
-     * Custom header comment inserted at the top of the generated Kotlin file.
+     * Custom header **comment** inserted at the top of the generated Kotlin file.
      *
      * Useful for license declarations, warnings, or documentation.
-     * **Is not validated.**
+     *
+     * By default, is a notice of _generated_ code.
      */
     val customFileHeader: String = KTORGEN_DEFAULT_NAME,
 

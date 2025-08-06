@@ -38,6 +38,9 @@ import kotlin.reflect.KClass
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
 annotation class KtorGenFunction(
+    /** Indicate the annotated function going to generate the code or not. */
+    val generate: Boolean = true,
+
     /** If `true`, the processor will attempt to copy supported annotations from the original method into the generated method. */
     @property:KtorGenExperimental
     val propagateAnnotations: Boolean = true,
