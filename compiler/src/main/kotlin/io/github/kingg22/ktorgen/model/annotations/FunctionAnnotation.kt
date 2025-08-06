@@ -4,8 +4,8 @@ package io.github.kingg22.ktorgen.model.annotations
 sealed interface FunctionAnnotation {
     val isRepeatable: Boolean get() = false
 
-    /** See [io.github.kingg22.ktorgen.core.KtorGenIgnore] */
-    data object Ignore : FunctionAnnotation
+    /** See [io.github.kingg22.ktorgen.http.Fragment] */
+    data class Fragment(val value: String, val encoded: Boolean) : FunctionAnnotation
 
     /**
      * See
