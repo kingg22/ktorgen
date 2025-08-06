@@ -24,7 +24,7 @@ class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Valida
             className = classData.interfaceName,
             packageName = classData.packageNameString,
             functions = classData.functions.filter { it.goingToGenerate },
-            superInterfaces = listOf(), // TODO
+            visibility = classData.visibilityModifier,
             baseUrl = null, // TODO
         )
         return run(context, ktorGenLogger).let {

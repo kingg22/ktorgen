@@ -6,6 +6,6 @@ class ValidationContext(
     val className: String,
     val packageName: String,
     val functions: List<FunctionData>,
-    val superInterfaces: List<String>,
+    val visibility: String,
     val baseUrl: String?,
 )

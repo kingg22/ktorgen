@@ -30,12 +30,13 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val KTOR_GEN = "[KtorGen]:"
         const val KTOR_GEN_TYPE_NOT_ALLOWED =
             "$KTOR_GEN Only interfaces and it companion objects can be annotated with @KtorGen"
-        const val NO_HTTP_ANNOTATION_AT = "$KTOR_GEN No Http annotation at "
         const val ONLY_ONE_HTTP_METHOD_IS_ALLOWED = "$KTOR_GEN Only one HTTP method is allowed."
         const val INTERFACE_NOT_HAVE_FILE = "$KTOR_GEN Interface must be in a file, but was null: "
         const val FUNCTION_NOT_RETURN_TYPE = "$KTOR_GEN Function don't have return type: "
         const val COOKIE_ON_FUNCTION_WITHOUT_VALUE =
             "$KTOR_GEN @Cookie on function requires value, only on parameter is not needed."
+        const val NO_HTTP_ANNOTATION =
+            "No Http annotation found and don't have a valid HttpRequest.takeFrom() or HttpRequestBuilder lambda. Add an @HTTP or @GET ... or a parameter with valid type."
         const val HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
             "@HeaderMap parameter type must be Map<String, String(?)> or Pair<String, String(?)>. "
         const val INVALID_HEADER = "The header name or value is blank on @Header or @HeaderParam."
@@ -45,7 +46,7 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
             "Function or parameters types must not include a type variable or wildcard: "
         const val SUSPEND_FUNCTION_OR_FLOW =
             "The function should be 'suspend' or return a Flow/StateFlow/SharedFlow, but it returns "
-        const val ABSTRACT_FUNCTION_IGNORED = "An abstract function with @KtorGenIgnore is invalid. "
+        const val ABSTRACT_FUNCTION_IGNORED = "An abstract function with @KtorGenFunction(generate=false) is invalid. "
         const val FORM_ENCODED_MUST_CONTAIN_AT_LEAST_ONE_FIELD =
             "@FormUrlEncoded must contain at least one @Field or @FieldMap. "
         const val FORM_ENCODED_ANNOTATION_MISSING_FOUND_FIELD =
@@ -89,5 +90,7 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
             "vararg parameter is an experimental feature, currently only @HeaderMap, @HeaderParam, @Cookie support it."
         const val CONTENT_TYPE_BODY_UNKNOWN = "Content-Type for @Body maybe is unknown. "
         const val ANY_TYPE_INVALID = "'Any' type is not valid, break validation and serialization."
+        const val PRIVATE_INTERFACE_CANT_GENERATE =
+            "Private Interface KSP can create a valid class to implement it. Make public or internal"
     }
 }
