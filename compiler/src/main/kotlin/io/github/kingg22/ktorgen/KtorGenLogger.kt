@@ -4,10 +4,6 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSNode
 
 class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: Int) : KSPLogger by kspLogger {
-    init {
-        instance = this
-    }
-
     override fun error(message: String, symbol: KSNode?) {
         when (loggingType) {
             0 -> {
@@ -26,7 +22,6 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
     }
 
     companion object {
-        lateinit var instance: KtorGenLogger
         const val KTOR_GEN = "[KtorGen]:"
         const val KTOR_GEN_TYPE_NOT_ALLOWED =
             "$KTOR_GEN Only interfaces and it companion objects can be annotated with @KtorGen"
