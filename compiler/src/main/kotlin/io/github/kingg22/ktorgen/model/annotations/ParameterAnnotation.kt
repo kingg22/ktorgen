@@ -8,52 +8,55 @@ sealed interface ParameterAnnotation {
     // -- url --
 
     /** See [io.github.kingg22.ktorgen.http.Url] */
-    data object Url : ParameterAnnotation
+    object Url : ParameterAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.Path] */
-    data class Path(val value: String, val encoded: Boolean) : ParameterAnnotation
+    class Path(val value: String, val encoded: Boolean) : ParameterAnnotation {
+        operator fun component1() = value
+        operator fun component2() = encoded
+    }
 
     /** See [io.github.kingg22.ktorgen.http.Query] */
-    data class Query(val value: String, val encoded: Boolean) : ParameterAnnotation
+    class Query(val value: String, val encoded: Boolean) : ParameterAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.QueryName] */
-    data class QueryName(val encoded: Boolean) : ParameterAnnotation
+    class QueryName(val encoded: Boolean) : ParameterAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.QueryMap] */
-    data class QueryMap(val encoded: Boolean) : WithMapOrPairType
+    class QueryMap(val encoded: Boolean) : WithMapOrPairType
 
     // -- header --
 
     /** See [io.github.kingg22.ktorgen.http.HeaderParam] */
-    data class Header(val value: String) : ParameterAnnotation {
+    class Header(val value: String) : ParameterAnnotation {
         override val isRepeatable = true
     }
 
     /** [io.github.kingg22.ktorgen.http.HeaderMap] */
-    data object HeaderMap : WithMapOrPairType
+    object HeaderMap : WithMapOrPairType
 
     /** See [io.github.kingg22.ktorgen.http.Cookie] */
-    data class Cookies(val value: List<CookieValues>) : ParameterAnnotation {
+    class Cookies(val value: List<CookieValues>) : ParameterAnnotation {
         override val isRepeatable = true
     }
 
     // -- body --
 
     /** See [io.github.kingg22.ktorgen.http.Body] */
-    data object Body : ParameterAnnotation
+    object Body : ParameterAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.Field] */
-    data class Field(val value: String, val encoded: Boolean) : ParameterAnnotation
+    class Field(val value: String, val encoded: Boolean) : ParameterAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.FieldMap] */
-    data class FieldMap(val encoded: Boolean) : WithMapOrPairType
+    class FieldMap(val encoded: Boolean) : WithMapOrPairType
 
     /** See [io.github.kingg22.ktorgen.http.Part] */
-    data class Part(val value: String, val encoding: String) : ParameterAnnotation
+    class Part(val value: String, val encoding: String) : ParameterAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.PartMap] */
-    data class PartMap(val encoding: String) : WithMapOrPairType
+    class PartMap(val encoding: String) : WithMapOrPairType
 
     /** See [io.github.kingg22.ktorgen.http.Tag] */
-    data class Tag(val value: String) : ParameterAnnotation
+    class Tag(val value: String) : ParameterAnnotation
 }
