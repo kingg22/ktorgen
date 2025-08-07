@@ -10,7 +10,7 @@ class SuspendOrFlowValidator : ValidatorStrategy {
     override val name: String = "Return Type"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             val returnTypeName = requireNotNull(function.returnTypeData.parameterType.declaration.qualifiedName) {
                 val funcLine = function.ksFunctionDeclaration.location as? FileLocation
                 val position = if (funcLine != null) "${funcLine.lineNumber}:${funcLine.filePath}" else function.name

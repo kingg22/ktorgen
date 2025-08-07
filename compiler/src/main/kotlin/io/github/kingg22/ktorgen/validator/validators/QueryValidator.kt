@@ -10,7 +10,7 @@ class QueryValidator : ValidatorStrategy {
     override val name: String = "URL Query"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             function.parameterDataList.filter {
                 it.hasAnnotation<ParameterAnnotation.QueryMap>()
             }.forEach { parameter ->

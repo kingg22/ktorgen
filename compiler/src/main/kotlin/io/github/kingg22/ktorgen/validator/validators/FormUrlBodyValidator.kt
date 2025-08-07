@@ -12,7 +12,7 @@ class FormUrlBodyValidator : ValidatorStrategy {
     override val name: String = "Form Url Encoded Body"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             var isFormUrlEncoded = function.hasAnnotation<FunctionAnnotation.FormUrlEncoded>()
             if (
                 !isFormUrlEncoded &&

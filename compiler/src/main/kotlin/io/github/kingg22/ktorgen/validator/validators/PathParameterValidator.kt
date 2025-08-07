@@ -10,7 +10,7 @@ class PathParameterValidator : ValidatorStrategy {
     override val name: String = "URL Path parameters"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             val (template, placeholders) = function.urlTemplate
             if (function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Path>() } &&
                 placeholders.isEmpty()

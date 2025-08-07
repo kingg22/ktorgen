@@ -12,7 +12,8 @@ class HeadReturnNothingValidator : ValidatorStrategy {
 
     override fun validate(context: ValidationContext) = ValidationResult {
         context.functions.filter {
-            it.httpMethodAnnotation.httpMethod == HttpMethod.Head &&
+            it.goingToGenerate &&
+                it.httpMethodAnnotation.httpMethod == HttpMethod.Head &&
                 it.returnTypeData.typeName != UNIT
         }.forEach { function ->
             addError(KtorGenLogger.HTTP_METHOD_HEAD_NOT_RETURN_BODY, function)

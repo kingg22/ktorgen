@@ -95,8 +95,10 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             val fullClassList = (classDataWithMethods + classWithoutMethods)
                 .distinctBy { it.interfaceName }
+                .also { timer.addStep("After filter declarations, have ${it.size}") }
+                .filter { it.goingToGenerate }
                 .also {
-                    timer.addStep("After filter declarations, have ${it.size} to validate")
+                    timer.addStep("After filter ignored interfaces, have ${it.size} to validate")
                     validationPhase.start()
                 }
                 .mapNotNull { classData ->
@@ -118,6 +120,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             // deferred errors, util for debug and accumulative errors
             if (fatalError) {
                 timer.dumpErrorsAndWarnings()
+                // raise throwable to fail the build
                 throw Throwable(KtorGenLogger.KTOR_GEN + "See errors above")
             }
             timer.finish()

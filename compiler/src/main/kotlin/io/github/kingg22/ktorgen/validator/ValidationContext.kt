@@ -1,11 +1,11 @@
 package io.github.kingg22.ktorgen.validator
 
+import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
 
-class ValidationContext(
-    val className: String,
-    val packageName: String,
-    val functions: List<FunctionData>,
-    val visibility: String,
-    val baseUrl: String?,
-)
+class ValidationContext(val classData: ClassData) {
+    // shortcuts
+    val className: String = classData.generatedName
+    val functions: List<FunctionData> = classData.functions
+    val visibilityGeneratedClass: String = classData.visibilityModifier
+}

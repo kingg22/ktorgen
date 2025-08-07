@@ -12,7 +12,7 @@ class MultipartValidator : ValidatorStrategy {
     override val name: String = "Multipart Body"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             var isMultiPart = function.hasAnnotation<FunctionAnnotation.Multipart>()
             if (!isMultiPart &&
                 function.parameterDataList.any {

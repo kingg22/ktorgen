@@ -10,7 +10,7 @@ class UrlSyntaxValidator : ValidatorStrategy {
     override val name: String = "Url Syntax"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             val pathValue = function.httpMethodAnnotation.path
 
             if (pathValue.isNotBlank() &&

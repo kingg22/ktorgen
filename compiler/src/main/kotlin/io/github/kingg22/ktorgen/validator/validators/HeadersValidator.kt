@@ -14,7 +14,7 @@ class HeadersValidator : ValidatorStrategy {
     override val name: String = "Headers"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             var haveHeadersMap = function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
             val headersFunction =
                 function.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.map { (name, value) ->

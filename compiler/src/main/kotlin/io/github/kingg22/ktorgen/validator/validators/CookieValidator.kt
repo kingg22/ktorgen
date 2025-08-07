@@ -10,7 +10,7 @@ class CookieValidator : ValidatorStrategy {
     override val name: String = "Cookies"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             for (parameter in function.parameterDataList.filter { it.hasAnnotation<ParameterAnnotation.Cookies>() }) {
                 if (parameter.isVararg &&
                     parameter.ktorgenAnnotations.count { it is ParameterAnnotation.Cookies } > 1

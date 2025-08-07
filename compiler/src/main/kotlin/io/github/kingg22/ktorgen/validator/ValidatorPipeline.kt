@@ -22,13 +22,7 @@ class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Valida
         // if we don't go to generate it, skip
         if (classData.goingToGenerate.not()) return null
 
-        val context = ValidationContext(
-            className = classData.interfaceName,
-            packageName = classData.packageNameString,
-            functions = classData.functions.filter { it.goingToGenerate },
-            visibility = classData.visibilityModifier,
-            baseUrl = null, // TODO
-        )
+        val context = ValidationContext(classData)
         var errorCount = 0
 
         for (validator in validators) {

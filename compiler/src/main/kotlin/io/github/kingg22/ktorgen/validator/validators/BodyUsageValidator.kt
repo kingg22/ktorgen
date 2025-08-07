@@ -10,7 +10,7 @@ class BodyUsageValidator : ValidatorStrategy {
     override val name: String = "Body Usage"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             val isBody = function.isBody
             val isFormUrl = function.isFormUrl
             val isMultipart = function.isMultipart

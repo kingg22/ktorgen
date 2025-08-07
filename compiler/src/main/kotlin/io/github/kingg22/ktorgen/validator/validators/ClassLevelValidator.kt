@@ -1,7 +1,7 @@
 package io.github.kingg22.ktorgen.validator.validators
 
-import com.google.devtools.ksp.symbol.Visibility
 import com.squareup.kotlinpoet.ANY
+import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.validator.ValidationContext
@@ -12,24 +12,27 @@ class ClassLevelValidator : ValidatorStrategy {
     override val name: String = "Class Level"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        if (context.visibility == Visibility.PRIVATE.name) {
+        if (context.visibilityGeneratedClass.equals("public", true).not() &&
+            context.visibilityGeneratedClass.equals("internal", false).not()
+        ) {
             addError(
-                buildString {
-                    append(KtorGenLogger.PRIVATE_INTERFACE_CANT_GENERATE)
-                    appendLine()
-                    append("Declaration: ")
-                    append(context.visibility)
-                    append(" ")
-                    append(context.className)
-                },
+                KtorGenLogger.ONLY_PUBLIC_INTERNAL_CLASS + "Current ${context.visibilityGeneratedClass}",
+                context.classData.ksClassDeclaration,
             )
         }
 
-        for (function in context.functions) {
-            if (function.isImplemented.not() && function.goingToGenerate.not()) {
-                addError(KtorGenLogger.ABSTRACT_FUNCTION_IGNORED, function)
-            }
+        if (context.classData.modifierSet.any { it == KModifier.PRIVATE }) {
+            addError(
+                KtorGenLogger.PRIVATE_INTERFACE_CANT_GENERATE + "Current ${context.classData.modifierSet}",
+                context.classData.ksClassDeclaration,
+            )
+        }
 
+        context.functions
+            .filter { it.isImplemented.not() && it.goingToGenerate.not() }
+            .forEach { addError(KtorGenLogger.ABSTRACT_FUNCTION_IGNORED, it) }
+
+        for (function in context.functions.filter { it.goingToGenerate }) {
             if (function.returnTypeData.typeName == ANY ||
                 function.returnTypeData.typeName == ANY.copy(nullable = true)
             ) {
@@ -42,7 +45,7 @@ class ClassLevelValidator : ValidatorStrategy {
                 addError(KtorGenLogger.NO_HTTP_ANNOTATION, function)
             }
 
-            for (parameter in function.parameterDataList) {
+            function.parameterDataList.forEach { parameter ->
                 if (parameter.ktorgenAnnotations.isEmpty() &&
                     parameter.isValidTakeFrom.not() &&
                     parameter.isHttpRequestBuilderLambda.not()
