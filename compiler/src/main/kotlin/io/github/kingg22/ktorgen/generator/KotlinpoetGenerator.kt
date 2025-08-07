@@ -19,6 +19,7 @@ import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 
+@Suppress("kotlin:S6619") // ksp in start projection return unexpected null values
 class KotlinpoetGenerator : KtorGenGenerator {
     override fun generate(classData: ClassData, timer: DiagnosticTimer.DiagnosticSender): FileSpec {
         // class
@@ -33,13 +34,26 @@ class KotlinpoetGenerator : KtorGenGenerator {
         // constructor with properties
         val (constructor, properties, httpClient) =
             generatePrimaryConstructorAndProperties(classData)
-        timer.addStep("Generated primary constructor and properties, going to generate functions")
-        classBuilder
-            .addSuperInterfacesAndConstructor(classData, constructor)
-            .addProperties(properties)
 
         // override functions
-        classData.functions.forEach { function ->
+        val functions = classData.functions.filter { it.goingToGenerate }
+
+        timer.addStep("Generated primary constructor and properties, going to generate ${functions.size} functions")
+
+        // optimize generation if not going to generate functions
+        val goingToGenerate =
+            functions.isNotEmpty() ||
+                properties.size > 1 ||
+                classData.superClasses.isNotEmpty()
+
+        // add super interfaces, constructor and properties
+        classBuilder
+            .addSuperInterfaces(classData, constructor)
+            .primaryConstructor(constructor.build().takeIf { goingToGenerate })
+            .addProperties(properties.takeIf { goingToGenerate } ?: emptyList())
+
+        // override functions
+        functions.forEach { function ->
             classBuilder.addFunction(generateFunction(function, httpClient))
             timer.addStep("Generated implementation function for ${function.name}")
         }
@@ -55,6 +69,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     .addMember("%S", "UNUSED_IMPORT")
                     .addMember("%S", "warnings")
                     .addMember("%S", "RemoveSingleExpressionStringTemplate")
+                    .addMember("%S", "ktlint")
+                    .addMember("%S", "detekt:all")
                     .build(),
             )
             .indent("    ") // use 4 spaces https://pinterest.github.io/ktlint/latest/rules/standard/#indentation
@@ -119,10 +135,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
         )
     }
 
-    private fun TypeSpec.Builder.addSuperInterfacesAndConstructor(
-        classData: ClassData,
-        primaryConstructor: FunSpec.Builder,
-    ) = apply {
+    /** This fill the primary constructor and super interfaces */
+    private fun TypeSpec.Builder.addSuperInterfaces(classData: ClassData, primaryConstructor: FunSpec.Builder) = apply {
         classData.superClasses
             .forEach { ref ->
                 val ksType = ref.resolve()
@@ -134,7 +148,6 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 primaryConstructor.addParameter(parameterName, className)
                 addSuperinterface(className, CodeBlock.of(parameterName))
             }
-        primaryConstructor(primaryConstructor.build())
     }
 
     private fun generateFunction(func: FunctionData, httpClientName: MemberName): FunSpec {
@@ -253,7 +266,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         func.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.map { (name, value) ->
             name.removeWhitespace() to value.removeWhitespace()
         }?.takeIf(List<*>::isNotEmpty)?.let {
-            beginControlFlow("this.headers")
+            beginControlFlow(THIS_HEADERS)
             for ((key, value) in it) {
                 addStatement("this.append(%S, %S)", key, value)
             }
@@ -286,7 +299,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     .map { it.value }
                     .flatten()
                     .forEach { cookieValues ->
-                        beginControlFlow("%L.forEach", p.nameString)
+                        beginControlFlow(LITERAL_FOREACH, p.nameString)
                         addCookieStatement(cookieValues, useVarargItem = true)
                         endControlFlow()
                     }
@@ -379,7 +392,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.Header>() }
             .takeIf(List<*>::isNotEmpty)
-            ?.also { beginControlFlow("this.headers") }
+            ?.also { beginControlFlow(THIS_HEADERS) }
             ?.forEach { parameterData ->
                 val paramName = parameterData.nameString
 
@@ -393,54 +406,23 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     val headerName = headerAnn.value
 
                     when {
-                        isList || isArray -> {
-                            val typeArg = (parameterData.typeData.typeName as? ParameterizedTypeName)
-                                ?.typeArguments?.firstOrNull()
-                            val isStringListOrArray = typeArg?.toString()?.removeSuffix("?") == "kotlin.String"
-                            val hasNullableInnerType = typeArg?.isNullable == true
-
-                            val paramAccess = if (parameterData.typeData.parameterType.isMarkedNullable) {
-                                CodeBlock.of("%L?", paramName)
-                            } else {
-                                CodeBlock.of("%L", paramName)
-                            }
-
-                            val listExpr = CodeBlock.builder().add(paramAccess)
-                            if (hasNullableInnerType) {
-                                listExpr.add(".filterNotNull()")
-                                if (parameterData.typeData.parameterType.isMarkedNullable) {
-                                    listExpr.add("?")
-                                }
-                            }
-
-                            beginControlFlow("%L.forEach", listExpr.build())
-                                .addStatement(
-                                    "append(%S, %L)",
-                                    headerName,
-                                    if (isStringListOrArray) CodeBlock.of("it") else CodeBlock.of("\"\$it\""),
-                                )
-                                .endControlFlow()
-                        }
+                        isList || isArray -> headerParameterListOrArray(parameterData, paramName, headerName)
 
                         isVararg -> {
                             // Tratamos el vararg como lista
-                            beginControlFlow("%L.forEach", paramName)
-                                .addStatement(
-                                    "append(%S, %L)",
-                                    headerName,
-                                    CodeBlock.of("\"\$it\""),
-                                )
-                                .endControlFlow()
+                            beginControlFlow(LITERAL_FOREACH, paramName)
+                                .addStatement(APPEND_STRING_LITERAL, headerName, CodeBlock.of("\"\$it\""))
+                            endControlFlow()
                         }
 
                         else -> {
                             val headerValue = CodeBlock.of("\"$%L\"", paramName)
                             if (parameterData.typeData.parameterType.isMarkedNullable) {
-                                beginControlFlow("%L?.let", paramName)
-                                    .addStatement("append(%S, %L)", headerName, headerValue)
+                                beginControlFlow(LITERAL_NN_LET, paramName)
+                                    .addStatement(APPEND_STRING_LITERAL, headerName, headerValue)
                                     .endControlFlow()
                             } else {
-                                addStatement("append(%S, %L)", headerName, headerValue)
+                                addStatement(APPEND_STRING_LITERAL, headerName, headerValue)
                             }
                         }
                     }
@@ -448,25 +430,58 @@ class KotlinpoetGenerator : KtorGenGenerator {
             }?.also { endControlFlow() }
     }
 
+    private fun CodeBlock.Builder.headerParameterListOrArray(
+        parameterData: ParameterData,
+        paramName: String,
+        headerName: String,
+    ) {
+        val typeArg = (parameterData.typeData.typeName as? ParameterizedTypeName)
+            ?.typeArguments?.firstOrNull()
+        val isStringListOrArray = typeArg?.copy(false)?.equals(STRING) == true
+        val hasNullableInnerType = typeArg?.isNullable == true
+
+        val paramAccess = if (parameterData.typeData.parameterType.isMarkedNullable) {
+            CodeBlock.of("%L?", paramName)
+        } else {
+            CodeBlock.of("%L", paramName)
+        }
+
+        val listExpr = CodeBlock.builder().add(paramAccess)
+        if (hasNullableInnerType) {
+            listExpr.add(".filterNotNull()")
+            if (parameterData.typeData.parameterType.isMarkedNullable) {
+                listExpr.add("?")
+            }
+        }
+
+        beginControlFlow(LITERAL_FOREACH, listExpr.build())
+            .addStatement(
+                APPEND_STRING_LITERAL,
+                headerName,
+                if (isStringListOrArray) CodeBlock.of("it") else CodeBlock.of("\"\$it\""),
+            )
+        endControlFlow()
+    }
+
     private fun CodeBlock.Builder.addHeaderMap(parameterDataList: List<ParameterData>) = apply {
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
             .takeIf(List<*>::isNotEmpty)
-            ?.also { beginControlFlow("this.headers") }
+            ?.also { beginControlFlow(THIS_HEADERS) }
             ?.forEach { parameterData ->
                 val typeName = parameterData.typeData.typeName
                 val paramName = parameterData.nameString
 
                 val isNullable = parameterData.typeData.parameterType.isMarkedNullable
 
-                val isMap = typeName.toString().startsWith("kotlin.collections.Map")
-                val isPair = typeName.toString().startsWith("kotlin.Pair")
-                val isVarargPair = parameterData.isVararg && typeName.toString().startsWith("kotlin.Pair")
-                val isVarargMap = parameterData.isVararg && typeName.toString().startsWith("kotlin.collections.Map")
+                val isMap = typeName.copy(false) == MAP
+                val isPair = typeName.copy(false) == ClassName("kotlin", "Pair")
+                val isVarargPair = parameterData.isVararg && isPair
+                val isVarargMap = parameterData.isVararg && isMap
 
                 val typeArgs = (typeName as? ParameterizedTypeName)?.typeArguments ?: emptyList()
                 val valueType = typeArgs.getOrNull(1) ?: typeArgs.getOrNull(0)
-                val valueIsString = valueType?.toString()?.removeSuffix("?") == "kotlin.String"
+                val valueIsString = valueType?.copy(false)?.equals(STRING) == true
                 val valueIsNullable = valueType?.isNullable == true
 
                 val paramAccess = if (isNullable) {
@@ -476,53 +491,67 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 }
 
                 when {
-                    isMap || isVarargMap -> {
-                        if (isVarargMap) {
-                            beginControlFlow("%L.forEach", paramAccess)
-                            beginControlFlow("it.forEach")
-                        } else {
-                            beginControlFlow("%L.forEach", paramAccess)
-                        }
-                        if (valueIsNullable) {
-                            beginControlFlow("it.value?.let { value ->")
-                        }
-                        addStatement(
-                            "append(it.key, %L)",
-                            if (valueIsString) {
-                                if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.value")
-                            } else {
-                                if (valueIsNullable) CodeBlock.of("\"\$value\"") else CodeBlock.of("\"\${it.value}\"")
-                            },
-                        )
-                        if (valueIsNullable) endControlFlow()
-                        endControlFlow() // end inner forEach
-                        if (isVarargMap) endControlFlow() // end outer forEach
-                    }
+                    isMap -> headerMapOrVarargMap(isVarargMap, paramAccess, valueIsString, valueIsNullable)
 
-                    isPair || isVarargPair -> {
-                        val forEachExpr = if (isVarargPair) {
-                            CodeBlock.of("%L", paramName)
-                        } else {
-                            CodeBlock.of("listOf(%L)", paramName)
-                        }
-                        beginControlFlow("%L.forEach", forEachExpr)
-
-                        if (valueIsNullable) beginControlFlow("it.second?.let { value ->")
-
-                        addStatement(
-                            "append(it.first, %L)",
-                            if (valueIsString) {
-                                if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.second")
-                            } else {
-                                if (valueIsNullable) CodeBlock.of("\"\$value\"") else CodeBlock.of("\"\${it.second}\"")
-                            },
-                        )
-
-                        if (valueIsNullable) endControlFlow()
-                        endControlFlow()
-                    }
+                    isPair -> headerPairOrVarargPair(isVarargPair, paramName, valueIsString, valueIsNullable)
                 }
             }?.also { endControlFlow() }
+    }
+
+    private fun CodeBlock.Builder.headerMapOrVarargMap(
+        isVarargMap: Boolean,
+        paramAccess: CodeBlock,
+        valueIsString: Boolean,
+        valueIsNullable: Boolean,
+    ) {
+        if (isVarargMap) {
+            beginControlFlow(LITERAL_FOREACH, paramAccess)
+            beginControlFlow("it.forEach")
+        } else {
+            beginControlFlow(LITERAL_FOREACH, paramAccess)
+        }
+        if (valueIsNullable) {
+            beginControlFlow("it.value?.let { value ->")
+        }
+        addStatement(
+            "append(it.key, %L)",
+            if (valueIsString) {
+                if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.value")
+            } else {
+                if (valueIsNullable) CodeBlock.of("\"\$value\"") else CodeBlock.of("\"\${it.value}\"")
+            },
+        )
+        if (valueIsNullable) endControlFlow()
+        endControlFlow() // end inner forEach
+        if (isVarargMap) endControlFlow() // end outer forEach
+    }
+
+    private fun CodeBlock.Builder.headerPairOrVarargPair(
+        isVarargPair: Boolean,
+        paramName: String,
+        valueIsString: Boolean,
+        valueIsNullable: Boolean,
+    ) {
+        val forEachExpr = if (isVarargPair) {
+            CodeBlock.of("%L", paramName)
+        } else {
+            CodeBlock.of("%M(%L)", MemberName("kotlin.collections", "listOf"), paramName)
+        }
+        beginControlFlow(LITERAL_FOREACH, forEachExpr)
+
+        if (valueIsNullable) beginControlFlow("it.second?.let { value ->")
+
+        addStatement(
+            "append(it.first, %L)",
+            if (valueIsString) {
+                if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.second")
+            } else {
+                if (valueIsNullable) CodeBlock.of("\"\$value\"") else CodeBlock.of("\"\${it.second}\"")
+            },
+        )
+
+        if (valueIsNullable) endControlFlow()
+        endControlFlow()
     }
 
     // -- query --
@@ -537,11 +566,11 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 val data = parameterData.nameString
 
                 block.beginControlFlow("%L?.forEach { entry ->", data)
-                block.beginControlFlow("entry.value?.let { value ->")
+                block.beginControlFlow(ENTRY_VALUE_NN_LET)
                 block.addStatement(
                     "%L(entry.key, %P)",
                     if (encoded) "encodedParameters.append" else "parameter",
-                    "\$value",
+                    VALUE,
                 )
                 block.endControlFlow()
                 block.endControlFlow()
@@ -564,7 +593,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     val isArray = starProj.isAssignableFrom(arrayType)
 
                     if (isList || isArray) {
-                        beginControlFlow("%L?.filterNotNull()?.forEach", name)
+                        beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
                         addStatement(
                             "%L.appendAll(%P, emptyList())",
                             if (encoded) "this.encodedParameters" else "this.parameters",
@@ -575,7 +604,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                         addStatement(
                             "%L.appendAll(%P, emptyList())",
                             if (encoded) "this.encodedParameters" else "this.parameters",
-                            "\$$name",
+                            "$$name",
                         )
                     }
                 }
@@ -589,12 +618,12 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     val query = parameterData.findAnnotationOrNull<ParameterAnnotation.Query>()
                         ?: error("Query annotation not found")
                     val encoded = query.encoded
-                    val starProj = parameterData.typeData.parameterType?.starProjection()
-                    val isList = starProj?.isAssignableFrom(listType) ?: false
-                    val isArray = starProj?.isAssignableFrom(arrayType) ?: false
+                    val starProj = parameterData.typeData.parameterType.starProjection()
+                    val isList = starProj.isAssignableFrom(listType)
+                    val isArray = starProj.isAssignableFrom(arrayType)
 
                     if (isList || isArray) {
-                        beginControlFlow("%L?.filterNotNull()?.forEach", parameterData.nameString)
+                        beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, parameterData.nameString)
                         addStatement(
                             "%L(%S, %P)",
                             if (encoded) "this.encodedParameters.append" else "this.parameters.append",
@@ -603,7 +632,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                         )
                         endControlFlow()
                     } else {
-                        beginControlFlow("%L?.let", parameterData.nameString)
+                        beginControlFlow(LITERAL_NN_LET, parameterData.nameString)
                         addStatement(
                             "%L(%S, %P)",
                             if (encoded) "this.encodedParameters.append" else "this.parameters.append",
@@ -643,11 +672,11 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 val isArray = starProj?.isAssignableFrom(arrayType) ?: false
 
                 if (isList || isArray) {
-                    partCode.beginControlFlow("%L?.filterNotNull()?.forEach", name)
+                    partCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
                     partCode.addStatement("this.append(%S, %P)", partValue, "\$it")
                     partCode.endControlFlow()
                 } else {
-                    partCode.beginControlFlow("%L?.let", name)
+                    partCode.beginControlFlow(LITERAL_NN_LET, name)
                     partCode.addStatement("this.append(%S, %P)", partValue, "\$it")
                     partCode.endControlFlow()
                 }
@@ -656,8 +685,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
         params.filter { it.hasAnnotation<ParameterAnnotation.PartMap>() }
             .forEach { parameterData ->
                 partCode.beginControlFlow("%L?.forEach", parameterData.nameString)
-                partCode.beginControlFlow("entry.value?.let { value ->")
-                partCode.addStatement("this.append(entry.key, %P)", "\$value")
+                partCode.beginControlFlow(ENTRY_VALUE_NN_LET)
+                partCode.addStatement("this.append(entry.key, %P)", VALUE)
                 partCode.endControlFlow()
                 partCode.endControlFlow()
             }
@@ -697,11 +726,11 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 val decodeSuffix = if (encoded) ".decodeURLQueryComponent(plusIsSpace = true)" else ""
 
                 if (isList || isArray) {
-                    fieldCode.beginControlFlow("%L?.filterNotNull()?.forEach", paramName)
+                    fieldCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, paramName)
                     fieldCode.addStatement("this.append(%S, %P%L)", fieldValue, "\$it", decodeSuffix)
                     fieldCode.endControlFlow()
                 } else {
-                    fieldCode.beginControlFlow("%L?.let", paramName)
+                    fieldCode.beginControlFlow(LITERAL_NN_LET, paramName)
                     fieldCode.addStatement("this.append(%S, %P%L)", fieldValue, "\$it", decodeSuffix)
                     fieldCode.endControlFlow()
                 }
@@ -715,8 +744,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 val decodeSuffix = if (encoded) ".decodeURLQueryComponent(plusIsSpace = true)" else ""
 
                 fieldCode.beginControlFlow("%L?.forEach", parameterData.nameString)
-                fieldCode.beginControlFlow("entry.value?.let { value ->")
-                fieldCode.addStatement("this.append(entry.key, %P%L)", "\$value", decodeSuffix)
+                fieldCode.beginControlFlow(ENTRY_VALUE_NN_LET)
+                fieldCode.addStatement("this.append(entry.key, %P%L)", VALUE, decodeSuffix)
                 fieldCode.endControlFlow()
                 fieldCode.endControlFlow()
             }
@@ -731,5 +760,15 @@ class KotlinpoetGenerator : KtorGenGenerator {
         }
 
         return block.build()
+    }
+
+    companion object {
+        private const val THIS_HEADERS = "this.headers"
+        private const val LITERAL_FOREACH = "%L.forEach"
+        private const val APPEND_STRING_LITERAL = "append(%S, %L)"
+        private const val LITERAL_NN_LET = "%L?.let"
+        private const val ITERABLE_FILTER_NULL_FOREACH = "%L?.filterNotNull()?.forEach"
+        private const val ENTRY_VALUE_NN_LET = "entry.value?.let { value ->"
+        private const val VALUE = "\$value"
     }
 }
