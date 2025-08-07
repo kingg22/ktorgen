@@ -5,8 +5,6 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
-import com.google.devtools.ksp.symbol.Visibility
-import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ksp.toClassName
 
@@ -22,41 +20,13 @@ class ClassData(
     val imports: Set<String>,
     val ksFile: KSFile,
     val annotationSet: Set<KSAnnotation>,
-    ksClassDeclaration: KSClassDeclaration,
-    val superClasses: List<KSTypeReference> = emptyList(),
-    val properties: List<KSPropertyDeclaration> = emptyList(),
-    val modifierSet: Set<KModifier> = emptySet(),
-    val haveCompanionObject: Boolean = false,
-    goingToGenerate: Boolean = true,
-    generatedName: String = "_${interfaceName}Impl",
-    visibilityModifier: Visibility = Visibility.PUBLIC,
-    generateTopLevelFunction: Boolean = true,
-    generateCompanionFunction: Boolean = false,
-    generateExtensions: Boolean = false,
-    jvmStatic: Boolean = false,
-    jsStatic: Boolean = false,
-    generatePublicConstructor: Boolean = false,
-    propagateAnnotations: Boolean = true,
-    annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
-    optIns: Set<AnnotationSpec> = emptySet(),
-    customFileHeader: String = KTORG_GENERATED_FILE_COMMENT,
-    customClassHeader: String = "",
-) : GenOptions.GenTypeOption(
-    goingToGenerate = goingToGenerate,
-    generatedName = generatedName,
-    visibilityModifier = visibilityModifier.name,
-    generateTopLevelFunction = generateTopLevelFunction,
-    generateCompanionFunction = generateCompanionFunction,
-    generateExtensions = generateExtensions,
-    jvmStatic = jvmStatic,
-    jsStatic = jsStatic,
-    generatePublicConstructor = generatePublicConstructor,
-    propagateAnnotations = propagateAnnotations,
-    annotationsToPropagate = annotationsToPropagate,
-    optIns = optIns,
-    customFileHeader = customFileHeader,
-    customClassHeader = customClassHeader,
-) {
+    val ksClassDeclaration: KSClassDeclaration,
+    val superClasses: List<KSTypeReference>,
+    val properties: List<KSPropertyDeclaration>,
+    val modifierSet: Set<KModifier>,
+    val haveCompanionObject: Boolean,
+    options: GenOptions.GenTypeOption,
+) : GenOptions.GenTypeOption by options {
     val httpClientProperty by lazy {
         properties.firstOrNull { it.type.resolve().toClassName() == HttpClientClassName }
     }

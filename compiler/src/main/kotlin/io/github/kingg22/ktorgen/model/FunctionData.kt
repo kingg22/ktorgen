@@ -12,23 +12,13 @@ class FunctionData(
     val httpMethodAnnotation: FunctionAnnotation.HttpMethodAnnotation,
     val parameterDataList: List<ParameterData>,
     val ktorGenAnnotations: List<FunctionAnnotation>,
-    val nonKtorGenAnnotations: List<AnnotationSpec>,
     val ksFunctionDeclaration: KSFunctionDeclaration,
     val isSuspend: Boolean = false,
-    val modifierSet: Set<KModifier> = emptySet(),
-    val isImplemented: Boolean = false,
-    goingToGenerate: Boolean = true, // TODO
-    propagateAnnotations: Boolean = true,
-    annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
-    optIns: Set<AnnotationSpec> = emptySet(),
-    customHeader: String = "",
-) : GenOptions(
-    goingToGenerate = goingToGenerate,
-    propagateAnnotations = propagateAnnotations,
-    annotationsToPropagate = annotationsToPropagate,
-    optIns = optIns,
-    customHeader = customHeader,
-) {
+    val modifierSet: Set<KModifier>,
+    val isImplemented: Boolean,
+    options: GenOptions,
+) : GenOptions by options {
+    val nonKtorGenAnnotations: List<AnnotationSpec> = options.annotationsToPropagate.map { it.build() }
     val urlTemplate by lazy { parseUrlTemplate(httpMethodAnnotation.path) }
     val isBody by lazy { parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Body>() } }
     val isFormUrl by lazy {
