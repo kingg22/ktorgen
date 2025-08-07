@@ -1,3 +1,5 @@
+@file:OptIn(KspExperimental::class, ExperimentalContracts::class)
+
 package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
@@ -7,7 +9,6 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.sequences.forEach
 
 /** Safe get and cast the properties of annotation */
 inline fun <reified T> KSAnnotation.getArgumentValueByName(name: String): T? = this.arguments.firstOrNull {
@@ -16,32 +17,28 @@ inline fun <reified T> KSAnnotation.getArgumentValueByName(name: String): T? = t
 
 // try-catch because default values is not working for KMP builds https://github.com/google/ksp/issues/2356
 
-/** Callbacks are invoked when the annotation is present, else NO OP */
-@OptIn(KspExperimental::class, ExperimentalContracts::class)
-inline fun <reified A : Annotation> KSAnnotated.getAnnotation(
-    crossinline manualExtraction: (KSAnnotation) -> Unit,
-    crossinline mapFromAnnotation: (A) -> Unit,
-) {
+/** Extract one annotation of type [A] and map to [R] if present. For more than one annotation use [getAllAnnotation] */
+inline fun <reified A : Annotation, R : Any> KSAnnotated.getAnnotation(
+    crossinline manualExtraction: (KSAnnotation) -> R,
+    crossinline mapFromAnnotation: (A) -> R,
+): R? {
     contract {
         callsInPlace(manualExtraction, InvocationKind.AT_MOST_ONCE)
         callsInPlace(mapFromAnnotation, InvocationKind.AT_MOST_ONCE)
     }
-    try {
-        this.getAnnotationsByType(A::class).firstOrNull()?.let(mapFromAnnotation)
+    return try {
+        this.getAnnotationsByType(A::class).singleOrNull()?.let(mapFromAnnotation)
     } catch (_: Exception) {
-        this.annotations.firstOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
+        this.annotations.singleOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
     }
 }
 
-/** Callbacks are invoked when one or more annotation is present, else NO OP */
-@OptIn(KspExperimental::class)
-inline fun <reified A : Annotation> KSAnnotated.getAllAnnotation(
-    crossinline manualExtraction: (KSAnnotation) -> Unit,
-    crossinline mapFromAnnotation: (A) -> Unit,
-) {
-    try {
-        this.getAnnotationsByType(A::class).forEach(mapFromAnnotation)
-    } catch (_: Exception) {
-        this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.forEach(manualExtraction)
-    }
+/** Extract all annotations of type [A] and map each to [R] */
+inline fun <reified A : Annotation, R : Any> KSAnnotated.getAllAnnotation(
+    noinline manualExtraction: (KSAnnotation) -> R,
+    noinline mapFromAnnotation: (A) -> R,
+): Sequence<R> = try {
+    this.getAnnotationsByType(A::class).map(mapFromAnnotation)
+} catch (_: Exception) {
+    this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
 }
