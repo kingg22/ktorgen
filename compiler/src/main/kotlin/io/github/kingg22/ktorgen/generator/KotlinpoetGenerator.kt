@@ -1,5 +1,6 @@
 package io.github.kingg22.ktorgen.generator
 
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
@@ -19,38 +20,44 @@ import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 
-@Suppress("kotlin:S6619") // ksp in start projection return unexpected null values
 class KotlinpoetGenerator : KtorGenGenerator {
     override fun generate(classData: ClassData, timer: DiagnosticTimer.DiagnosticSender): FileSpec {
         // class
         timer.start()
+        val visibilityModifier = KModifier.valueOf(classData.visibilityModifier.uppercase())
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
-            .addModifiers(KModifier.valueOf(classData.visibilityModifier.uppercase()))
+            .addModifiers(visibilityModifier)
             .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
             .addKdoc(classData.customHeader)
+            .addAnnotations(classData.annotationsToPropagate.map(AnnotationSpec.Builder::build))
             .addOriginatingKSFile(classData.ksFile)
         timer.addStep("Creating class for ${classData.interfaceName} to ${classData.generatedName}")
 
         // constructor with properties
         val (constructor, properties, httpClient) =
-            generatePrimaryConstructorAndProperties(classData)
+            generatePrimaryConstructorAndProperties(classData, visibilityModifier)
 
         // override functions
         val functions = classData.functions.filter { it.goingToGenerate }
 
         timer.addStep("Generated primary constructor and properties, going to generate ${functions.size} functions")
 
-        // optimize generation if not going to generate functions
-        val goingToGenerate =
-            functions.isNotEmpty() ||
-                properties.size > 1 ||
-                classData.superClasses.isNotEmpty()
+        // optimize generation if not going to generate util code
+        // no have functions to overrides
+        // one property is HttpClient, no have properties to override
+        val goingToGenerate = functions.isNotEmpty() || properties.size > 1
+
+        if (!goingToGenerate) {
+            return KtorGenGenerator.NO_OP.generate(classData, timer.createTask("Dummy code")).also {
+                timer.finish()
+            }
+        }
 
         // add super interfaces, constructor and properties
         classBuilder
             .addSuperInterfaces(classData, constructor)
-            .primaryConstructor(constructor.build().takeIf { goingToGenerate })
-            .addProperties(properties.takeIf { goingToGenerate } ?: emptyList())
+            .primaryConstructor(constructor.build())
+            .addProperties(properties)
 
         // override functions
         functions.forEach { function ->
@@ -80,6 +87,62 @@ class KotlinpoetGenerator : KtorGenGenerator {
         timer.addStep("Processed file, adding required imports")
         classData.imports.forEach { fileBuilder.addImport(it.substringBeforeLast("."), it.substringAfterLast(".")) }
 
+        if (classData.generateTopLevelFunction) {
+            val function = generateTopLevelFactoryFunction(
+                classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
+                interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
+                constructorParams = constructor.build().parameters,
+            )
+            fileBuilder.addFunction(
+                function
+                    .addModifiers(visibilityModifier)
+                    .addOriginatingKSFile(classData.ksFile)
+                    .build(),
+            )
+            timer.addStep("Added top level function factory")
+        }
+
+        if (classData.generateCompanionExtFunction && classData.haveCompanionObject) {
+            val companionName = timer.requireNotNull(
+                classData.ksClassDeclaration.declarations
+                    .filterIsInstance<KSClassDeclaration>()
+                    .firstOrNull { it.isCompanionObject },
+                "${classData.interfaceName} don't have companion object",
+                classData.ksClassDeclaration,
+            ).toClassName()
+
+            val function = generateCompanionExtensionFunction(
+                companionClassName = companionName,
+                classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
+                interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
+                constructorParams = constructor.build().parameters,
+            )
+
+            fileBuilder.addFunction(
+                function
+                    .addModifiers(visibilityModifier)
+                    .addOriginatingKSFile(classData.ksFile)
+                    .build(),
+            )
+            timer.addStep("Added interface companion extension function factory")
+        }
+
+        if (classData.generateHttpClientExtension) {
+            val function = generateHttpClientExtensionFunction(
+                httpClientClassName = HttpClientClassName,
+                classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
+                interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
+                constructorParams = constructor.build().parameters,
+            )
+            fileBuilder.addFunction(
+                function
+                    .addModifiers(visibilityModifier)
+                    .addOriginatingKSFile(classData.ksFile)
+                    .build(),
+            )
+            timer.addStep("Added http client extension function factory")
+        }
+
         // add class to file and build all
         timer.addStep("Finished file generation")
         return fileBuilder.addType(classBuilder.build()).build().also { timer.finish() }
@@ -88,8 +151,9 @@ class KotlinpoetGenerator : KtorGenGenerator {
     /** @return FunSpec del constructor, propiedades y nombre de la propiedad httpClient */
     private fun generatePrimaryConstructorAndProperties(
         classData: ClassData,
+        visibilityModifier: KModifier,
     ): Triple<FunSpec.Builder, List<PropertySpec>, MemberName> {
-        val primaryConstructorBuilder = FunSpec.constructorBuilder().addModifiers(KModifier.PUBLIC)
+        val primaryConstructorBuilder = FunSpec.constructorBuilder().addModifiers(visibilityModifier)
         val propertiesToAdd = mutableListOf<PropertySpec>()
         var httpClientName = "_httpClient"
 
@@ -164,7 +228,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 name = param.nameString,
                 type = param.typeData.typeName,
                 modifiers = buildList { if (param.isVararg) add(KModifier.VARARG) },
-                // TODO add propagate annotations
+                // TODO add propagate annotations on parameter
             )
         }
 
@@ -179,6 +243,59 @@ class KotlinpoetGenerator : KtorGenGenerator {
         // End with get body if return type != Unit
         if (func.returnTypeData.typeName != UNIT) add(".body()")
     }.build()
+
+    private fun generateTopLevelFactoryFunction(
+        classNameImpl: ClassName,
+        interfaceClassName: ClassName,
+        constructorParams: List<ParameterSpec>,
+    ) = FunSpec.builder(interfaceClassName.simpleName)
+        .returns(interfaceClassName)
+        .addParameters(constructorParams.map { it.toBuilder(it.name.removePrefix("_")).build() })
+        .addStatement(
+            RETURN_TYPE_LITERAL,
+            classNameImpl,
+            constructorParams.joinToString { it.name.removePrefix("_") },
+        )
+
+    private fun generateCompanionExtensionFunction(
+        companionClassName: ClassName,
+        classNameImpl: ClassName,
+        interfaceClassName: ClassName,
+        constructorParams: List<ParameterSpec>,
+    ) = FunSpec.builder("create")
+        .receiver(companionClassName)
+        .returns(interfaceClassName)
+        .addParameters(constructorParams.map { it.toBuilder(it.name.removePrefix("_")).build() })
+        .addStatement(
+            RETURN_TYPE_LITERAL,
+            classNameImpl,
+            constructorParams.joinToString { it.name.removePrefix("_") },
+        )
+
+    private fun generateHttpClientExtensionFunction(
+        httpClientClassName: ClassName,
+        classNameImpl: ClassName,
+        interfaceClassName: ClassName,
+        constructorParams: List<ParameterSpec>,
+    ): FunSpec.Builder {
+        val paramsExclHttpClient = constructorParams.filter { it.type != httpClientClassName }
+
+        return FunSpec.builder("create${interfaceClassName.simpleName}")
+            .receiver(httpClientClassName)
+            .returns(interfaceClassName)
+            .addParameters(paramsExclHttpClient)
+            .addStatement(
+                RETURN_TYPE_LITERAL,
+                classNameImpl,
+                buildString {
+                    append("this")
+                    if (paramsExclHttpClient.isNotEmpty()) {
+                        append(", ")
+                        append(paramsExclHttpClient.joinToString { it.name })
+                    }
+                },
+            )
+    }
 
     // -- Complete request is here --
     private fun CodeBlock.Builder.addRequest(func: FunctionData, httpClient: MemberName) = apply {
@@ -397,9 +514,9 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 val paramName = parameterData.nameString
 
                 val headers = parameterData.findAllAnnotations<ParameterAnnotation.Header>()
-                val starProj = parameterData.typeData.parameterType?.starProjection()
-                val isList = starProj?.isAssignableFrom(listType) ?: false
-                val isArray = starProj?.isAssignableFrom(arrayType) ?: false
+                val starProj = parameterData.typeData.parameterType.starProjection()
+                val isList = starProj.isAssignableFrom(listType)
+                val isArray = starProj.isAssignableFrom(arrayType)
                 val isVararg = parameterData.isVararg
 
                 headers.forEach { headerAnn ->
@@ -667,9 +784,9 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 val name = parameterData.nameString
                 val partValue = part.value
 
-                val starProj = parameterData.typeData.parameterType?.starProjection()
-                val isList = starProj?.isAssignableFrom(listType) ?: false
-                val isArray = starProj?.isAssignableFrom(arrayType) ?: false
+                val starProj = parameterData.typeData.parameterType
+                val isList = starProj.isAssignableFrom(listType)
+                val isArray = starProj.isAssignableFrom(arrayType)
 
                 if (isList || isArray) {
                     partCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
@@ -720,9 +837,9 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 val paramName = parameterData.nameString
                 val fieldValue = field.value
 
-                val starProj = parameterData.typeData.parameterType?.starProjection()
-                val isList = starProj?.isAssignableFrom(listType) ?: false
-                val isArray = starProj?.isAssignableFrom(arrayType) ?: false
+                val starProj = parameterData.typeData.parameterType.starProjection()
+                val isList = starProj.isAssignableFrom(listType)
+                val isArray = starProj.isAssignableFrom(arrayType)
                 val decodeSuffix = if (encoded) ".decodeURLQueryComponent(plusIsSpace = true)" else ""
 
                 if (isList || isArray) {
@@ -770,5 +887,6 @@ class KotlinpoetGenerator : KtorGenGenerator {
         private const val ITERABLE_FILTER_NULL_FOREACH = "%L?.filterNotNull()?.forEach"
         private const val ENTRY_VALUE_NN_LET = "entry.value?.let { value ->"
         private const val VALUE = "\$value"
+        private const val RETURN_TYPE_LITERAL = "return %T(%L)"
     }
 }
