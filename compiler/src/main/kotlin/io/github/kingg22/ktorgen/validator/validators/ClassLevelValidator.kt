@@ -1,8 +1,10 @@
 package io.github.kingg22.ktorgen.validator.validators
 
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.KtorGenLogger
+import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
@@ -30,6 +32,22 @@ class ClassLevelValidator : ValidatorStrategy {
 
         if (context.classData.haveCompanionObject.not() && context.classData.generateCompanionExtFunction) {
             addError(KtorGenLogger.MISSING_COMPANION_TO_GENERATE, context.classData.ksClassDeclaration)
+        }
+
+        if (context.classData.haveCompanionObject) {
+            val kClassDeclaration = context.classData.ksClassDeclaration
+
+            val companionDeclaration = kClassDeclaration.declarations
+                .filterIsInstance<KSClassDeclaration>()
+                .firstOrNull { it.isCompanionObject } ?: error("Unexpected not found companion object declaration")
+
+            if (companionDeclaration.annotations
+                    .any { it.shortName.getShortName() == KtorGen::class.simpleName!! } &&
+                kClassDeclaration.annotations
+                    .any { it.shortName.getShortName() == KtorGen::class.simpleName!! }
+            ) {
+                addError(KtorGenLogger.TWO_KTORGEN_ANNOTATIONS, companionDeclaration)
+            }
         }
 
         context.functions
