@@ -102,7 +102,7 @@ annotation class KtorGen(
     val optInAnnotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * Indicate the visibility modifier of the generated **class**
+     * Indicate the visibility modifier of the generated **class** and it primary constructor.
      *
      * @see <a href="https://kotlinlang.org/docs/visibility-modifiers.html#packages">Kotlin Visibility Modifiers</a>
      */
