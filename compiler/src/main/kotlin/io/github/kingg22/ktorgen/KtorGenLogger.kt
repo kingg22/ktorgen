@@ -88,5 +88,7 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val PRIVATE_INTERFACE_CANT_GENERATE =
             "Private Interface KSP can create a valid class to implement it. Make public or internal. "
         const val ONLY_PUBLIC_INTERNAL_CLASS = "Only public or internal visibility modifier for class is valid. "
+        const val MISSING_COMPANION_TO_GENERATE =
+            "Missing declare explicit the companion to generate an extension function or remove @KtorGen(generateCompanionExtFunction = false). This limitation is of KSP and how kotlin generate the companion class. See KSP limitations: https://kotlinlang.org/docs/ksp-why-ksp.html#limitations and Kotlin Companion objects https://kotlinlang.org/docs/object-declarations.html#companion-objects"
     }
 }

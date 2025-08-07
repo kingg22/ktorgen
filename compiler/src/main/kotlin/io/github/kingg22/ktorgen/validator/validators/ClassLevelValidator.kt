@@ -28,6 +28,10 @@ class ClassLevelValidator : ValidatorStrategy {
             )
         }
 
+        if (context.classData.haveCompanionObject.not() && context.classData.generateCompanionExtFunction) {
+            addError(KtorGenLogger.MISSING_COMPANION_TO_GENERATE, context.classData.ksClassDeclaration)
+        }
+
         context.functions
             .filter { it.isImplemented.not() && it.goingToGenerate.not() }
             .forEach { addError(KtorGenLogger.ABSTRACT_FUNCTION_IGNORED, it) }
