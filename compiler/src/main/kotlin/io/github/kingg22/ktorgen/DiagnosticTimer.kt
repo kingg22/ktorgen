@@ -58,7 +58,7 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
     /** Print errors and warning to logger in level EXCEPTION, this not mark as finish the root timer */
     fun dumpErrorsAndWarnings() {
         val header = buildString {
-            appendLine("❌ Errors and Warnings found during \"${root.name}\" execution:")
+            appendLine("❌ Errors and ⚠️ Warnings found during \"${root.name}\" execution:")
             appendFilteredSteps(root, this, 0) { it.type == StepType.WARNING || it.type == StepType.ERROR }
         }
         logger.exception(Throwable(header))
@@ -71,14 +71,7 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
 
     private fun printStep(builder: StringBuilder, step: Step, indent: String) {
         val icon = iconFor(step)
-        val label = when (step.type) {
-            StepType.ROOT -> "Processor"
-            StepType.PHASE -> "Phase"
-            StepType.TASK -> "Task"
-            StepType.STEP -> "Step"
-            StepType.WARNING -> "Warning"
-            StepType.ERROR -> "Error"
-        }
+        val label = step.type.label
 
         builder.appendLine("$indent$icon $label: ${step.name} completed in (${step.formattedDuration()})")
         step.printDiagnostic(builder, indent)
@@ -89,14 +82,10 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
     }
 
     private fun iconFor(step: Step): String = when (step.type) {
-        StepType.ROOT -> "⚙️"
         StepType.PHASE, StepType.TASK -> if (step.haveErrors()) "❌" else "✔️"
-        StepType.STEP -> "✔️"
-        StepType.WARNING -> "⚠️"
-        StepType.ERROR -> "❌"
+        else -> step.type.icon
     }
 
-    @Suppress("ktlint:standard:max-line-length")
     private fun appendFilteredSteps(
         step: Step,
         builder: StringBuilder,
@@ -110,7 +99,7 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         if (messages.isNotEmpty() || hasRelevantChildren) {
             builder.appendLine("$indent${iconFor(step)} ${step.name} (${step.formattedDuration()})")
             messages.forEach { msg ->
-                builder.appendLine("$indent  ${msg.type}: ${msg.message}")
+                builder.appendLine("$indent  ${msg.type.icon}${msg.type}: ${msg.message}")
                 msg.generateSymbolInfo().takeIf(String::isNotEmpty)?.let { symbolInfo ->
                     builder.appendLine("$indent    -> $symbolInfo")
                 }
@@ -186,12 +175,7 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         fun printDiagnostic(builder: StringBuilder, indent: String) {
             check(isCompleted()) { "Step $name not completed yet" }
             for (msg in messages) {
-                val emoji = when (msg.type) {
-                    StepType.STEP -> "🟢"
-                    StepType.WARNING -> "⚠️"
-                    StepType.ERROR -> "❌"
-                    else -> "ℹ️"
-                }
+                val emoji = msg.type.icon
                 val prefix = "    "
                 builder.appendLine("$indent$prefix$emoji ${msg.type.name}: ${msg.message}${msg.generateSymbolInfo()}")
             }
@@ -224,13 +208,13 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         }
     }
 
-    private enum class StepType {
-        ROOT,
-        PHASE,
-        TASK,
-        STEP,
-        WARNING,
-        ERROR,
+    private enum class StepType(val label: String, val icon: String) {
+        ROOT("Processor", "⚙️"),
+        PHASE("Phase", "ℹ️"),
+        TASK("Task", "🛠️"),
+        STEP("Step", "🟢"),
+        WARNING("Warning", "⚠️"),
+        ERROR("Error", "❌"),
     }
 
     interface DiagnosticSender {

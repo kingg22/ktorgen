@@ -31,7 +31,7 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val COOKIE_ON_FUNCTION_WITHOUT_VALUE =
             "$KTOR_GEN @Cookie on function requires value, only on parameter is not needed."
         const val NO_HTTP_ANNOTATION =
-            "No Http annotation found and don't have a valid HttpRequest.takeFrom() or HttpRequestBuilder lambda. Add an @HTTP or @GET ... or a parameter with valid type."
+            "No Http annotation found and don't have a valid HttpRequest.takeFrom() or HttpRequestBuilder lambda. Add an @HTTP or @GET or parameter with valid type for dynamic request."
         const val HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING =
             "@HeaderMap parameter type must be Map<String, String(?)> or Pair<String, String(?)>. "
         const val INVALID_HEADER = "The header name or value is blank on @Header or @HeaderParam."
@@ -86,6 +86,7 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val CONTENT_TYPE_BODY_UNKNOWN = "Content-Type for @Body maybe is unknown. "
         const val ANY_TYPE_INVALID = "'Any' type is not valid, break validation and serialization."
         const val PRIVATE_INTERFACE_CANT_GENERATE =
-            "Private Interface KSP can create a valid class to implement it. Make public or internal"
+            "Private Interface KSP can create a valid class to implement it. Make public or internal. "
+        const val ONLY_PUBLIC_INTERNAL_CLASS = "Only public or internal visibility modifier for class is valid. "
     }
 }
