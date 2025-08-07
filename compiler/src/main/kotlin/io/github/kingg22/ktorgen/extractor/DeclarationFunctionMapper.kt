@@ -9,6 +9,7 @@ fun interface DeclarationFunctionMapper {
     fun mapToModel(
         declaration: KSFunctionDeclaration,
         onAddImport: (String) -> Unit,
+        basePath: String,
         timer: (String) -> DiagnosticTimer.DiagnosticSender,
     ): FunctionData
 
