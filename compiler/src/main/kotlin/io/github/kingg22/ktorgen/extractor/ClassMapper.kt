@@ -40,11 +40,11 @@ class ClassMapper : DeclarationMapper {
             val companionObject = declaration.declarations
                 .filterIsInstance<KSClassDeclaration>()
                 .any { it.isCompanionObject }
-            timer.addStep("Have companion object for: $companionObject")
+            timer.addStep("Have companion object: $companionObject")
 
             val properties = declaration.getDeclaredProperties()
-
             timer.addStep("Retrieved all properties")
+
             val options = extractKtorGen(declaration)
                 ?: DefaultOptions(
                     generatedName = "_${interfaceName}Impl",
@@ -58,18 +58,20 @@ class ClassMapper : DeclarationMapper {
                 }.also {
                     timer.addStep("Processed function: ${it.name}")
                 }
-            }.toList().also {
-                if (it.isNotEmpty()) {
-                    imports.addAll(
-                        arrayOf(
-                            KTOR_CLIENT_CALL_BODY,
-                            KTOR_CLIENT_REQUEST,
-                            KTOR_URL_TAKE_FROM,
-                            KTOR_DECODE_URL_QUERY,
-                        ),
-                    )
-                }
+            }.toList()
+
+            if (functions.isNotEmpty()) {
+                // basic imports
+                imports.addAll(
+                    arrayOf(
+                        KTOR_CLIENT_CALL_BODY,
+                        KTOR_CLIENT_REQUEST,
+                        KTOR_URL_TAKE_FROM,
+                        KTOR_DECODE_URL_QUERY,
+                    ),
+                )
             }
+
             timer.addStep("Processed all functions")
 
             // an operation terminal of sequences must be in one site

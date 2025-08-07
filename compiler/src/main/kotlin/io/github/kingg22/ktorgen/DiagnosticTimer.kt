@@ -118,11 +118,9 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         val messages = mutableListOf<DiagnosticMessage>()
         val children = mutableListOf<Step>()
 
-        fun isStarted() = startNanos != 0L
-        fun isFinish() = endNanos != 0L
-        fun isInProgress() = isStarted() && !isFinish()
-        fun isCompleted() = isStarted() && isFinish()
-        fun haveErrors() = children.any { it.type == StepType.ERROR }
+        override fun isStarted() = startNanos != 0L
+        override fun isFinish() = endNanos != 0L
+        override fun haveErrors() = children.any { it.type == StepType.ERROR } || type == StepType.ERROR
 
         override fun start() {
             check(started && !isStarted()) { "Step $name already started" }
@@ -130,8 +128,12 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         }
 
         override fun finish() {
-            check(started && isStarted()) { "Step $name not started" }
+            check(started && isStarted()) { "Step $name not started yet" }
             check(!isFinish()) { "Step $name already finish" }
+            check(children.all(Step::isCompleted)) {
+                "A children step of $name is not completed. " +
+                    "Children status: ${children.count(Step::isCompleted)}/${children.size} completed."
+            }
             endNanos = System.nanoTime()
         }
 
@@ -159,15 +161,19 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
 
         override fun die(message: String, symbol: KSNode?): Nothing {
             messages.add(DiagnosticMessage(StepType.ERROR, message.trim(), symbol))
-            this@DiagnosticTimer.finish()
-            dumpErrorsAndWarnings()
             var suppressException: Throwable? = null
+
             try {
-                finish()
-            } catch (e: Exception) {
+                dumpErrorsAndWarnings()
+                // cancel in order of hierarchy
+                (root.retrieveAllChildrenStep() + root)
+                    .filter(Step::isStarted)
+                    .filter(Step::isInProgress)
+                    .forEach(Step::finish)
+            } catch (e: Throwable) {
                 suppressException = e
             }
-            val exception = IllegalStateException()
+            val exception = Throwable("Fatal error occurred, see report above")
             suppressException?.let { exception.addSuppressed(suppressException) }
             throw exception
         }
@@ -186,6 +192,8 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
             val ms = (endNanos - startNanos).div(1_000_000.0).roundTo(3)
             return "$ms ms"
         }
+
+        fun retrieveAllChildrenStep(): List<Step> = this.children.flatMap(Step::retrieveAllChildrenStep) + this.children
 
         private fun Double.roundTo(numFractionDigits: Int): Double {
             val factor = 10.0.pow(numFractionDigits.toDouble())
@@ -218,6 +226,12 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
     }
 
     interface DiagnosticSender {
+        fun isStarted(): Boolean
+        fun isFinish(): Boolean
+        fun isInProgress() = isStarted() && !isFinish()
+        fun isCompleted() = isStarted() && isFinish()
+        fun haveErrors(): Boolean
+
         /** Start the step. Only called on start and after root is started */
         fun start()
 
@@ -244,12 +258,12 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
             val diagnosis = RecuperableDiagnosis(this)
             return try {
                 start()
-                block(diagnosis)
+                val result = block(diagnosis)
+                finish()
+                result
             } catch (e: Exception) {
                 val (message, symbol) = diagnosis.onDieProvider ?: Pair(e.message ?: "", null)
                 die(message, symbol)
-            } finally {
-                finish()
             }
         }
 
