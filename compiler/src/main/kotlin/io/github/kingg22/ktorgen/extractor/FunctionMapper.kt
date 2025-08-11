@@ -4,10 +4,14 @@ package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
@@ -39,6 +43,7 @@ import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotationsFunction
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
 import kotlin.reflect.KClass
 
@@ -76,7 +81,14 @@ class FunctionMapper : DeclarationFunctionMapper {
             addImportsForFunctionAnnotations(functionAnnotations, onAddImport)
             timer.addStep("Extracting options of @KtorGenFunction")
 
-            val options = extractKtorGenFunction(declaration)
+            var options = extractKtorGenFunction(declaration) ?: DefaultOptions()
+            timer.addStep("Extracting the rest of annotations for function")
+
+            var (annotations, optIn) = extractAnnotationsFiltered(declaration)
+            optIn = options.optIns + optIn
+            annotations = (options.annotationsToPropagate + annotations).filterNot { it in optIn }.toSet()
+            options = options.copy(annotationsToPropagate = annotations, optIns = optIn)
+
             val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)
             val modifiers = buildSet {
                 add(KModifier.OVERRIDE)
@@ -95,7 +107,7 @@ class FunctionMapper : DeclarationFunctionMapper {
                 functionAnnotations.filterIsInstance<FunctionAnnotation.HttpMethodAnnotation>().first(),
                 modifierSet = modifiers,
                 ksFunctionDeclaration = declaration,
-                options = options ?: DefaultOptions(),
+                options = options,
             )
         }
     }
@@ -297,12 +309,16 @@ class FunctionMapper : DeclarationFunctionMapper {
                 goingToGenerate = it.getArgumentValueByName("generate") ?: true,
                 propagateAnnotations = it.getArgumentValueByName("propagateAnnotations") ?: true,
                 annotationsToPropagate =
-                it.getArgumentValueByName<Array<KClass<out Annotation>>>("annotations")
-                    ?.map { a -> AnnotationSpec.builder(a) }
+                it.getArgumentValueByName<List<KSType>>("annotations")
+                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
+                    ?.map { n -> ClassName.bestGuess(n) }
+                    ?.map { a -> AnnotationSpec.builder(a).build() }
                     ?.toSet()
                     ?: emptySet(),
-                optIns = it.getArgumentValueByName<Array<KClass<out Annotation>>>("optInAnnotations")
-                    ?.map { a -> AnnotationSpec.builder(a) }
+                optIns = it.getArgumentValueByName<List<KSType>>("optInAnnotations")
+                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
+                    ?.map { n -> ClassName.bestGuess(n) }
+                    ?.map { a -> AnnotationSpec.builder(a).build() }
                     ?.toSet()
                     ?: emptySet(),
                 customHeader = it.getArgumentValueByName("customHeader") ?: "",
@@ -311,9 +327,29 @@ class FunctionMapper : DeclarationFunctionMapper {
             DefaultOptions(
                 goingToGenerate = it.generate,
                 propagateAnnotations = it.propagateAnnotations,
-                annotationsToPropagate = it.annotations.map { a -> AnnotationSpec.builder(a) }.toSet(),
-                optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a) }.toSet(),
+                annotationsToPropagate = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
+                optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 customHeader = it.customHeader,
             )
         }
+
+    private fun extractAnnotationsFiltered(
+        declaration: KSFunctionDeclaration,
+    ): Pair<Set<AnnotationSpec>, Set<AnnotationSpec>> {
+        val ktorGenFunctionsName = ktorGenAnnotationsFunction.mapNotNull(KClass<*>::simpleName)
+
+        val optIn = declaration.annotations
+            .filterNot { it.shortName.getShortName() in ktorGenFunctionsName }
+            .filter { it.shortName.getShortName() == "OptIn" }
+            .map(KSAnnotation::toAnnotationSpec)
+            .toSet()
+
+        val propagateAnnotations = declaration.annotations
+            .filterNot { it.shortName.getShortName() in ktorGenFunctionsName }
+            .map(KSAnnotation::toAnnotationSpec)
+            .filterNot { it in optIn }
+            .toSet()
+
+        return propagateAnnotations to optIn
+    }
 }

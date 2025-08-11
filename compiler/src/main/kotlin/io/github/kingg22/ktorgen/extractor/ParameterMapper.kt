@@ -2,16 +2,22 @@ package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotationsParameter
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
+import kotlin.reflect.KClass
 
 class ParameterMapper : DeclarationParameterMapper {
     override fun mapToModel(
@@ -19,12 +25,23 @@ class ParameterMapper : DeclarationParameterMapper {
         timer: (String) -> DiagnosticTimer.DiagnosticSender,
     ): ParameterData = timer("Parameter Mapper for [${declaration.name?.asString() ?: "unknow"}]").work { timer ->
         val type = declaration.type.resolve()
+        val (annotations, optIns) = extractAnnotationsFiltered(declaration)
         ParameterData(
             nameString = declaration.name?.asString().orEmpty(),
             typeData = TypeData(type),
             ksValueParameter = declaration,
             ktorgenAnnotations = collectParameterAnnotations(declaration).also {
                 timer.addStep("Processed annotations")
+            },
+            nonKtorgenAnnotations = annotations,
+            optInAnnotation = if (optIns.isNotEmpty()) {
+                AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
+                    .addMember(
+                        (1..optIns.size).joinToString { "%T::class" },
+                        *optIns.map { it.typeName }.toTypedArray(),
+                    ).build()
+            } else {
+                null
             },
             isHttpRequestBuilderLambda = isHttpRequestBuilderLambda(type).also {
                 timer.addStep("Processed is http builder lambda: $it")
@@ -151,6 +168,26 @@ class ParameterMapper : DeclarationParameterMapper {
             .toList()
             .takeIf(List<*>::isNotEmpty)
             ?.let { cookies -> add(ParameterAnnotation.Cookies(cookies)) }
+    }
+
+    private fun extractAnnotationsFiltered(
+        declaration: KSValueParameter,
+    ): Pair<Set<AnnotationSpec>, Set<AnnotationSpec>> {
+        val ktorGenParametersNames = ktorGenAnnotationsParameter.mapNotNull(KClass<*>::simpleName)
+
+        val optIn = declaration.annotations
+            .filterNot { it.shortName.getShortName() in ktorGenParametersNames }
+            .filter { it.shortName.getShortName() == "OptIn" }
+            .map(KSAnnotation::toAnnotationSpec)
+            .toSet()
+
+        val propagateAnnotations = declaration.annotations
+            .filterNot { it.shortName.getShortName() in ktorGenParametersNames }
+            .map(KSAnnotation::toAnnotationSpec)
+            .filterNot { it in optIn }
+            .toSet()
+
+        return propagateAnnotations to optIn
     }
 
     private fun isHttpRequestBuilderLambda(type: KSType): Boolean {
