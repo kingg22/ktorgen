@@ -3,7 +3,7 @@ package io.github.kingg22.ktorgen.http
 import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
 
 /**
- * Named pair for a form-encoded request.
+ * A named pair for a form-encoded request.
  *
  * **Needs** to be used in combination with [@FormUrlEncoded][FormUrlEncoded]
  *

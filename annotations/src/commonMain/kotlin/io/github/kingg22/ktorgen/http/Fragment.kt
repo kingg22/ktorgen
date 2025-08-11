@@ -12,7 +12,7 @@ package io.github.kingg22.ktorgen.http
 @Target(AnnotationTarget.FUNCTION)
 @MustBeDocumented
 annotation class Fragment(
-    /** A sequence of any characters. The exact format of the fragment is defined by the resource itself. */
+    /** A sequence of any characters. The resource itself defines the exact format of the fragment. */
     val value: String,
     /** Specifies whether the names and values are already URL encoded. */
     val encoded: Boolean = false,

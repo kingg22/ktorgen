@@ -1,7 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
 /**
- * Set URL of the request
+ * Set the URL of the request
  *
  * Can be type of: `String`, Ktor `Url`, Ktor `UrlBuilder`. More detail, see [Url.takeFrom](https://api.ktor.io/ktor-http/io.ktor.http/take-from.html)
  *

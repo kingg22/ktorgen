@@ -5,7 +5,7 @@ package io.github.kingg22.ktorgen.http
 import org.intellij.lang.annotations.Language
 
 /**
- * Add header to a request
+ * Add a header to a request
  *
  * ```kotlin
  * @Header("Accept", "application/json")

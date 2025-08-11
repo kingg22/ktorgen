@@ -47,7 +47,7 @@ annotation class KtorGen(
     val generate: Boolean = true,
 
     /**
-     * Set a base path (or URL) for the current interface, all generated function going to init with this + it path.
+     * Set a base path (or URL) for the current interface, all generated functions going to init with this + it path.
      *
      * By default, Ktor Client handle base url for the `HttpClient`.
      *
@@ -69,7 +69,7 @@ annotation class KtorGen(
     /**
      * Whether to generate a `create(client)` extension function of interface's companion object.
      *
-     * This **requires** the annotation to be placed on the companion itself or **declared companion object explicit**.
+     * This **requires** the annotation to be placed on the companion itself or **declared a companion object explicit**.
      * Example: `UserRoute.create(client)`
      */
     val generateCompanionExtFunction: Boolean = false,
@@ -102,12 +102,12 @@ annotation class KtorGen(
     val optInAnnotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * Indicate the visibility modifier all generated code (class, primary constructor and extension functions)
+     * Indicate the visibility modifier for all generated code (class, primary constructor, and extension functions)
      *
      * Can be `public` or `internal`.
      * Is not valid: `private` and `protected`
      *
-     * Don't confuse visibility of generated code with interface visibility.
+     * Don't confuse the visibility of generated code with interface visibility.
      * The interface can't be `private`
      *
      * Combination of `internal interface` and `public` class and extensions is valid.
@@ -122,14 +122,14 @@ annotation class KtorGen(
      *
      * Useful for license declarations, warnings, or documentation.
      *
-     * By default, is a notice of _generated_ code.
+     * By default, there is a notice of _generated_ code.
      */
     val customFileHeader: String = KTORGEN_DEFAULT_NAME,
 
     /**
      * Custom KDoc comment or annotations for the generated implementation class.
      *
-     * Useful to indicate that the class is auto-generated and shouldn't be modified or annotate with custom code.
+     * Useful to indicate that the class is auto-generated and shouldn't be modified or annotated with custom code.
      */
     val customClassHeader: String = "",
 )
