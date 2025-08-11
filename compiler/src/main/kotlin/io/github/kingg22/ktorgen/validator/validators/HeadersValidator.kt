@@ -11,23 +11,23 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 import io.github.kingg22.ktorgen.http.Header.Companion.ContentType as CONTENT_TYPE_HEADER
 
 class HeadersValidator : ValidatorStrategy {
+    override val name: String = "Headers"
+
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             var haveHeadersMap = function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
             val headersFunction =
                 function.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.map { (name, value) ->
                     name.removeWhitespace() to value.removeWhitespace()
                 }?.associate {
                     val (name, value) = it
-                    if (name.isBlank() || value.isBlank()) {
-                        addError(KtorGenLogger.INVALID_HEADER + addDeclaration(context, function))
-                    }
+                    if (name.isBlank() || value.isBlank()) addError(KtorGenLogger.INVALID_HEADER, function)
                     it
                 }?.toMutableMap() ?: mutableMapOf()
             var haveContentType = headersFunction.any { (key, _) -> key.equals(CONTENT_TYPE_HEADER, true) }
 
             if (haveContentType && (function.isFormUrl || function.isMultipart)) {
-                addError(KtorGenLogger.ONLY_ONE_CONTENT_TYPE_IS_ALLOWED + addDeclaration(context, function))
+                addError(KtorGenLogger.ONLY_ONE_CONTENT_TYPE_IS_ALLOWED, function)
             }
 
             for (parameter in function.parameterDataList.filter {
@@ -36,17 +36,12 @@ class HeadersValidator : ValidatorStrategy {
             }) {
                 // Validate @HeaderParam
                 if (parameter.isVararg && parameter.ktorgenAnnotations.count { it is ParameterAnnotation.Header } > 1) {
-                    addWarning(
-                        KtorGenLogger.VARARG_PARAMETER_WITH_LOT_ANNOTATIONS +
-                            addDeclaration(context, function, parameter),
-                    )
+                    addWarning(KtorGenLogger.VARARG_PARAMETER_WITH_LOT_ANNOTATIONS, parameter)
                 }
                 parameter.findAllAnnotations<ParameterAnnotation.Header>().forEach { header ->
                     val name = header.value.removeWhitespace()
                     if (name.isBlank()) {
-                        addError(
-                            KtorGenLogger.INVALID_HEADER + addDeclaration(context, function, parameter),
-                        )
+                        addError(KtorGenLogger.INVALID_HEADER, parameter)
                     }
 
                     val isContentType = name.equals(CONTENT_TYPE_HEADER, ignoreCase = true)
@@ -55,16 +50,13 @@ class HeadersValidator : ValidatorStrategy {
                     if (isContentType &&
                         (headersFunction.keys.any { it.equals(CONTENT_TYPE_HEADER, true) } || parameter.isVararg)
                     ) {
-                        addError(KtorGenLogger.DUPLICATE_HEADER + addDeclaration(context, function, parameter))
+                        addError(KtorGenLogger.DUPLICATE_HEADER, parameter)
                     }
 
                     if (!haveContentType && isContentType) haveContentType = true
 
                     if ((function.isFormUrl || function.isMultipart) && isContentType) {
-                        addError(
-                            KtorGenLogger.ONLY_ONE_CONTENT_TYPE_IS_ALLOWED +
-                                addDeclaration(context, function, parameter),
-                        )
+                        addError(KtorGenLogger.ONLY_ONE_CONTENT_TYPE_IS_ALLOWED, parameter)
                     }
 
                     name.takeIf(String::isNotBlank)?.let {
@@ -78,8 +70,6 @@ class HeadersValidator : ValidatorStrategy {
                     haveHeadersMap = true
                     validateMapParameter(
                         parameter,
-                        context,
-                        function,
                         KtorGenLogger.HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING,
                     ) { keys, values ->
                         keys != Pair(KOTLIN_STRING, false) || values.first != KOTLIN_STRING
@@ -88,7 +78,7 @@ class HeadersValidator : ValidatorStrategy {
             }
 
             if (function.isBody && !haveHeadersMap && !haveContentType) {
-                addWarning(KtorGenLogger.CONTENT_TYPE_BODY_UNKNOWN + addDeclaration(context, function))
+                addWarning(KtorGenLogger.CONTENT_TYPE_BODY_UNKNOWN, function)
             }
         }
     }

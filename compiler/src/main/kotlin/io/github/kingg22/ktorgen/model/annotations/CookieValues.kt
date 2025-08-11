@@ -1,7 +1,7 @@
 package io.github.kingg22.ktorgen.model.annotations
 
 /** See values of [io.github.kingg22.ktorgen.http.Cookie] */
-data class CookieValues(
+class CookieValues(
     val name: String,
     val value: String,
     val isValueParameter: Boolean,

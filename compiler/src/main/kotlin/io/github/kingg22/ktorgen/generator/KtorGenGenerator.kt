@@ -6,23 +6,27 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
+import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.model.ClassData
+import io.github.kingg22.ktorgen.model.KTORG_GENERATED_COMMENT
+import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
 
 fun interface KtorGenGenerator {
-    fun generate(classData: ClassData): FileSpec
+    fun generate(classData: ClassData, timer: DiagnosticTimer.DiagnosticSender): FileSpec
 
     companion object {
         /** Generate the Impl class using [KotlinpoetGenerator] of ksp */
-        fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator) {
-            DEFAULT.generate(classData).writeTo(codeGenerator, false)
+        fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator, timer: DiagnosticTimer.DiagnosticSender) {
+            DEFAULT.generate(classData, timer).writeTo(codeGenerator, false)
         }
 
         val DEFAULT: KtorGenGenerator by lazy { KotlinpoetGenerator() }
 
         val TODO_GENERATOR by lazy {
-            KtorGenGenerator { classData ->
+            KtorGenGenerator { classData, _ ->
                 val interfaceName = classData.interfaceName
 
                 val classBuilder = TypeSpec.classBuilder(classData.generatedName)
@@ -34,7 +38,7 @@ fun interface KtorGenGenerator {
                     val funBuilder = FunSpec.builder(func.name)
                         .addModifiers(func.modifierSet)
                         .returns(func.returnTypeData.typeName)
-                        .addAnnotations(func.nonKtorGenAnnotations)
+                        .addAnnotations(func.annotationsToPropagate)
                         .addKdoc(func.customHeader)
 
                     if (func.isSuspend) funBuilder.addModifiers(KModifier.SUSPEND)
@@ -72,13 +76,28 @@ fun interface KtorGenGenerator {
         }
 
         val NO_OP by lazy {
-            KtorGenGenerator { data ->
-                FileSpec.builder(data.packageNameString, data.generatedName)
-                    .addFileComment(
-                        "This class is generated to test the KtorGen compiler. It does not contain any code and should not be used.",
-                    )
-                    .addProperty("hello", String::class, KModifier.PRIVATE, KModifier.CONST)
-                    .build()
+            KtorGenGenerator { data, logger ->
+                logger.work {
+                    FileSpec.builder(data.packageNameString, data.generatedName)
+                        .addFileComment(
+                            KTORG_GENERATED_FILE_COMMENT +
+                                "\nIt does not contain any code.\n" +
+                                "If you have this in your source code, means an interface is detected, is valid, but don't have anything to implement.",
+                        )
+                        .addProperty(
+                            PropertySpec.builder(
+                                "hello",
+                                String::class,
+                                KModifier.PRIVATE,
+                                KModifier.CONST,
+                            )
+                                .addKdoc("This dummy property avoid empty files\n")
+                                .addKdoc(KTORG_GENERATED_COMMENT)
+                                .initializer("%S", "world")
+                                .build(),
+                        )
+                        .build()
+                }
             }
         }
     }

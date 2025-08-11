@@ -4,12 +4,18 @@ package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.KtorGenLogger
-import io.github.kingg22.ktorgen.Timer
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
+import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.http.Cookie
 import io.github.kingg22.ktorgen.http.FormUrlEncoded
 import io.github.kingg22.ktorgen.http.Fragment
@@ -17,7 +23,9 @@ import io.github.kingg22.ktorgen.http.HTTP
 import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.Multipart
 import io.github.kingg22.ktorgen.http.Streaming
+import io.github.kingg22.ktorgen.model.DefaultOptions
 import io.github.kingg22.ktorgen.model.FunctionData
+import io.github.kingg22.ktorgen.model.GenOptions
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_ATTRIBUTE_KEY
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_COOKIE
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_FORM_DATA
@@ -35,41 +43,60 @@ import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotationsFunction
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
+import kotlin.reflect.KClass
 
 class FunctionMapper : DeclarationFunctionMapper {
-    override fun mapToModel(declaration: KSFunctionDeclaration, onAddImport: (String) -> Unit): FunctionData {
+    override fun mapToModel(
+        declaration: KSFunctionDeclaration,
+        onAddImport: (String) -> Unit,
+        basePath: String,
+        timer: (String) -> DiagnosticTimer.DiagnosticSender,
+    ): FunctionData {
         val name = declaration.simpleName.asString()
-        val timer = Timer("KtorGen [Function Mapper] for $name").start()
-        try {
+        val timer = timer("Function Mapper for [$name]")
+        return timer.work { _ ->
             val parameters = declaration.parameters.map { param ->
-                DeclarationParameterMapper.DEFAULT.mapToModel(param).also {
-                    timer.markStepCompleted("Processed param: ${it.nameString}")
+                DeclarationParameterMapper.DEFAULT.mapToModel(param) { timer.createTask(it) }.also {
+                    timer.addStep("Processed param: ${it.nameString}")
                 }
             }
-            timer.markStepCompleted("Adding imports of parameters")
+            timer.addStep("Adding imports of parameters")
             addImportsForParametersAnnotations(parameters.flatMap { p -> p.ktorgenAnnotations }, onAddImport)
 
             val returnType = TypeData(
                 requireNotNull(declaration.returnType?.resolve()) { KtorGenLogger.FUNCTION_NOT_RETURN_TYPE + name },
             )
-            timer.markStepCompleted(
+            timer.addStep(
                 "Processed return type: ${returnType.parameterType.declaration.simpleName.asString()}",
             )
 
-            val functionAnnotations = getFunctionAnnotations(declaration, timer)
-            timer.markStepCompleted("Processed function annotations, adding imports")
+            val functionAnnotations = getFunctionAnnotations(
+                declaration,
+                timer.createTask("Extract annotations"),
+                basePath,
+            )
+            timer.addStep("Processed function annotations, adding imports")
             addImportsForFunctionAnnotations(functionAnnotations, onAddImport)
+            timer.addStep("Extracting options of @KtorGenFunction")
+
+            var options = extractKtorGenFunction(declaration) ?: DefaultOptions()
+            timer.addStep("Extracting the rest of annotations for function")
+
+            var (annotations, optIn) = extractAnnotationsFiltered(declaration)
+            optIn = options.optIns + optIn
+            annotations = (options.annotationsToPropagate + annotations).filterNot { it in optIn }.toSet()
+            options = options.copy(annotationsToPropagate = annotations, optIns = optIn)
 
             val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)
-
             val modifiers = buildSet {
                 add(KModifier.OVERRIDE)
                 if (isSuspend) add(KModifier.SUSPEND)
             }
 
-            timer.markStepCompleted("Finishing mapping")
-            return FunctionData(
+            timer.addStep("Finishing mapping")
+            FunctionData(
                 name = name,
                 returnTypeData = returnType,
                 isSuspend = isSuspend,
@@ -78,15 +105,10 @@ class FunctionMapper : DeclarationFunctionMapper {
                 ktorGenAnnotations = functionAnnotations,
                 httpMethodAnnotation =
                 functionAnnotations.filterIsInstance<FunctionAnnotation.HttpMethodAnnotation>().first(),
-                nonKtorGenAnnotations = emptyList(), // TODO
                 modifierSet = modifiers,
                 ksFunctionDeclaration = declaration,
+                options = options,
             )
-        } catch (e: Exception) {
-            timer.markStepCompleted("Error on function: ${declaration.simpleName.asString()}")
-            throw e
-        } finally {
-            timer.finishAndPrint()
         }
     }
 
@@ -164,82 +186,89 @@ class FunctionMapper : DeclarationFunctionMapper {
     }
 
     @OptIn(KspExperimental::class)
-    private fun getFunctionAnnotations(function: KSFunctionDeclaration, timer: Timer) = buildList {
-        timer.markStepCompleted("Start collect KtorGen annotations, first Http Method")
+    private fun getFunctionAnnotations(
+        function: KSFunctionDeclaration,
+        timer: DiagnosticTimer.DiagnosticSender,
+        basePath: String,
+    ) = timer.work {
+        buildList {
+            timer.addStep("Start collect KtorGen annotations, first Http Method")
 
-        val method = httpAnnotationResolver(function)
-        if (method.isEmpty()) {
-            add(FunctionAnnotation.HttpMethodAnnotation("", HttpMethod.Absent))
-            timer.markStepCompleted("Http method not found, adding absent value, need validation!")
-        } else {
-            require(method.size == 1) {
-                "${KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED} Found: ${method.joinToString {
-                    it.httpMethod.value
-                }} at ${function.simpleName.asString()}"
+            val method = httpAnnotationResolver(function, basePath)
+            if (method.isEmpty()) {
+                add(FunctionAnnotation.HttpMethodAnnotation(basePath, HttpMethod.Absent))
+                timer.addStep("Http method not found, adding absent value, need validation!", function)
+            } else {
+                require(method.size == 1) {
+                    "${KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED} Found: ${
+                        method.joinToString {
+                            it.httpMethod.value
+                        }
+                    } at ${function.simpleName.asString()}"
+                }
+                val http = method.first()
+                add(http)
+                timer.addStep("Processed http annotation $http")
             }
-            val http = method.first()
-            add(http)
-            timer.markStepCompleted("Processed http annotation $http")
-        }
 
-        timer.markStepCompleted("Going to get Fragment")
-        function.getAnnotation<Fragment>(
-            manualExtraction = {
+            timer.addStep("Going to get Fragment")
+            function.getAnnotation<Fragment, Any>(manualExtraction = {
                 add(
                     FunctionAnnotation.Fragment(
                         it.getArgumentValueByName<String>("value").orEmpty(),
                         it.getArgumentValueByName("encoded") ?: false,
                     ),
                 )
-                timer.markStepCompleted("Fragment found")
-            },
-        ) {
-            add(FunctionAnnotation.Fragment(it.value, it.encoded))
-            timer.markStepCompleted("Fragment found")
-        }
-
-        timer.markStepCompleted("Going to get Multipart")
-        function.getAnnotationsByType(Multipart::class).firstOrNull()?.let {
-            add(FunctionAnnotation.Multipart)
-            timer.markStepCompleted("Multipart found")
-        }
-
-        timer.markStepCompleted("Going to get Streaming")
-        function.getAnnotationsByType(Streaming::class).firstOrNull()?.let {
-            add(FunctionAnnotation.Streaming)
-            timer.markStepCompleted("Streaming found")
-        }
-
-        timer.markStepCompleted("Going to get FormUrlEncoded")
-        function.getAnnotationsByType(FormUrlEncoded::class).firstOrNull()?.let {
-            add(FunctionAnnotation.FormUrlEncoded)
-            timer.markStepCompleted("FormUrlEncoded found")
-        }
-
-        timer.markStepCompleted("Going to get Headers")
-        function.getAnnotationsByType(Header::class)
-            .map { it.name to it.value }
-            .toList()
-            .takeIf(List<*>::isNotEmpty)
-            ?.let { headers ->
-                timer.markStepCompleted("Header found")
-                add(FunctionAnnotation.Headers(headers))
+                timer.addStep("Fragment found")
+            }) {
+                add(FunctionAnnotation.Fragment(it.value, it.encoded))
+                timer.addStep("Fragment found")
             }
 
-        timer.markStepCompleted("Going to get Cookies")
-        function.getAnnotationsByType(Cookie::class)
-            .map(Cookie::toCookieValues)
-            .toList()
-            .takeIf(List<*>::isNotEmpty)
-            ?.let { cookies ->
-                timer.markStepCompleted("Cookies found")
-                add(FunctionAnnotation.Cookies(cookies))
+            timer.addStep("Going to get Multipart")
+            function.getAnnotationsByType(Multipart::class).firstOrNull()?.let {
+                add(FunctionAnnotation.Multipart)
+                timer.addStep("Multipart found")
             }
 
-        timer.markStepCompleted("Finish collection of KtorGen annotations")
+            timer.addStep("Going to get Streaming")
+            function.getAnnotationsByType(Streaming::class).firstOrNull()?.let {
+                add(FunctionAnnotation.Streaming)
+                timer.addStep("Streaming found")
+            }
+
+            timer.addStep("Going to get FormUrlEncoded")
+            function.getAnnotationsByType(FormUrlEncoded::class).firstOrNull()?.let {
+                add(FunctionAnnotation.FormUrlEncoded)
+                timer.addStep("FormUrlEncoded found")
+            }
+
+            timer.addStep("Going to get Headers")
+            function.getAnnotationsByType(Header::class)
+                .map { it.name to it.value }
+                .toList()
+                .takeIf(List<*>::isNotEmpty)
+                ?.let { headers ->
+                    timer.addStep("Header found")
+                    add(FunctionAnnotation.Headers(headers))
+                }
+
+            timer.addStep("Going to get Cookies")
+            function.getAnnotationsByType(Cookie::class)
+                .map(Cookie::toCookieValues)
+                .toList()
+                .takeIf(List<*>::isNotEmpty)
+                ?.let { cookies ->
+                    timer.addStep("Cookies found")
+                    add(FunctionAnnotation.Cookies(cookies))
+                }
+        }
     }
 
-    private fun httpAnnotationResolver(function: KSFunctionDeclaration): List<FunctionAnnotation.HttpMethodAnnotation> {
+    private fun httpAnnotationResolver(
+        function: KSFunctionDeclaration,
+        basePath: String,
+    ): List<FunctionAnnotation.HttpMethodAnnotation> {
         @OptIn(KspExperimental::class)
         fun KSFunctionDeclaration.parseHTTPMethod(name: String): FunctionAnnotation.HttpMethodAnnotation? {
             val annotation = this.annotations.firstOrNull { it.shortName.asString() == name }
@@ -247,7 +276,7 @@ class FunctionMapper : DeclarationFunctionMapper {
                 null
             } else if (name == "HTTP") {
                 this.getAnnotationsByType(HTTP::class).firstOrNull()?.let {
-                    FunctionAnnotation.HttpMethodAnnotation(it.path, HttpMethod.parse(it.method.uppercase()))
+                    FunctionAnnotation.HttpMethodAnnotation(basePath + it.path, HttpMethod.parse(it.method.uppercase()))
                 }
             } else {
                 val value = when (val path = annotation.getArgumentValueByName<Any?>("value")) {
@@ -255,7 +284,10 @@ class FunctionMapper : DeclarationFunctionMapper {
                     is ArrayList<*> -> path.firstOrNull() as? String
                     else -> null
                 }
-                FunctionAnnotation.HttpMethodAnnotation(value.orEmpty(), HttpMethod.parse(name.uppercase()))
+                FunctionAnnotation.HttpMethodAnnotation(
+                    (basePath + value.orEmpty()),
+                    HttpMethod.parse(name.uppercase()),
+                )
             }
         }
 
@@ -269,5 +301,55 @@ class FunctionMapper : DeclarationFunctionMapper {
             function.parseHTTPMethod("OPTIONS"),
             function.parseHTTPMethod("HTTP"),
         )
+    }
+
+    private fun extractKtorGenFunction(declaration: KSFunctionDeclaration): GenOptions? =
+        declaration.getAnnotation<KtorGenFunction, GenOptions>(manualExtraction = {
+            DefaultOptions(
+                goingToGenerate = it.getArgumentValueByName("generate") ?: true,
+                propagateAnnotations = it.getArgumentValueByName("propagateAnnotations") ?: true,
+                annotationsToPropagate =
+                it.getArgumentValueByName<List<KSType>>("annotations")
+                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
+                    ?.map { n -> ClassName.bestGuess(n) }
+                    ?.map { a -> AnnotationSpec.builder(a).build() }
+                    ?.toSet()
+                    ?: emptySet(),
+                optIns = it.getArgumentValueByName<List<KSType>>("optInAnnotations")
+                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
+                    ?.map { n -> ClassName.bestGuess(n) }
+                    ?.map { a -> AnnotationSpec.builder(a).build() }
+                    ?.toSet()
+                    ?: emptySet(),
+                customHeader = it.getArgumentValueByName("customHeader") ?: "",
+            )
+        }) {
+            DefaultOptions(
+                goingToGenerate = it.generate,
+                propagateAnnotations = it.propagateAnnotations,
+                annotationsToPropagate = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
+                optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
+                customHeader = it.customHeader,
+            )
+        }
+
+    private fun extractAnnotationsFiltered(
+        declaration: KSFunctionDeclaration,
+    ): Pair<Set<AnnotationSpec>, Set<AnnotationSpec>> {
+        val ktorGenFunctionsName = ktorGenAnnotationsFunction.mapNotNull(KClass<*>::simpleName)
+
+        val optIn = declaration.annotations
+            .filterNot { it.shortName.getShortName() in ktorGenFunctionsName }
+            .filter { it.shortName.getShortName() == "OptIn" }
+            .map(KSAnnotation::toAnnotationSpec)
+            .toSet()
+
+        val propagateAnnotations = declaration.annotations
+            .filterNot { it.shortName.getShortName() in ktorGenFunctionsName }
+            .map(KSAnnotation::toAnnotationSpec)
+            .filterNot { it in optIn }
+            .toSet()
+
+        return propagateAnnotations to optIn
     }
 }

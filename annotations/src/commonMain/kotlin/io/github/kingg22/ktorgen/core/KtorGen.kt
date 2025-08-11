@@ -102,7 +102,15 @@ annotation class KtorGen(
     val optInAnnotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * Indicate the visibility modifier of the generated **class**
+     * Indicate the visibility modifier all generated code (class, primary constructor and extension functions)
+     *
+     * Can be `public` or `internal`.
+     * Is not valid: `private` and `protected`
+     *
+     * Don't confuse visibility of generated code with interface visibility.
+     * The interface can't be `private`
+     *
+     * Combination of `internal interface` and `public` class and extensions is valid.
      *
      * @see <a href="https://kotlinlang.org/docs/visibility-modifiers.html#packages">Kotlin Visibility Modifiers</a>
      */

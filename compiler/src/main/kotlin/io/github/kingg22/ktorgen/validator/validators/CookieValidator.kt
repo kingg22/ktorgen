@@ -7,16 +7,15 @@ import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
 class CookieValidator : ValidatorStrategy {
+    override val name: String = "Cookies"
+
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
+        for (function in context.functions.filter { it.goingToGenerate }) {
             for (parameter in function.parameterDataList.filter { it.hasAnnotation<ParameterAnnotation.Cookies>() }) {
                 if (parameter.isVararg &&
                     parameter.ktorgenAnnotations.count { it is ParameterAnnotation.Cookies } > 1
                 ) {
-                    addWarning(
-                        KtorGenLogger.VARARG_PARAMETER_WITH_LOT_ANNOTATIONS +
-                            addDeclaration(context, function, parameter),
-                    )
+                    addWarning(KtorGenLogger.VARARG_PARAMETER_WITH_LOT_ANNOTATIONS, parameter)
                 }
             }
         }

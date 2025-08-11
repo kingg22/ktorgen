@@ -13,7 +13,9 @@ fun String.removeWhitespace(): String = this.trim().replace("\\s+".toRegex(), ""
 
 /** This is a mapper function, handle try-catch of arrays. Throw exception when parameterName is required */
 fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
+    // clean here because don't need validation, otherwise don't do it
     var isParameter: Boolean
+
     val finalValue = try {
         when (val cleanValue = value.removeWhitespace()) {
             KTORGEN_DEFAULT_VALUE -> {
@@ -69,17 +71,59 @@ fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
             false
         },
         extensions = try {
-            extensions.toExtensionsMap()
+            extensions.associate { (key, value) ->
+                key.removeWhitespace() to value.removeWhitespace().takeIf(String::isNotBlank)
+            }
         } catch (_: NoSuchElementException) {
             emptyMap()
         },
     )
 }
 
-fun Array<Cookie.PairString>.toExtensionsMap() = this.associate { (key, value) ->
-    // clean here because don't need validation, otherwise don't do it
-    key.removeWhitespace() to value.removeWhitespace().takeIf(String::isNotBlank)
-}
-
 private operator fun Cookie.PairString.component1() = first
 private operator fun Cookie.PairString.component2() = second
+
+// experimental is a meta-annotation (documented) for optIn only. this doesn't process it
+val ktorGenAnnotationsClass = setOf(KtorGen::class)
+
+val ktorGenAnnotationsIndication = setOf(
+    KtorGen::class,
+    KtorGenFunction::class,
+)
+
+val ktorGenAnnotationsFunction = setOf(
+    KtorGenFunction::class,
+    HTTP::class,
+    GET::class,
+    POST::class,
+    PUT::class,
+    PATCH::class,
+    DELETE::class,
+    HEAD::class,
+    OPTIONS::class,
+    Header::class,
+    Cookie::class,
+    FormUrlEncoded::class,
+    Streaming::class,
+    Multipart::class,
+)
+
+val ktorGenAnnotationsParameter = setOf(
+    Body::class,
+    Cookie::class,
+    Url::class,
+    Field::class,
+    FieldMap::class,
+    HeaderMap::class,
+    HeaderParam::class,
+    Part::class,
+    PartMap::class,
+    Path::class,
+    Query::class,
+    QueryMap::class,
+    QueryName::class,
+    Tag::class,
+)
+
+val ktorGenAnnotations =
+    ktorGenAnnotationsClass + ktorGenAnnotationsIndication + ktorGenAnnotationsFunction + ktorGenAnnotationsParameter

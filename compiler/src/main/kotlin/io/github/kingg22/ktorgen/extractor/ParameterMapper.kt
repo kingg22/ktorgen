@@ -2,180 +2,192 @@ package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
-import io.github.kingg22.ktorgen.Timer
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotationsParameter
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
+import kotlin.reflect.KClass
 
 class ParameterMapper : DeclarationParameterMapper {
-    override fun mapToModel(declaration: KSValueParameter): ParameterData {
-        val timer = Timer("KtorGen [Parameter Mapper] for ${declaration.name?.asString() ?: "unknow"}").start()
-        try {
-            val type = declaration.type.resolve()
-            return ParameterData(
-                nameString = declaration.name?.asString().orEmpty(),
-                typeData = TypeData(type),
-                ksValueParameter = declaration,
-                ktorgenAnnotations = collectParameterAnnotations(declaration).also {
-                    timer.markStepCompleted("Processed annotations")
-                },
-                isHttpRequestBuilderLambda = isHttpRequestBuilderLambda(type).also {
-                    timer.markStepCompleted("Processed is http builder lambda: $it")
-                },
-            ).also {
-                timer.markStepCompleted("End for ${it.nameString}")
-            }
-        } catch (e: Throwable) {
-            timer.markStepCompleted("Error on parameter")
-            throw e
-        } finally {
-            timer.finishAndPrint()
-        }
+    override fun mapToModel(
+        declaration: KSValueParameter,
+        timer: (String) -> DiagnosticTimer.DiagnosticSender,
+    ): ParameterData = timer("Parameter Mapper for [${declaration.name?.asString() ?: "unknow"}]").work { timer ->
+        val type = declaration.type.resolve()
+        val (annotations, optIns) = extractAnnotationsFiltered(declaration)
+        ParameterData(
+            nameString = declaration.name?.asString().orEmpty(),
+            typeData = TypeData(type),
+            ksValueParameter = declaration,
+            ktorgenAnnotations = collectParameterAnnotations(declaration).also {
+                timer.addStep("Processed annotations")
+            },
+            nonKtorgenAnnotations = annotations,
+            optInAnnotation = if (optIns.isNotEmpty()) {
+                AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
+                    .addMember(
+                        (1..optIns.size).joinToString { "%T::class" },
+                        *optIns.map { it.typeName }.toTypedArray(),
+                    ).build()
+            } else {
+                null
+            },
+            isHttpRequestBuilderLambda = isHttpRequestBuilderLambda(type).also {
+                timer.addStep("Processed is http builder lambda: $it")
+            },
+        )
     }
 
     @OptIn(KspExperimental::class)
     private fun collectParameterAnnotations(declaration: KSValueParameter): List<ParameterAnnotation> = buildList {
-        declaration.getAnnotation<Path>(
+        declaration.getAnnotation<Path, ParameterAnnotation.Path>(
             manualExtraction = {
-                add(
-                    ParameterAnnotation.Path(
-                        it.getArgumentValueByName<String>("value")
-                            ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
-                            ?: declaration.name.safeString(),
-                        it.getArgumentValueByName<Boolean>("encoded") ?: false,
-                    ),
-                )
-            },
-        ) {
-            add(
                 ParameterAnnotation.Path(
-                    it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
-                    it.encoded,
-                ),
-            )
-        }
-
-        declaration.getAnnotation<Query>(
-            manualExtraction = {
-                add(
-                    ParameterAnnotation.Query(
-                        it.getArgumentValueByName<String>("value")
-                            ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
-                            ?: declaration.name.safeString(),
-                        it.getArgumentValueByName<Boolean>("encoded") ?: false,
-                    ),
+                    it.getArgumentValueByName<String>("value")
+                        ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
+                        ?: declaration.name.safeString(),
+                    it.getArgumentValueByName<Boolean>("encoded") ?: false,
                 )
             },
         ) {
-            add(
+            ParameterAnnotation.Path(
+                it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
+                it.encoded,
+            )
+        }?.let { add(it) }
+
+        declaration.getAnnotation<Query, ParameterAnnotation.Query>(
+            manualExtraction = {
                 ParameterAnnotation.Query(
-                    it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
-                    it.encoded,
-                ),
-            )
-        }
-
-        declaration.getAnnotation<QueryName>(
-            manualExtraction = {
-                add(ParameterAnnotation.QueryName(it.getArgumentValueByName<Boolean>("encoded") ?: false))
-            },
-        ) { add(ParameterAnnotation.QueryName(it.encoded)) }
-
-        declaration.getAnnotation<QueryMap>(
-            manualExtraction = {
-                add(ParameterAnnotation.QueryMap(it.getArgumentValueByName<Boolean>("encoded") ?: false))
-            },
-        ) { add(ParameterAnnotation.QueryMap(it.encoded)) }
-
-        declaration.getAnnotation<Field>(
-            manualExtraction = {
-                add(
-                    ParameterAnnotation.Field(
-                        it.getArgumentValueByName<String>(
-                            "value",
-                        )?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
-                            ?: declaration.name.safeString(),
-                        it.getArgumentValueByName<Boolean>("encoded") ?: false,
-                    ),
+                    it.getArgumentValueByName<String>("value")
+                        ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
+                        ?: declaration.name.safeString(),
+                    it.getArgumentValueByName<Boolean>("encoded") ?: false,
                 )
             },
         ) {
-            add(
-                ParameterAnnotation.Field(
-                    it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
-                    it.encoded,
-                ),
+            ParameterAnnotation.Query(
+                it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
+                it.encoded,
             )
-        }
+        }?.let { add(it) }
 
-        declaration.getAnnotation<FieldMap>(
+        declaration.getAnnotation<QueryName, ParameterAnnotation.QueryName>(
             manualExtraction = {
-                add(ParameterAnnotation.FieldMap(it.getArgumentValueByName<Boolean>("encoded") ?: false))
+                ParameterAnnotation.QueryName(it.getArgumentValueByName<Boolean>("encoded") ?: false)
             },
-        ) { add(ParameterAnnotation.FieldMap(it.encoded)) }
+        ) { ParameterAnnotation.QueryName(it.encoded) }?.let { add(it) }
 
-        declaration.getAnnotation<Part>(
+        declaration.getAnnotation<QueryMap, ParameterAnnotation.QueryMap>(
             manualExtraction = {
-                add(
-                    ParameterAnnotation.Part(
-                        it.getArgumentValueByName<String>("value") ?: declaration.name.safeString(),
-                        it.getArgumentValueByName<String>("encoding") ?: "binary",
-                    ),
+                ParameterAnnotation.QueryMap(it.getArgumentValueByName<Boolean>("encoded") ?: false)
+            },
+        ) { ParameterAnnotation.QueryMap(it.encoded) }?.let { add(it) }
+
+        declaration.getAnnotation<Field, ParameterAnnotation.Field>(
+            manualExtraction = {
+                ParameterAnnotation.Field(
+                    it.getArgumentValueByName<String>(
+                        "value",
+                    )?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
+                        ?: declaration.name.safeString(),
+                    it.getArgumentValueByName<Boolean>("encoded") ?: false,
                 )
             },
-        ) { add(ParameterAnnotation.Part(it.value, it.encoding)) }
+        ) {
+            ParameterAnnotation.Field(
+                it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
+                it.encoded,
+            )
+        }?.let { add(it) }
 
-        declaration.getAnnotation<PartMap>(
+        declaration.getAnnotation<FieldMap, ParameterAnnotation.FieldMap>(
+            manualExtraction = { ParameterAnnotation.FieldMap(it.getArgumentValueByName<Boolean>("encoded") ?: false) },
+        ) { ParameterAnnotation.FieldMap(it.encoded) }?.let { add(it) }
+
+        declaration.getAnnotation<Part, ParameterAnnotation.Part>(
             manualExtraction = {
-                add(ParameterAnnotation.PartMap(it.getArgumentValueByName<String>("encoding") ?: "binary"))
-            },
-        ) { add(ParameterAnnotation.PartMap(it.encoding)) }
-
-        declaration.getAnnotation<Body>(
-            manualExtraction = { _ -> add(ParameterAnnotation.Body) },
-        ) { _ -> add(ParameterAnnotation.Body) }
-
-        declaration.getAllAnnotation<HeaderParam>(
-            manualExtraction = {
-                add(
-                    ParameterAnnotation.Header(
-                        it.getArgumentValueByName<String>("name") ?: declaration.name.safeString(),
-                    ),
+                ParameterAnnotation.Part(
+                    it.getArgumentValueByName<String>("value") ?: declaration.name.safeString(),
+                    it.getArgumentValueByName<String>("encoding") ?: "binary",
                 )
             },
-        ) { add(ParameterAnnotation.Header(it.name)) }
+        ) { ParameterAnnotation.Part(it.value, it.encoding) }?.let { add(it) }
 
-        declaration.getAnnotation<HeaderMap>(
-            manualExtraction = { _ -> add(ParameterAnnotation.HeaderMap) },
-        ) { _ -> add(ParameterAnnotation.HeaderMap) }
-
-        declaration.getAnnotation<Url>(
-            manualExtraction = { _ -> add(ParameterAnnotation.Url) },
-        ) { _ -> add(ParameterAnnotation.Url) }
-
-        declaration.getAnnotation<Tag>(
+        declaration.getAnnotation<PartMap, ParameterAnnotation.PartMap>(
             manualExtraction = {
-                add(
-                    ParameterAnnotation.Tag(
-                        it.getArgumentValueByName<String>("value")
-                            ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
-                            ?: declaration.name.safeString(),
-                    ),
+                ParameterAnnotation.PartMap(it.getArgumentValueByName<String>("encoding") ?: "binary")
+            },
+        ) { ParameterAnnotation.PartMap(it.encoding) }?.let { add(it) }
+
+        declaration.getAnnotation<Body, ParameterAnnotation.Body>(
+            manualExtraction = { _ -> ParameterAnnotation.Body },
+        ) { _ -> ParameterAnnotation.Body }?.let { add(it) }
+
+        declaration.getAllAnnotation<HeaderParam, ParameterAnnotation.Header>(
+            manualExtraction = {
+                ParameterAnnotation.Header(
+                    it.getArgumentValueByName<String>("name") ?: declaration.name.safeString(),
                 )
             },
-        ) { add(ParameterAnnotation.Tag(it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()))) }
+        ) { ParameterAnnotation.Header(it.name) }.forEach { add(it) }
+
+        declaration.getAnnotation<HeaderMap, ParameterAnnotation.HeaderMap>(
+            manualExtraction = { _ -> ParameterAnnotation.HeaderMap },
+        ) { _ -> ParameterAnnotation.HeaderMap }?.let { add(it) }
+
+        declaration.getAnnotation<Url, ParameterAnnotation.Url>(
+            manualExtraction = { _ -> ParameterAnnotation.Url },
+        ) { _ -> ParameterAnnotation.Url }?.let { add(it) }
+
+        declaration.getAnnotation<Tag, ParameterAnnotation.Tag>(
+            manualExtraction = {
+                ParameterAnnotation.Tag(
+                    it.getArgumentValueByName<String>("value")
+                        ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
+                        ?: declaration.name.safeString(),
+                )
+            },
+        ) {
+            ParameterAnnotation.Tag(it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()))
+        }?.let { add(it) }
 
         declaration.getAnnotationsByType(Cookie::class)
             .map { it.toCookieValues(declaration.name.safeString()) }
             .toList()
             .takeIf(List<*>::isNotEmpty)
             ?.let { cookies -> add(ParameterAnnotation.Cookies(cookies)) }
+    }
+
+    private fun extractAnnotationsFiltered(
+        declaration: KSValueParameter,
+    ): Pair<Set<AnnotationSpec>, Set<AnnotationSpec>> {
+        val ktorGenParametersNames = ktorGenAnnotationsParameter.mapNotNull(KClass<*>::simpleName)
+
+        val optIn = declaration.annotations
+            .filterNot { it.shortName.getShortName() in ktorGenParametersNames }
+            .filter { it.shortName.getShortName() == "OptIn" }
+            .map(KSAnnotation::toAnnotationSpec)
+            .toSet()
+
+        val propagateAnnotations = declaration.annotations
+            .filterNot { it.shortName.getShortName() in ktorGenParametersNames }
+            .map(KSAnnotation::toAnnotationSpec)
+            .filterNot { it in optIn }
+            .toSet()
+
+        return propagateAnnotations to optIn
     }
 
     private fun isHttpRequestBuilderLambda(type: KSType): Boolean {

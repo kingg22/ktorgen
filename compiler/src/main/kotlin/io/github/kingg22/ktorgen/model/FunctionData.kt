@@ -2,6 +2,7 @@ package io.github.kingg22.ktorgen.model
 
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
@@ -12,23 +13,12 @@ class FunctionData(
     val httpMethodAnnotation: FunctionAnnotation.HttpMethodAnnotation,
     val parameterDataList: List<ParameterData>,
     val ktorGenAnnotations: List<FunctionAnnotation>,
-    val nonKtorGenAnnotations: List<AnnotationSpec>,
     val ksFunctionDeclaration: KSFunctionDeclaration,
     val isSuspend: Boolean = false,
-    val modifierSet: Set<KModifier> = emptySet(),
-    val isImplemented: Boolean = false,
-    goingToGenerate: Boolean = true, // TODO
-    propagateAnnotations: Boolean = true,
-    annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
-    optIns: Set<AnnotationSpec> = emptySet(),
-    customHeader: String = "",
-) : GenOptions(
-    goingToGenerate = goingToGenerate,
-    propagateAnnotations = propagateAnnotations,
-    annotationsToPropagate = annotationsToPropagate,
-    optIns = optIns,
-    customHeader = customHeader,
-) {
+    val modifierSet: Set<KModifier>,
+    val isImplemented: Boolean,
+    options: GenOptions,
+) : GenOptions by options {
     val urlTemplate by lazy { parseUrlTemplate(httpMethodAnnotation.path) }
     val isBody by lazy { parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Body>() } }
     val isFormUrl by lazy {
@@ -50,7 +40,10 @@ class FunctionData(
 
     inline fun <reified T : FunctionAnnotation> hasAnnotation() = this.findAnnotationOrNull<T>() != null
 
-    data class UrlTemplateResult(val template: String, val keys: List<String>) {
+    class UrlTemplateResult(val template: String, val keys: List<String>) {
+        operator fun component1() = template
+        operator fun component2() = keys
+
         val isEmpty = template.isBlank() && keys.isEmpty()
         val isNotEmpty = !isEmpty
     }
@@ -67,4 +60,13 @@ class FunctionData(
 
         return UrlTemplateResult(template, keys)
     }
+
+    // TODO change parent to use this
+    class FunctionGenerationOptions(
+        val generate: Boolean = true,
+        val annotations: Set<AnnotationSpec> = emptySet(),
+        val optIns: Set<ClassName> = emptySet(),
+        val optInAnnotation: AnnotationSpec? = null,
+        val customHeader: String = "",
+    )
 }

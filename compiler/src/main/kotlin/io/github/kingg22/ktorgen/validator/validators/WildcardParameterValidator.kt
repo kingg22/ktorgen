@@ -6,14 +6,17 @@ import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
 class WildcardParameterValidator : ValidatorStrategy {
+    override val name: String = "Wildcard Parameter"
+
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions) {
-            if (function.ksFunctionDeclaration.typeParameters.isNotEmpty()) {
+        context.functions
+            .filter {
+                it.goingToGenerate && it.ksFunctionDeclaration.typeParameters.isNotEmpty()
+            }.forEach { function ->
                 addError(
-                    KtorGenLogger.FUNCTION_OR_PARAMETERS_TYPES_MUST_NOT_INCLUDE_TYPE_VARIABLE_OR_WILDCARD +
-                        function.name,
+                    KtorGenLogger.FUNCTION_OR_PARAMETERS_TYPES_MUST_NOT_INCLUDE_TYPE_VARIABLE_OR_WILDCARD,
+                    function,
                 )
             }
-        }
     }
 }

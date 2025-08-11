@@ -1,5 +1,6 @@
 package io.github.kingg22.ktorgen.validator
 
+import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.KtorGenOptions
 import io.github.kingg22.ktorgen.model.ClassData
@@ -15,36 +16,29 @@ class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Valida
     override fun validate(
         classData: ClassData,
         ktorGenOptions: KtorGenOptions,
-        ktorGenLogger: KtorGenLogger,
+        diagnosticSender: (String) -> DiagnosticTimer.DiagnosticSender,
         onFatalError: () -> Unit,
     ): ClassData? {
         // if we don't go to generate it, skip
         if (classData.goingToGenerate.not()) return null
-        val context = ValidationContext(
-            className = classData.interfaceName,
-            packageName = classData.packageNameString,
-            functions = classData.functions.filter { it.goingToGenerate },
-            visibility = classData.visibilityModifier,
-            baseUrl = null, // TODO
-        )
-        return run(context, ktorGenLogger).let {
-            if (it.isOk) {
-                classData
-            } else {
-                onFatalError()
-                null
-            }
-        }
-    }
 
-    private fun run(context: ValidationContext, logger: KtorGenLogger): ValidationResult {
-        val finalResult = ValidationResult()
+        val context = ValidationContext(classData)
+        var errorCount = 0
+
         for (validator in validators) {
+            val sender = diagnosticSender(validator.name)
+            sender.start()
             val result = validator.validate(context)
-            finalResult.errors.addAll(result.errors)
-            finalResult.warnings.addAll(result.warnings)
+            sender.finish()
+            result.dump(sender)
+            errorCount += result.errorCount
         }
-        finalResult.dump(logger)
-        return finalResult
+
+        return if (errorCount == 0) {
+            classData
+        } else {
+            onFatalError()
+            null
+        }
     }
 }

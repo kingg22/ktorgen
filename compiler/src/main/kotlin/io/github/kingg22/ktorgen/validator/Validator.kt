@@ -1,6 +1,6 @@
 package io.github.kingg22.ktorgen.validator
 
-import io.github.kingg22.ktorgen.KtorGenLogger
+import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.KtorGenOptions
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.validator.validators.*
@@ -9,7 +9,7 @@ fun interface Validator {
     fun validate(
         classData: ClassData,
         ktorGenOptions: KtorGenOptions,
-        ktorGenLogger: KtorGenLogger,
+        diagnosticSender: (String) -> DiagnosticTimer.DiagnosticSender,
         onFatalError: () -> Unit,
     ): ClassData?
 
