@@ -38,7 +38,7 @@ fun interface KtorGenGenerator {
                     val funBuilder = FunSpec.builder(func.name)
                         .addModifiers(func.modifierSet)
                         .returns(func.returnTypeData.typeName)
-                        .addAnnotations(func.nonKtorGenAnnotations)
+                        .addAnnotations(func.annotationsToPropagate)
                         .addKdoc(func.customHeader)
 
                     if (func.isSuspend) funBuilder.addModifiers(KModifier.SUSPEND)

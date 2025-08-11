@@ -11,6 +11,7 @@ import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
+import io.github.kingg22.ktorgen.model.GenOptions
 import io.github.kingg22.ktorgen.model.HttpClientClassName
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_COMMENT
 import io.github.kingg22.ktorgen.model.ParameterData
@@ -25,11 +26,12 @@ class KotlinpoetGenerator : KtorGenGenerator {
         // class
         timer.start()
         val visibilityModifier = KModifier.valueOf(classData.visibilityModifier.uppercase())
+
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
             .addModifiers(visibilityModifier)
             .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
             .addKdoc(classData.customHeader)
-            .addAnnotations(classData.annotationsToPropagate.map(AnnotationSpec.Builder::build))
+            .addAnnotations(classData.buildAnnotations())
             .addOriginatingKSFile(classData.ksFile)
         timer.addStep("Creating class for ${classData.interfaceName} to ${classData.generatedName}")
 
@@ -96,6 +98,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             fileBuilder.addFunction(
                 function
                     .addModifiers(visibilityModifier)
+                    .addAnnotations(classData.buildAnnotations())
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
             )
@@ -121,6 +124,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             fileBuilder.addFunction(
                 function
                     .addModifiers(visibilityModifier)
+                    .addAnnotations(classData.buildAnnotations())
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
             )
@@ -137,6 +141,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             fileBuilder.addFunction(
                 function
                     .addModifiers(visibilityModifier)
+                    .addAnnotations(classData.buildAnnotations())
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
             )
@@ -199,6 +204,20 @@ class KotlinpoetGenerator : KtorGenGenerator {
         )
     }
 
+    private fun GenOptions.buildAnnotations(): Set<AnnotationSpec> {
+        val annotations = annotationsToPropagate.toMutableSet()
+        if (optIns.isNotEmpty() && optInAnnotation == null) {
+            annotations += AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
+                .addMember(
+                    (1..optIns.size).joinToString { "%T::class" },
+                    *optIns.map { it.typeName }.toTypedArray(),
+                ).build()
+        } else if (optInAnnotation != null) {
+            annotations.add(optInAnnotation!!)
+        }
+        return annotations
+    }
+
     /** This fill the primary constructor and super interfaces */
     private fun TypeSpec.Builder.addSuperInterfaces(classData: ClassData, primaryConstructor: FunSpec.Builder) = apply {
         classData.superClasses
@@ -218,17 +237,25 @@ class KotlinpoetGenerator : KtorGenGenerator {
         val funBuilder = FunSpec.builder(func.name)
             .addModifiers(func.modifierSet)
             .returns(func.returnTypeData.typeName)
-            .addAnnotations(func.nonKtorGenAnnotations)
+            .addAnnotations(func.buildAnnotations())
             .addKdoc(func.customHeader.ifEmpty { KTORG_GENERATED_COMMENT })
 
         if (func.isSuspend) funBuilder.addModifiers(KModifier.SUSPEND)
 
         func.parameterDataList.forEach { param ->
             funBuilder.addParameter(
-                name = param.nameString,
-                type = param.typeData.typeName,
-                modifiers = buildList { if (param.isVararg) add(KModifier.VARARG) },
-                // TODO add propagate annotations on parameter
+                ParameterSpec.builder(
+                    name = param.nameString,
+                    type = param.typeData.typeName,
+                    modifiers = buildList { if (param.isVararg) add(KModifier.VARARG) },
+                )
+                    .addAnnotations(param.nonKtorgenAnnotations)
+                    .apply {
+                        if (param.optInAnnotation != null) {
+                            addAnnotation(param.optInAnnotation)
+                        }
+                    }
+                    .build(),
             )
         }
 
