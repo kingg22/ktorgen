@@ -2,6 +2,7 @@ package io.github.kingg22.ktorgen.model
 
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
@@ -18,7 +19,6 @@ class FunctionData(
     val isImplemented: Boolean,
     options: GenOptions,
 ) : GenOptions by options {
-    val nonKtorGenAnnotations: List<AnnotationSpec> = options.annotationsToPropagate.map { it.build() }
     val urlTemplate by lazy { parseUrlTemplate(httpMethodAnnotation.path) }
     val isBody by lazy { parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Body>() } }
     val isFormUrl by lazy {
@@ -40,7 +40,10 @@ class FunctionData(
 
     inline fun <reified T : FunctionAnnotation> hasAnnotation() = this.findAnnotationOrNull<T>() != null
 
-    data class UrlTemplateResult(val template: String, val keys: List<String>) {
+    class UrlTemplateResult(val template: String, val keys: List<String>) {
+        operator fun component1() = template
+        operator fun component2() = keys
+
         val isEmpty = template.isBlank() && keys.isEmpty()
         val isNotEmpty = !isEmpty
     }
@@ -57,4 +60,13 @@ class FunctionData(
 
         return UrlTemplateResult(template, keys)
     }
+
+    // TODO change parent to use this
+    class FunctionGenerationOptions(
+        val generate: Boolean = true,
+        val annotations: Set<AnnotationSpec> = emptySet(),
+        val optIns: Set<ClassName> = emptySet(),
+        val optInAnnotation: AnnotationSpec? = null,
+        val customHeader: String = "",
+    )
 }

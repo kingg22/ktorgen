@@ -1,6 +1,8 @@
 package io.github.kingg22.ktorgen.model
 
 import com.google.devtools.ksp.symbol.KSValueParameter
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 
 class ParameterData(
@@ -8,6 +10,8 @@ class ParameterData(
     val typeData: TypeData,
     val ksValueParameter: KSValueParameter,
     val ktorgenAnnotations: List<ParameterAnnotation>,
+    val nonKtorgenAnnotations: Set<AnnotationSpec>,
+    val optInAnnotation: AnnotationSpec?,
     val isHttpRequestBuilderLambda: Boolean,
 ) {
     val isVararg = ksValueParameter.isVararg
@@ -22,4 +26,11 @@ class ParameterData(
     inline fun <reified T : ParameterAnnotation> findAllAnnotations() = ktorgenAnnotations.filterIsInstance<T>()
 
     inline fun <reified T : ParameterAnnotation> hasAnnotation() = findAnnotationOrNull<T>() != null
+
+    // TODO add options to parent
+    class ParameterGenerationOptions(
+        val annotations: Set<AnnotationSpec> = emptySet(),
+        val optIns: Set<ClassName> = emptySet(),
+        val optInAnnotation: AnnotationSpec? = null,
+    )
 }
