@@ -1,0 +1,526 @@
+public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGen : java/lang/annotation/Annotation {
+	public abstract fun annotations ()[Ljava/lang/Class;
+	public abstract fun basePath ()Ljava/lang/String;
+	public abstract fun customClassHeader ()Ljava/lang/String;
+	public abstract fun customFileHeader ()Ljava/lang/String;
+	public abstract fun generate ()Z
+	public abstract fun generateCompanionExtFunction ()Z
+	public abstract fun generateHttpClientExtension ()Z
+	public abstract fun generateTopLevelFunction ()Z
+	public abstract fun name ()Ljava/lang/String;
+	public abstract fun optInAnnotations ()[Ljava/lang/Class;
+	public abstract fun propagateAnnotations ()Z
+	public abstract fun visibilityModifier ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenExperimental : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenFunction : java/lang/annotation/Annotation {
+	public abstract fun annotations ()[Ljava/lang/Class;
+	public abstract fun customHeader ()Ljava/lang/String;
+	public abstract fun generate ()Z
+	public abstract fun optInAnnotations ()[Ljava/lang/Class;
+	public abstract fun propagateAnnotations ()Z
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Body : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Cookie : java/lang/annotation/Annotation {
+	public static final field AccessToken Ljava/lang/String;
+	public static final field Auth Ljava/lang/String;
+	public static final field AuthToken Ljava/lang/String;
+	public static final field Bearer Ljava/lang/String;
+	public static final field ClientId Ljava/lang/String;
+	public static final field Companion Lio/github/kingg22/ktorgen/http/Cookie$Companion;
+	public static final field Csrf Ljava/lang/String;
+	public static final field CsrfToken Ljava/lang/String;
+	public static final field IdToken Ljava/lang/String;
+	public static final field Lang Ljava/lang/String;
+	public static final field Locale Ljava/lang/String;
+	public static final field RefreshToken Ljava/lang/String;
+	public static final field SID Ljava/lang/String;
+	public static final field SameSite Ljava/lang/String;
+	public static final field SessionId Ljava/lang/String;
+	public static final field SessionTrack Ljava/lang/String;
+	public static final field Theme Ljava/lang/String;
+	public static final field Token Ljava/lang/String;
+	public static final field TrackId Ljava/lang/String;
+	public static final field XSRF_TOKEN Ljava/lang/String;
+	public abstract fun domain ()Ljava/lang/String;
+	public abstract fun expiresTimestamp ()J
+	public abstract fun extensions ()[Lio/github/kingg22/ktorgen/http/Cookie$PairString;
+	public abstract fun httpOnly ()Z
+	public abstract fun maxAge ()I
+	public abstract fun name ()Ljava/lang/String;
+	public abstract fun path ()Ljava/lang/String;
+	public abstract fun secure ()Z
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Cookie$Companion {
+	public static final field AccessToken Ljava/lang/String;
+	public static final field Auth Ljava/lang/String;
+	public static final field AuthToken Ljava/lang/String;
+	public static final field Bearer Ljava/lang/String;
+	public static final field ClientId Ljava/lang/String;
+	public static final field Csrf Ljava/lang/String;
+	public static final field CsrfToken Ljava/lang/String;
+	public static final field IdToken Ljava/lang/String;
+	public static final field Lang Ljava/lang/String;
+	public static final field Locale Ljava/lang/String;
+	public static final field RefreshToken Ljava/lang/String;
+	public static final field SID Ljava/lang/String;
+	public static final field SameSite Ljava/lang/String;
+	public static final field SessionId Ljava/lang/String;
+	public static final field SessionTrack Ljava/lang/String;
+	public static final field Theme Ljava/lang/String;
+	public static final field Token Ljava/lang/String;
+	public static final field TrackId Ljava/lang/String;
+	public static final field XSRF_TOKEN Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Cookie$Container : java/lang/annotation/Annotation {
+	public abstract fun value ()[Lio/github/kingg22/ktorgen/http/Cookie;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Cookie$PairString : java/lang/annotation/Annotation {
+	public abstract fun first ()Ljava/lang/String;
+	public abstract fun second ()Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Cookie$SameSites {
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Cookie$SameSites;
+	public static final field Lax Ljava/lang/String;
+	public static final field None Ljava/lang/String;
+	public static final field Strict Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/DELETE : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Field : java/lang/annotation/Annotation {
+	public abstract fun encoded ()Z
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/FieldMap : java/lang/annotation/Annotation {
+	public abstract fun encoded ()Z
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/FormUrlEncoded : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Fragment : java/lang/annotation/Annotation {
+	public abstract fun encoded ()Z
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/GET : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/HEAD : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/HTTP : java/lang/annotation/Annotation {
+	public abstract fun hasBody ()Z
+	public abstract fun method ()Ljava/lang/String;
+	public abstract fun path ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Header : java/lang/annotation/Annotation {
+	public static final field ALPN Ljava/lang/String;
+	public static final field Accept Ljava/lang/String;
+	public static final field AcceptCharset Ljava/lang/String;
+	public static final field AcceptEncoding Ljava/lang/String;
+	public static final field AcceptLanguage Ljava/lang/String;
+	public static final field AcceptRanges Ljava/lang/String;
+	public static final field AccessControlAllowCredentials Ljava/lang/String;
+	public static final field AccessControlAllowHeaders Ljava/lang/String;
+	public static final field AccessControlAllowMethods Ljava/lang/String;
+	public static final field AccessControlAllowOrigin Ljava/lang/String;
+	public static final field AccessControlExposeHeaders Ljava/lang/String;
+	public static final field AccessControlMaxAge Ljava/lang/String;
+	public static final field AccessControlRequestHeaders Ljava/lang/String;
+	public static final field AccessControlRequestMethod Ljava/lang/String;
+	public static final field Age Ljava/lang/String;
+	public static final field Allow Ljava/lang/String;
+	public static final field AuthenticationInfo Ljava/lang/String;
+	public static final field Authorization Ljava/lang/String;
+	public static final field CacheControl Ljava/lang/String;
+	public static final field Companion Lio/github/kingg22/ktorgen/http/Header$Companion;
+	public static final field Connection Ljava/lang/String;
+	public static final field ContentDisposition Ljava/lang/String;
+	public static final field ContentEncoding Ljava/lang/String;
+	public static final field ContentLanguage Ljava/lang/String;
+	public static final field ContentLength Ljava/lang/String;
+	public static final field ContentLocation Ljava/lang/String;
+	public static final field ContentRange Ljava/lang/String;
+	public static final field ContentType Ljava/lang/String;
+	public static final field Cookie Ljava/lang/String;
+	public static final field DASL Ljava/lang/String;
+	public static final field DAV Ljava/lang/String;
+	public static final field Date Ljava/lang/String;
+	public static final field Depth Ljava/lang/String;
+	public static final field Destination Ljava/lang/String;
+	public static final field ETag Ljava/lang/String;
+	public static final field Expect Ljava/lang/String;
+	public static final field Expires Ljava/lang/String;
+	public static final field Forwarded Ljava/lang/String;
+	public static final field From Ljava/lang/String;
+	public static final field HTTP2Settings Ljava/lang/String;
+	public static final field Host Ljava/lang/String;
+	public static final field If Ljava/lang/String;
+	public static final field IfMatch Ljava/lang/String;
+	public static final field IfModifiedSince Ljava/lang/String;
+	public static final field IfNoneMatch Ljava/lang/String;
+	public static final field IfRange Ljava/lang/String;
+	public static final field IfScheduleTagMatch Ljava/lang/String;
+	public static final field IfUnmodifiedSince Ljava/lang/String;
+	public static final field LastModified Ljava/lang/String;
+	public static final field Link Ljava/lang/String;
+	public static final field Location Ljava/lang/String;
+	public static final field LockToken Ljava/lang/String;
+	public static final field MIMEVersion Ljava/lang/String;
+	public static final field MaxForwards Ljava/lang/String;
+	public static final field OrderingType Ljava/lang/String;
+	public static final field Origin Ljava/lang/String;
+	public static final field Overwrite Ljava/lang/String;
+	public static final field Position Ljava/lang/String;
+	public static final field Pragma Ljava/lang/String;
+	public static final field Prefer Ljava/lang/String;
+	public static final field PreferenceApplied Ljava/lang/String;
+	public static final field ProxyAuthenticate Ljava/lang/String;
+	public static final field ProxyAuthenticationInfo Ljava/lang/String;
+	public static final field ProxyAuthorization Ljava/lang/String;
+	public static final field Range Ljava/lang/String;
+	public static final field Referrer Ljava/lang/String;
+	public static final field RetryAfter Ljava/lang/String;
+	public static final field SLUG Ljava/lang/String;
+	public static final field ScheduleReply Ljava/lang/String;
+	public static final field ScheduleTag Ljava/lang/String;
+	public static final field SecWebSocketAccept Ljava/lang/String;
+	public static final field SecWebSocketExtensions Ljava/lang/String;
+	public static final field SecWebSocketKey Ljava/lang/String;
+	public static final field SecWebSocketProtocol Ljava/lang/String;
+	public static final field SecWebSocketVersion Ljava/lang/String;
+	public static final field Server Ljava/lang/String;
+	public static final field SetCookie Ljava/lang/String;
+	public static final field StrictTransportSecurity Ljava/lang/String;
+	public static final field TE Ljava/lang/String;
+	public static final field Timeout Ljava/lang/String;
+	public static final field Trailer Ljava/lang/String;
+	public static final field TransferEncoding Ljava/lang/String;
+	public static final field Upgrade Ljava/lang/String;
+	public static final field UserAgent Ljava/lang/String;
+	public static final field Vary Ljava/lang/String;
+	public static final field Via Ljava/lang/String;
+	public static final field WWWAuthenticate Ljava/lang/String;
+	public static final field Warning Ljava/lang/String;
+	public static final field XCorrelationId Ljava/lang/String;
+	public static final field XForwardedFor Ljava/lang/String;
+	public static final field XForwardedHost Ljava/lang/String;
+	public static final field XForwardedPort Ljava/lang/String;
+	public static final field XForwardedProto Ljava/lang/String;
+	public static final field XForwardedServer Ljava/lang/String;
+	public static final field XHttpMethodOverride Ljava/lang/String;
+	public static final field XRequestId Ljava/lang/String;
+	public static final field XTotalCount Ljava/lang/String;
+	public static final field constKeyPins Ljava/lang/String;
+	public static final field constKeyPinsReportOnly Ljava/lang/String;
+	public abstract fun name ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$AcceptEncodings {
+	public static final field All Ljava/lang/String;
+	public static final field Br Ljava/lang/String;
+	public static final field Compress Ljava/lang/String;
+	public static final field Deflate Ljava/lang/String;
+	public static final field Gzip Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$AcceptEncodings;
+	public static final field Identity Ljava/lang/String;
+	public static final field Zstd Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$Companion {
+	public static final field ALPN Ljava/lang/String;
+	public static final field Accept Ljava/lang/String;
+	public static final field AcceptCharset Ljava/lang/String;
+	public static final field AcceptEncoding Ljava/lang/String;
+	public static final field AcceptLanguage Ljava/lang/String;
+	public static final field AcceptRanges Ljava/lang/String;
+	public static final field AccessControlAllowCredentials Ljava/lang/String;
+	public static final field AccessControlAllowHeaders Ljava/lang/String;
+	public static final field AccessControlAllowMethods Ljava/lang/String;
+	public static final field AccessControlAllowOrigin Ljava/lang/String;
+	public static final field AccessControlExposeHeaders Ljava/lang/String;
+	public static final field AccessControlMaxAge Ljava/lang/String;
+	public static final field AccessControlRequestHeaders Ljava/lang/String;
+	public static final field AccessControlRequestMethod Ljava/lang/String;
+	public static final field Age Ljava/lang/String;
+	public static final field Allow Ljava/lang/String;
+	public static final field AuthenticationInfo Ljava/lang/String;
+	public static final field Authorization Ljava/lang/String;
+	public static final field CacheControl Ljava/lang/String;
+	public static final field Connection Ljava/lang/String;
+	public static final field ContentDisposition Ljava/lang/String;
+	public static final field ContentEncoding Ljava/lang/String;
+	public static final field ContentLanguage Ljava/lang/String;
+	public static final field ContentLength Ljava/lang/String;
+	public static final field ContentLocation Ljava/lang/String;
+	public static final field ContentRange Ljava/lang/String;
+	public static final field ContentType Ljava/lang/String;
+	public static final field Cookie Ljava/lang/String;
+	public static final field DASL Ljava/lang/String;
+	public static final field DAV Ljava/lang/String;
+	public static final field Date Ljava/lang/String;
+	public static final field Depth Ljava/lang/String;
+	public static final field Destination Ljava/lang/String;
+	public static final field ETag Ljava/lang/String;
+	public static final field Expect Ljava/lang/String;
+	public static final field Expires Ljava/lang/String;
+	public static final field Forwarded Ljava/lang/String;
+	public static final field From Ljava/lang/String;
+	public static final field HTTP2Settings Ljava/lang/String;
+	public static final field Host Ljava/lang/String;
+	public static final field If Ljava/lang/String;
+	public static final field IfMatch Ljava/lang/String;
+	public static final field IfModifiedSince Ljava/lang/String;
+	public static final field IfNoneMatch Ljava/lang/String;
+	public static final field IfRange Ljava/lang/String;
+	public static final field IfScheduleTagMatch Ljava/lang/String;
+	public static final field IfUnmodifiedSince Ljava/lang/String;
+	public static final field LastModified Ljava/lang/String;
+	public static final field Link Ljava/lang/String;
+	public static final field Location Ljava/lang/String;
+	public static final field LockToken Ljava/lang/String;
+	public static final field MIMEVersion Ljava/lang/String;
+	public static final field MaxForwards Ljava/lang/String;
+	public static final field OrderingType Ljava/lang/String;
+	public static final field Origin Ljava/lang/String;
+	public static final field Overwrite Ljava/lang/String;
+	public static final field Position Ljava/lang/String;
+	public static final field Pragma Ljava/lang/String;
+	public static final field Prefer Ljava/lang/String;
+	public static final field PreferenceApplied Ljava/lang/String;
+	public static final field ProxyAuthenticate Ljava/lang/String;
+	public static final field ProxyAuthenticationInfo Ljava/lang/String;
+	public static final field ProxyAuthorization Ljava/lang/String;
+	public static final field Range Ljava/lang/String;
+	public static final field Referrer Ljava/lang/String;
+	public static final field RetryAfter Ljava/lang/String;
+	public static final field SLUG Ljava/lang/String;
+	public static final field ScheduleReply Ljava/lang/String;
+	public static final field ScheduleTag Ljava/lang/String;
+	public static final field SecWebSocketAccept Ljava/lang/String;
+	public static final field SecWebSocketExtensions Ljava/lang/String;
+	public static final field SecWebSocketKey Ljava/lang/String;
+	public static final field SecWebSocketProtocol Ljava/lang/String;
+	public static final field SecWebSocketVersion Ljava/lang/String;
+	public static final field Server Ljava/lang/String;
+	public static final field SetCookie Ljava/lang/String;
+	public static final field StrictTransportSecurity Ljava/lang/String;
+	public static final field TE Ljava/lang/String;
+	public static final field Timeout Ljava/lang/String;
+	public static final field Trailer Ljava/lang/String;
+	public static final field TransferEncoding Ljava/lang/String;
+	public static final field Upgrade Ljava/lang/String;
+	public static final field UserAgent Ljava/lang/String;
+	public static final field Vary Ljava/lang/String;
+	public static final field Via Ljava/lang/String;
+	public static final field WWWAuthenticate Ljava/lang/String;
+	public static final field Warning Ljava/lang/String;
+	public static final field XCorrelationId Ljava/lang/String;
+	public static final field XForwardedFor Ljava/lang/String;
+	public static final field XForwardedHost Ljava/lang/String;
+	public static final field XForwardedPort Ljava/lang/String;
+	public static final field XForwardedProto Ljava/lang/String;
+	public static final field XForwardedServer Ljava/lang/String;
+	public static final field XHttpMethodOverride Ljava/lang/String;
+	public static final field XRequestId Ljava/lang/String;
+	public static final field XTotalCount Ljava/lang/String;
+	public static final field constKeyPins Ljava/lang/String;
+	public static final field constKeyPinsReportOnly Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Header$Container : java/lang/annotation/Annotation {
+	public abstract fun value ()[Lio/github/kingg22/ktorgen/http/Header;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$ContentTypes {
+	public static final field Any Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$ContentTypes;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$ContentTypes$Application {
+	public static final field Any Ljava/lang/String;
+	public static final field Atom Ljava/lang/String;
+	public static final field Cbor Ljava/lang/String;
+	public static final field Docx Ljava/lang/String;
+	public static final field FormUrlEncoded Ljava/lang/String;
+	public static final field GZip Ljava/lang/String;
+	public static final field HalJson Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$ContentTypes$Application;
+	public static final field JavaScript Ljava/lang/String;
+	public static final field Json Ljava/lang/String;
+	public static final field OctetStream Ljava/lang/String;
+	public static final field Pdf Ljava/lang/String;
+	public static final field Pptx Ljava/lang/String;
+	public static final field ProblemJson Ljava/lang/String;
+	public static final field ProblemXml Ljava/lang/String;
+	public static final field ProtoBuf Ljava/lang/String;
+	public static final field Rss Ljava/lang/String;
+	public static final field Soap Ljava/lang/String;
+	public static final field Wasm Ljava/lang/String;
+	public static final field Xlsx Ljava/lang/String;
+	public static final field Xml Ljava/lang/String;
+	public static final field Xml_Dtd Ljava/lang/String;
+	public static final field Yaml Ljava/lang/String;
+	public static final field Zip Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$ContentTypes$Audio {
+	public static final field Any Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$ContentTypes$Audio;
+	public static final field MP4 Ljava/lang/String;
+	public static final field MPEG Ljava/lang/String;
+	public static final field OGG Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$ContentTypes$Font {
+	public static final field Any Ljava/lang/String;
+	public static final field Collection Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$ContentTypes$Font;
+	public static final field Otf Ljava/lang/String;
+	public static final field Sfnt Ljava/lang/String;
+	public static final field Ttf Ljava/lang/String;
+	public static final field Woff Ljava/lang/String;
+	public static final field Woff2 Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$ContentTypes$Image {
+	public static final field Any Ljava/lang/String;
+	public static final field GIF Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$ContentTypes$Image;
+	public static final field JPEG Ljava/lang/String;
+	public static final field PNG Ljava/lang/String;
+	public static final field SVG Ljava/lang/String;
+	public static final field XIcon Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$ContentTypes$Message {
+	public static final field Any Ljava/lang/String;
+	public static final field Http Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$ContentTypes$Message;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$ContentTypes$MultiPart {
+	public static final field Alternative Ljava/lang/String;
+	public static final field Any Ljava/lang/String;
+	public static final field ByteRanges Ljava/lang/String;
+	public static final field Encrypted Ljava/lang/String;
+	public static final field FormData Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$ContentTypes$MultiPart;
+	public static final field Mixed Ljava/lang/String;
+	public static final field Related Ljava/lang/String;
+	public static final field Signed Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$ContentTypes$Text {
+	public static final field Any Ljava/lang/String;
+	public static final field CSS Ljava/lang/String;
+	public static final field CSV Ljava/lang/String;
+	public static final field EventStream Ljava/lang/String;
+	public static final field Html Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$ContentTypes$Text;
+	public static final field JavaScript Ljava/lang/String;
+	public static final field Plain Ljava/lang/String;
+	public static final field VCard Ljava/lang/String;
+	public static final field Xml Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/http/Header$ContentTypes$Video {
+	public static final field Any Ljava/lang/String;
+	public static final field INSTANCE Lio/github/kingg22/ktorgen/http/Header$ContentTypes$Video;
+	public static final field MP4 Ljava/lang/String;
+	public static final field MPEG Ljava/lang/String;
+	public static final field OGG Ljava/lang/String;
+	public static final field QuickTime Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/HeaderMap : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/HeaderParam : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/HeaderParam$Container : java/lang/annotation/Annotation {
+	public abstract fun value ()[Lio/github/kingg22/ktorgen/http/HeaderParam;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Headers : java/lang/annotation/Annotation {
+	public abstract fun values ()[Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Multipart : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/OPTIONS : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/PATCH : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/POST : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/PUT : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Part : java/lang/annotation/Annotation {
+	public abstract fun encoding ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/PartMap : java/lang/annotation/Annotation {
+	public abstract fun encoding ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Path : java/lang/annotation/Annotation {
+	public abstract fun encoded ()Z
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Query : java/lang/annotation/Annotation {
+	public abstract fun encoded ()Z
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/QueryMap : java/lang/annotation/Annotation {
+	public abstract fun encoded ()Z
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/QueryName : java/lang/annotation/Annotation {
+	public abstract fun encoded ()Z
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Streaming : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Tag : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/http/Url : java/lang/annotation/Annotation {
+}
+

@@ -9,12 +9,8 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
-import io.github.kingg22.ktorgen.model.ClassData
-import io.github.kingg22.ktorgen.model.FunctionData
-import io.github.kingg22.ktorgen.model.GenOptions
-import io.github.kingg22.ktorgen.model.HttpClientClassName
-import io.github.kingg22.ktorgen.model.KTORG_GENERATED_COMMENT
-import io.github.kingg22.ktorgen.model.ParameterData
+import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.partDataKtor
+import io.github.kingg22.ktorgen.model.*
 import io.github.kingg22.ktorgen.model.annotations.CookieValues
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
@@ -22,9 +18,8 @@ import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 
 class KotlinpoetGenerator : KtorGenGenerator {
-    override fun generate(classData: ClassData, timer: DiagnosticTimer.DiagnosticSender): FileSpec {
+    override fun generate(classData: ClassData, timer: DiagnosticTimer.DiagnosticSender): FileSpec = timer.work {
         // class
-        timer.start()
         val visibilityModifier = KModifier.valueOf(classData.visibilityModifier.uppercase())
 
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
@@ -50,9 +45,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         val goingToGenerate = functions.isNotEmpty() || properties.size > 1
 
         if (!goingToGenerate) {
-            return KtorGenGenerator.NO_OP.generate(classData, timer.createTask("Dummy code")).also {
-                timer.finish()
-            }
+            return@work KtorGenGenerator.NO_OP.generate(classData, timer.createTask("Dummy code"))
         }
 
         // add super interfaces, constructor and properties
@@ -150,7 +143,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
         // add class to file and build all
         timer.addStep("Finished file generation")
-        return fileBuilder.addType(classBuilder.build()).build().also { timer.finish() }
+        fileBuilder.addType(classBuilder.build()).build()
     }
 
     /** @return FunSpec del constructor, propiedades y nombre de la propiedad httpClient */
@@ -265,11 +258,76 @@ class KotlinpoetGenerator : KtorGenGenerator {
     }
 
     private fun generateFunctionBody(func: FunctionData, httpClient: MemberName) = CodeBlock.builder().apply {
-        if (func.returnTypeData.typeName != UNIT) add("return ")
-        addRequest(func, httpClient)
-        // End with get body if return type != Unit
-        if (func.returnTypeData.typeName != UNIT) add(".body()")
+        val returnType = func.returnTypeData.typeName
+        val isFlow = returnType.isFlowType()
+        val isResult = returnType.isResultType()
+
+        when {
+            isFlow && returnType.unwrapFlow().isResultType() -> returnFlowResult(returnType, func, httpClient)
+
+            isFlow -> {
+                val isUnit = returnType.unwrapFlow() == UNIT
+                beginControlFlow("return %M", MemberName("kotlinx.coroutines.flow", "flow"))
+                addRequest(func, httpClient)
+                if (!isUnit) {
+                    add(BODY_LITERAL, returnType.unwrapFlow())
+                    beginControlFlow(".let")
+                        .addStatement("emit(it)")
+                    endControlFlow()
+                } else {
+                    addStatement("emit(%L)", UNIT)
+                }
+                endControlFlow()
+            }
+
+            isResult -> returnResult(returnType, func, httpClient)
+
+            else -> {
+                val isUnit = returnType == UNIT
+                if (!isUnit) add("return ")
+                addRequest(func, httpClient)
+                if (!isUnit) add(".body()")
+            }
+        }
     }.build()
+
+    private fun CodeBlock.Builder.returnFlowResult(returnType: TypeName, func: FunctionData, httpClient: MemberName) =
+        apply {
+            val isUnit = returnType.unwrapFlowResult() == UNIT
+            beginControlFlow("return %M", MemberName("kotlinx.coroutines.flow", "flow"))
+                .beginControlFlow("try")
+                .addRequest(func, httpClient)
+            if (!isUnit) {
+                add(BODY_LITERAL, returnType.unwrapFlowResult())
+                beginControlFlow(".let")
+                addStatement("emit(Result.success(it))")
+                endControlFlow()
+            } else {
+                addStatement("emit(Result.success(%L))", UNIT)
+            }
+            nextControlFlow("catch (e: Exception)")
+                .addStatement("emit(Result.failure(e))")
+            endControlFlow()
+            endControlFlow()
+        }
+
+    private fun CodeBlock.Builder.returnResult(returnType: TypeName, func: FunctionData, httpClient: MemberName) =
+        apply {
+            val isUnit = returnType.unwrapResult() == UNIT
+            beginControlFlow("return try")
+            addRequest(func, httpClient)
+            if (!isUnit) {
+                addStatement(BODY_LITERAL, returnType.unwrapResult())
+                beginControlFlow(".let")
+                    .addStatement("Result.success(it)")
+                endControlFlow()
+            } else {
+                addStatement("Result.success(%L)", UNIT)
+            }
+            nextControlFlow("catch (e: Exception)")
+            addStatement("Result.failure(e)")
+            endControlFlow()
+        }
 
     private fun generateTopLevelFactoryFunction(
         classNameImpl: ClassName,
@@ -327,7 +385,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
     // -- Complete request is here --
     private fun CodeBlock.Builder.addRequest(func: FunctionData, httpClient: MemberName) = apply {
         // Start with httpClient.request {
-        beginControlFlow("this.%M.request", httpClient)
+        beginControlFlow("%M.request", httpClient)
             // First invoke builders
             .addBuilderCall(func.parameterDataList)
             .addHttpMethod(func)
@@ -505,7 +563,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     ?: error("Not found body"), // imposible after isBody and validations
             )
         }
-        if (func.isMultipart) add(getPartsCodeBlock(func.parameterDataList, listType, arrayType))
+        if (func.isMultipart) add(getPartsCodeBlock(func.parameterDataList, listType, arrayType, partDataKtor))
         if (func.isFormUrl) add(getFieldArgumentsCodeBlock(func.parameterDataList, listType, arrayType))
     }
 
@@ -564,7 +622,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                             if (parameterData.typeData.parameterType.isMarkedNullable) {
                                 beginControlFlow(LITERAL_NN_LET, paramName)
                                     .addStatement(APPEND_STRING_LITERAL, headerName, headerValue)
-                                    .endControlFlow()
+                                endControlFlow()
                             } else {
                                 addStatement(APPEND_STRING_LITERAL, headerName, headerValue)
                             }
@@ -618,8 +676,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
                 val isNullable = parameterData.typeData.parameterType.isMarkedNullable
 
-                val isMap = typeName.copy(false) == MAP
-                val isPair = typeName.copy(false) == ClassName("kotlin", "Pair")
+                val isMap = MAP == typeName.rawType()
+                val isPair = ClassName("kotlin", "Pair") == typeName.rawType()
                 val isVarargPair = parameterData.isVararg && isPair
                 val isVarargMap = parameterData.isVararg && isMap
 
@@ -642,6 +700,12 @@ class KotlinpoetGenerator : KtorGenGenerator {
             }?.also { endControlFlow() }
     }
 
+    private fun TypeName.rawType(): ClassName = when (this) {
+        is ParameterizedTypeName -> this.rawType
+        is ClassName -> this
+        else -> error("Unsupported type: Dynamic")
+    }
+
     private fun CodeBlock.Builder.headerMapOrVarargMap(
         isVarargMap: Boolean,
         paramAccess: CodeBlock,
@@ -658,7 +722,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             beginControlFlow("it.value?.let { value ->")
         }
         addStatement(
-            "append(it.key, %L)",
+            "this.append(it.key, %L)",
             if (valueIsString) {
                 if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.value")
             } else {
@@ -686,7 +750,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         if (valueIsNullable) beginControlFlow("it.second?.let { value ->")
 
         addStatement(
-            "append(it.first, %L)",
+            "this.append(it.first, %L)",
             if (valueIsString) {
                 if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.second")
             } else {
@@ -795,15 +859,20 @@ class KotlinpoetGenerator : KtorGenGenerator {
     }.build()
 
     // -- body --
-    fun getPartsCodeBlock(
+    private fun getPartsCodeBlock(
         params: List<ParameterData>,
         listType: KSType,
         arrayType: KSType,
+        partDataType: KSType?,
         formDataVar: String = "_multiPartDataContent",
+        partDataVar: String = "_partDataList",
     ): CodeBlock {
         val block = CodeBlock.builder()
 
         val partCode = CodeBlock.builder()
+
+        block.addStatement("val %L = mutableListOf<%T>()", partDataVar, ClassName("io.ktor.http.content", "PartData"))
+
         params.filter { it.hasAnnotation<ParameterAnnotation.Part>() }
             .forEach { parameterData ->
                 val part = parameterData.findAnnotationOrNull<ParameterAnnotation.Part>()
@@ -812,42 +881,78 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 val partValue = part.value
 
                 val starProj = parameterData.typeData.parameterType
-                val isList = starProj.isAssignableFrom(listType)
-                val isArray = starProj.isAssignableFrom(arrayType)
+                val isList = listType.isAssignableFrom(starProj)
+                val isArray = arrayType.isAssignableFrom(starProj)
+                val isPartData = partDataType != null && partDataType.isAssignableFrom(starProj)
+                val isListPartData = (isList || isArray) &&
+                    partDataType != null &&
+                    starProj.arguments.firstOrNull()?.type?.resolve()?.let { partDataType.isAssignableFrom(it) } == true
 
-                if (isList || isArray) {
-                    partCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
-                    partCode.addStatement("this.append(%S, %P)", partValue, "\$it")
-                    partCode.endControlFlow()
-                } else {
-                    partCode.beginControlFlow(LITERAL_NN_LET, name)
-                    partCode.addStatement("this.append(%S, %P)", partValue, "\$it")
-                    partCode.endControlFlow()
+                when {
+                    isListPartData -> {
+                        partCode.beginControlFlow(LITERAL_NN_LET, name)
+                            .addStatement("%L.addAll(it)", partDataVar)
+                        partCode.endControlFlow()
+                    }
+
+                    isPartData -> {
+                        partCode.beginControlFlow(LITERAL_NN_LET, name)
+                            .addStatement("%L.add(it)", partDataVar)
+                        partCode.endControlFlow()
+                    }
+
+                    isList || isArray -> {
+                        partCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
+                            .addStatement("this.append(%S, %P)", partValue, "\$it")
+                        partCode.endControlFlow()
+                    }
+
+                    else -> {
+                        partCode.beginControlFlow(LITERAL_NN_LET, name)
+                            .addStatement("this.append(%S, %P)", partValue, "\$it")
+                        partCode.endControlFlow()
+                    }
                 }
             }
 
         params.filter { it.hasAnnotation<ParameterAnnotation.PartMap>() }
             .forEach { parameterData ->
-                partCode.beginControlFlow("%L?.forEach", parameterData.nameString)
-                partCode.beginControlFlow(ENTRY_VALUE_NN_LET)
-                partCode.addStatement("this.append(entry.key, %P)", VALUE)
-                partCode.endControlFlow()
-                partCode.endControlFlow()
+                val starProj = parameterData.typeData.parameterType
+                val isList = starProj.isAssignableFrom(listType)
+                val isArray = starProj.isAssignableFrom(arrayType)
+                val isListPartData = (isList || isArray) &&
+                    partDataType != null &&
+                    starProj.arguments.firstOrNull()?.type?.resolve()?.let { partDataType.isAssignableFrom(it) } == true
+
+                when {
+                    isListPartData -> {
+                        partCode.beginControlFlow(LITERAL_NN_LET, parameterData.nameString)
+                            .addStatement("%L.addAll(it)", partDataVar)
+                        partCode.endControlFlow()
+                    }
+
+                    else -> {
+                        partCode.beginControlFlow("%L?.forEach", parameterData.nameString)
+                        partCode.beginControlFlow(ENTRY_VALUE_NN_LET)
+                            .addStatement("this.append(entry.key, %P)", VALUE)
+                        partCode.endControlFlow()
+                        partCode.endControlFlow()
+                    }
+                }
             }
 
         if (partCode.build().isNotEmpty()) {
-            block.add("val %L = formData·{\n", formDataVar)
-            block.indent()
-            block.add(partCode.build())
-            block.unindent()
-            block.add("}\n")
-            block.addStatement("this.setBody(MultiPartFormDataContent(%L))", formDataVar)
-        }
+            block.beginControlFlow("val %L = %M", formDataVar, MemberName("io.ktor.client.request.forms", "formData"))
+                .add(partCode.build())
+            block.endControlFlow()
 
+            // Unir contenido de formData y lista de PartData
+            block.addStatement("this.setBody(MultiPartFormDataContent(%L + %L))", partDataVar, formDataVar)
+        }
         return block.build()
     }
 
-    fun getFieldArgumentsCodeBlock(
+    private fun getFieldArgumentsCodeBlock(
         params: List<ParameterData>,
         listType: KSType,
         arrayType: KSType,
@@ -909,11 +1014,12 @@ class KotlinpoetGenerator : KtorGenGenerator {
     companion object {
         private const val THIS_HEADERS = "this.headers"
         private const val LITERAL_FOREACH = "%L.forEach"
-        private const val APPEND_STRING_LITERAL = "append(%S, %L)"
+        private const val APPEND_STRING_LITERAL = "this.append(%S, %L)"
         private const val LITERAL_NN_LET = "%L?.let"
         private const val ITERABLE_FILTER_NULL_FOREACH = "%L?.filterNotNull()?.forEach"
         private const val ENTRY_VALUE_NN_LET = "entry.value?.let { value ->"
         private const val VALUE = "\$value"
         private const val RETURN_TYPE_LITERAL = "return %T(%L)"
+        private const val BODY_LITERAL = ".body<%T>()"
     }
 }

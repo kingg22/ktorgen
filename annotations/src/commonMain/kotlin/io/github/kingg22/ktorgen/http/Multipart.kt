@@ -1,7 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
 /**
- * Send a request body is multipart
+ * Indicate the request body is multipart
  *
  * Parts should be declared as parameters and annotated with [@Part][Part]
  *

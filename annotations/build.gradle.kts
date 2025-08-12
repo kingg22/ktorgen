@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlinMultiplatform)
-    // alias(libs.plugins.kotlinxBinaryCompatibility)
+    alias(libs.plugins.kotlinxBinaryCompatibility)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.mavenPublish)
 }
@@ -18,15 +18,11 @@ plugins {
 group = "io.github.kingg22"
 version = libs.versions.ktorgen.version.get()
 
-/*
 apiValidation {
-    // temp disable until publish
-    validationDisabled = true
     klib {
         enabled = true
     }
 }
- */
 
 kotlin {
     compilerOptions {
@@ -38,11 +34,6 @@ kotlin {
     // after kotlin 2.2.0
     abiValidation {
         enabled.set(true)
-        filters {
-            excluded {
-                annotatedWith.add("$group.ktorgen.core.InternalKtorGen")
-            }
-        }
     }
      */
 

@@ -8,10 +8,9 @@ class KtorGenOptions(options: Map<String, String>) {
      *
      * 2: Turn errors into warnings
      */
-    val errorsLoggingType: Int = options[CHECKING_TYPE]?.toIntOrNull() ?: 1
+    val errorsLoggingType: Int = options[CHECKING_TYPE]?.toIntOrNull() ?: 2
 
     companion object {
-        const val CHECKING_TYPE = "ktorgen_check_type"
-        const val QUALIFIED_TYPE = "ktorgen_qualified_type_name"
+        private const val CHECKING_TYPE = "ktorgen_check_type"
     }
 }

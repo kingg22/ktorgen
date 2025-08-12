@@ -3,6 +3,8 @@ package io.github.kingg22.ktorgen.http
 /**
  * Annotate a single part of a multipart request.
  *
+ * If the type is `PartData` the value will be used directly with its content type.
+ *
  * ```kotlin
  * @POST("upload")
  * @Multipart
