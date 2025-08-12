@@ -21,9 +21,16 @@ Ktorgen is a 100% compile-time code generator for creating HTTP clients using Kt
 
 🔹 Annotation retention: SOURCE / BINARY.
 
+🔹 Support [suspend fun](https://kotlinlang.org/docs/async-programming.html#coroutines),
+[Coroutines Flow](https://kotlinlang.org/docs/flow.html) and
+[Result](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-result/) out of the box.
+
 🔹 Optional type-safe headers, using `Headers.ContentTypes` or `Headers.Companion.*`
 
 🔹 Optional inheritance between interfaces (use [delegation](https://kotlinlang.org/docs/delegation.html) to implement).
+
+🔹 Experimental support for [vararg parameters](https://kotlinlang.org/docs/functions.html#variable-number-of-arguments-varargs) and
+[Pair](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-pair/) type.
 
 📚 [Documentación completa de las anotaciones](https://kingg22.github.io/ktorgen/).
 
@@ -53,15 +60,16 @@ ktorgen-compiler = { group = "io.github.kingg22", name = "ktorgen-compiler", ver
 ```
 
 ## 🔄 Comparison
-| Feature                               | Retrofit                       | Ktorfit                        | ktorgen 🚀                                              |
-|---------------------------------------|--------------------------------|--------------------------------|---------------------------------------------------------|
-| Based on Ktor Client                  | ❌                              | ✅                              | ✅                                                       |
-| Runtime dependencies                  | ✅ (Reflection)                 | ✅                              | ❌                                                       |
-| Retrofit-like annotations             | ✅ (Runtime retention)          | ✅ + ⚠️ more annotations        | ✅ with _smart use_ that reduces unnecessary annotations |
-| Type-safe headers                     | ❌                              | ❌                              | ✅ with `Headers.ContentTypes` and `Headers.Companion.*` |
-| Cookie support                        | ⚠️ using the Header annotation | ⚠️ Using the Header annotation | ✅ with `@Cookie`                                        |
-| Using an `@Part` without `@Multipart` | ❌                              | ❌                              | ✅ (smart use, your intended use is understood)          |
-| Customizing the generated code        | Limited                        | Limited                        | ✅ Using options in `@KtorGen` and `@KtorGenFunction`    |
+| Feature                               | Retrofit                             | Ktorfit                        | ktorgen 🚀                                                     |
+|---------------------------------------|--------------------------------------|--------------------------------|----------------------------------------------------------------|
+| Based on Ktor Client                  | ❌                                    | ✅                              | ✅                                                              |
+| Runtime dependencies                  | ✅ (Reflection, converters, adapters) | ✅ (Converts)                   | ❌                                                              |
+| Retrofit-like annotations             | ✅ (Runtime retention)                | ✅ + ⚠️ more annotations        | ✅ with _smart use_ that reduces unnecessary annotations        |
+| Type-safe headers                     | ❌                                    | ❌                              | ✅ with `Headers.ContentTypes` and `Headers.Companion.*`        |
+| Cookie support                        | ⚠️ using the Header annotation       | ⚠️ Using the Header annotation | ✅ with `@Cookie`                                               |
+| Using an `@Part` without `@Multipart` | ❌                                    | ❌                              | ✅ (smart use, your intended use is understood)                 |
+| Customizing the generated code        | Limited                              | Limited                        | ✅ Using options in `@KtorGen` and `@KtorGenFunction`           |
+| Synchronous request                   | ✅                                    | ✅                              | ❌ Ktor Client don't offer synchronous request, only for `Flow` |
 
 **BREAKING CHANGES:**
 - Since [PR #1](https://github.com/kingg22/ktorgen/pull/1), Header annotations have been different:
