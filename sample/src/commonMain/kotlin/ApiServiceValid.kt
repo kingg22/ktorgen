@@ -5,6 +5,7 @@ import io.github.kingg22.ktorgen.sample.model.IssueData
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.http.content.PartData
+import kotlinx.coroutines.flow.Flow
 
 interface ApiServiceValid {
     val httpClient: HttpClient
@@ -56,15 +57,16 @@ interface ApiServiceValid {
     suspend fun ping(@QueryName hola: String)
 
     @GET
-    suspend fun dynamicUrl(
+    fun dynamicUrl(
         @Url url: String,
         @HeaderMap headers: Map<String, String>,
         @HeaderMap vararg others: Pair<String, String?>,
-    ): IssueData
+        @Part parts: List<PartData>,
+    ): Flow<Result<IssueData>>
 
     @Fragment("header")
-    suspend fun dynamicQuery(builder: HttpRequestBuilder.() -> Unit): IssueData
+    suspend fun dynamicQuery(builder: HttpRequestBuilder.() -> Unit): Result<IssueData>
 
     @HTTP("TRACE", "media/download")
-    suspend fun dynamicQuery(builder: HttpRequestBuilder, @Tag tagValue: String): IssueData
+    fun dynamicQuery(builder: HttpRequestBuilder, @Tag tagValue: String): Flow<IssueData>
 }
