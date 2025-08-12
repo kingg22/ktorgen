@@ -23,6 +23,7 @@ import io.github.kingg22.ktorgen.http.OPTIONS
 import io.github.kingg22.ktorgen.http.PATCH
 import io.github.kingg22.ktorgen.http.POST
 import io.github.kingg22.ktorgen.http.PUT
+import io.github.kingg22.ktorgen.model.KTOR_CLIENT_PART_DATA
 import io.github.kingg22.ktorgen.validator.Validator
 
 class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val ktorGenOptions: KtorGenOptions) :
@@ -30,6 +31,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
     companion object {
         lateinit var listType: KSType
         lateinit var arrayType: KSType
+        var partDataKtor: KSType? = null
     }
     private val logger = KtorGenLogger(env.logger, ktorGenOptions.errorsLoggingType)
     private var invoked = false
@@ -49,6 +51,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 ?.asStarProjectedType()
                 ?: error("${KtorGenLogger.KTOR_GEN} List not found")
             arrayType = resolver.builtIns.arrayType
+            partDataKtor = resolver.getKotlinClassByName(KTOR_CLIENT_PART_DATA)?.asType(emptyList())
             timer.addStep("Retrieve KSTypes")
 
             // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
