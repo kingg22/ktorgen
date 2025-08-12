@@ -22,7 +22,6 @@ import io.github.kingg22.ktorgen.http.Fragment
 import io.github.kingg22.ktorgen.http.HTTP
 import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.Multipart
-import io.github.kingg22.ktorgen.http.Streaming
 import io.github.kingg22.ktorgen.model.DefaultOptions
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.GenOptions
@@ -135,9 +134,7 @@ class FunctionMapper : DeclarationFunctionMapper {
                 }
 
                 is FunctionAnnotation.HttpMethodAnnotation -> onAddImport(KTOR_HTTP_METHOD)
-                is FunctionAnnotation.Fragment, FunctionAnnotation.Streaming -> {
-                    /* No Op */
-                }
+                is FunctionAnnotation.Fragment -> { /* No Op */ }
             }
         }
     }
@@ -229,12 +226,6 @@ class FunctionMapper : DeclarationFunctionMapper {
             function.getAnnotationsByType(Multipart::class).firstOrNull()?.let {
                 add(FunctionAnnotation.Multipart)
                 timer.addStep("Multipart found")
-            }
-
-            timer.addStep("Going to get Streaming")
-            function.getAnnotationsByType(Streaming::class).firstOrNull()?.let {
-                add(FunctionAnnotation.Streaming)
-                timer.addStep("Streaming found")
             }
 
             timer.addStep("Going to get FormUrlEncoded")

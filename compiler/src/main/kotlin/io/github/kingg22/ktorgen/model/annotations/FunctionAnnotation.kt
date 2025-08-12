@@ -18,10 +18,7 @@ sealed interface FunctionAnnotation {
      * [io.github.kingg22.ktorgen.http.OPTIONS],
      * [io.github.kingg22.ktorgen.http.PATCH],
      */
-    class HttpMethodAnnotation(val path: String, val httpMethod: HttpMethod) : FunctionAnnotation {
-        fun copy(path: String = this.path, httpMethod: HttpMethod = this.httpMethod) =
-            HttpMethodAnnotation(path, httpMethod)
-    }
+    class HttpMethodAnnotation(val path: String, val httpMethod: HttpMethod) : FunctionAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.Header] */
     class Headers(val value: List<Pair<String, String>>) : FunctionAnnotation {
@@ -35,9 +32,6 @@ sealed interface FunctionAnnotation {
 
     /** See [io.github.kingg22.ktorgen.http.FormUrlEncoded] */
     object FormUrlEncoded : FunctionAnnotation
-
-    /** See [io.github.kingg22.ktorgen.http.Streaming] */
-    object Streaming : FunctionAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.Body] */
     object Multipart : FunctionAnnotation

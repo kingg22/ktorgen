@@ -104,8 +104,8 @@ val ktorGenAnnotationsFunction = setOf(
     Header::class,
     Cookie::class,
     FormUrlEncoded::class,
-    Streaming::class,
     Multipart::class,
+    Fragment::class,
 )
 
 val ktorGenAnnotationsParameter = setOf(
