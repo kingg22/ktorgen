@@ -15,7 +15,7 @@ class ClassLevelValidator : ValidatorStrategy {
 
     override fun validate(context: ValidationContext) = ValidationResult {
         if (context.visibilityGeneratedClass.equals("public", true).not() &&
-            context.visibilityGeneratedClass.equals("internal", false).not()
+            context.visibilityGeneratedClass.equals("internal", true).not()
         ) {
             addError(
                 KtorGenLogger.ONLY_PUBLIC_INTERNAL_CLASS + "Current ${context.visibilityGeneratedClass}",
