@@ -9,20 +9,21 @@ import kotlin.math.roundToInt
 // Inspired on Paris Processor timer https://github.com/airbnb/paris/blob/d8b5edbc56253bcdd0d0c57930d2e91113dd0f37/paris-processor/src/main/java/com/airbnb/paris/processor/Timer.kt
 class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
     private val root = Step(name, StepType.ROOT)
-    private var started = false
+    private var rootStarted: Boolean
+        set(_) {
+            throw UnsupportedOperationException()
+        }
+        get() = root.isStarted()
 
     fun start(): DiagnosticTimer {
-        check(!started) { "DiagnosticTimer on root already started" }
-        started = true
+        check(!rootStarted) { "DiagnosticTimer on root already started" }
         root.start()
         return this
     }
 
     /** Factory for inner phases */
-    fun createPhase(name: String): DiagnosticSender {
-        val phase = Step(name, StepType.PHASE)
-        root.addChild(phase)
-        return phase
+    fun createPhase(name: String): DiagnosticSender = Step(name, StepType.PHASE).apply {
+        root.addChild(this)
     }
 
     /** Add step on root phase */
@@ -65,9 +66,7 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
     }
 
     /** Finish the root timer */
-    fun finish() {
-        root.finish()
-    }
+    fun finish() = root.finish()
 
     private fun printStep(builder: StringBuilder, step: Step, indent: String) {
         val icon = iconFor(step)
@@ -123,16 +122,18 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         override fun haveErrors() = children.any { it.type == StepType.ERROR } || type == StepType.ERROR
 
         override fun start() {
-            check(started && !isStarted()) { "Step $name already started" }
+            check((this == root || rootStarted) && !isStarted()) { "Step $name already started" }
             startNanos = System.nanoTime()
         }
 
         override fun finish() {
-            check(started && isStarted()) { "Step $name not started yet" }
+            check(rootStarted && isStarted()) { "Step $name not started yet" }
             check(!isFinish()) { "Step $name already finish" }
-            check(children.all(Step::isCompleted)) {
-                "A children step of $name is not completed. " +
-                    "Children status: ${children.count(Step::isCompleted)}/${children.size} completed."
+            if (!children.all(Step::isCompleted)) {
+                logger.logging(
+                    "A children step of $name is not completed. " +
+                        "Children status: ${children.count(Step::isCompleted)}/${children.size} completed.",
+                )
             }
             endNanos = System.nanoTime()
         }
@@ -141,10 +142,8 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
             children.add(step)
         }
 
-        override fun createTask(name: String): DiagnosticSender {
-            val task = Step(name, StepType.TASK)
-            addChild(task)
-            return task
+        override fun createTask(name: String): DiagnosticSender = Step(name, StepType.TASK).apply {
+            addChild(this)
         }
 
         override fun addStep(message: String, symbol: KSNode?) {
@@ -179,7 +178,6 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         }
 
         fun printDiagnostic(builder: StringBuilder, indent: String) {
-            check(isCompleted()) { "Step $name not completed yet" }
             for (msg in messages) {
                 val emoji = msg.type.icon
                 val prefix = "    "
