@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+    // Can't use android multiplatform library. See https://github.com/google/ksp/issues/2476
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ksp)

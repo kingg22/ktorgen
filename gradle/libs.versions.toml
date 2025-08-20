@@ -4,34 +4,38 @@
 
 [versions]
 # https://developer.android.com/build/releases/gradle-plugin
-agp = "8.11.1"
+agp = "8.12.0"
 
 # https://developer.android.com/tools/releases/platforms
 android-compileSdk = "36"
 android-minSdk = "21"
 
 # https://mvnrepository.com/artifact/androidx.room/room-compiler-processing-testing
-androidx-room-compiler-testing = "2.8.0-alpha01"
+#androidx-room-compiler-testing = "2.8.0-rc01"
 # https://github.com/Kotlin/dokka/releases
 dokka = "2.0.0"
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
 # https://github.com/JetBrains/kotlin/releases
-# match according to androidx https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L55
-kotlin = "2.1.21"
+# match according to androidx https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L56
+kotlin = "2.2.0"
+# https://github.com/Kotlin/binary-compatibility-validator/releases
+kotlin-binary-compatibility = "0.18.1"
 # https://github.com/square/kotlinpoet/releases
 kotlin-poet = "2.2.0"
 # https://github.com/Kotlin/kotlinx-kover/releases
 kover = "0.9.1"
 # https://github.com/google/ksp/releases
-ksp = "2.1.21-2.0.2"
+ksp = "2.2.0-2.0.2"
 # https://github.com/pinterest/ktlint/releases
-ktlint-pinterest = "1.6.0"
+ktlint-pinterest = "1.7.1"
 # https://github.com/jlleitschuh/ktlint-gradle/releases
 ktlint-plugin = "13.0.0"
 # https://github.com/ktorio/ktor/releases
 ktor = "3.2.3"
-ktorgen-version = "0.3.0-SNAPSHOT"
+
+ktorgen-version = "0.1.0"
+
 # https://github.com/vanniktech/gradle-maven-publish-plugin/releases
 maven-publish = "0.34.0"
 
@@ -42,8 +46,9 @@ jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version
 ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
 kotlin-poet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlin-poet" }
 kotlin-poet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlin-poet" }
-androidx-room-compiler-testing = { group = "androidx.room", name = "room-compiler-processing-testing", version.ref = "androidx-room-compiler-testing" }
+#androidx-room-compiler-testing = { group = "androidx.room", name = "room-compiler-processing-testing", version.ref = "androidx-room-compiler-testing" }
 
+# samples
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 # Libraries can be bundled together for easier import
 [bundles]
@@ -54,7 +59,7 @@ androidMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library",
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-kotlinxBinaryCompatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.18.1" }
+kotlinxBinaryCompatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-binary-compatibility" }
 kotlinxKover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }
