@@ -20,6 +20,7 @@ import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.DefaultOptions
 import io.github.kingg22.ktorgen.model.GenOptions
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
+import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_CALL_BODY
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_REQUEST
 import io.github.kingg22.ktorgen.model.KTOR_DECODE_URL_QUERY
@@ -55,7 +56,7 @@ class ClassMapper : DeclarationMapper {
                 )
             timer.addStep("Retrieved @KtorGen options. BasePath: '${options.basePath}'")
 
-            var (annotations, optIn) = extractAnnotationsFiltered(declaration)
+            var (annotations, optIn) = extractAnnotationsOfClassFiltered(declaration)
             timer.addStep("Retrieved the rest of annotations and optIns")
 
             if (optIn != null && options.optIns.isNotEmpty()) {
@@ -120,7 +121,7 @@ class ClassMapper : DeclarationMapper {
         }
     }
 
-    private fun extractAnnotationsFiltered(
+    private fun extractAnnotationsOfClassFiltered(
         declaration: KSClassDeclaration,
     ): Pair<Set<AnnotationSpec>, AnnotationSpec?> {
         val optIn = declaration.annotations
@@ -166,8 +167,9 @@ class ClassMapper : DeclarationMapper {
                     ?.toSet()
                     ?: emptySet(),
 
-                visibilityModifier = it.getArgumentValueByName("visibilityModifier") ?: "public",
-                customFileHeader = it.getArgumentValueByName("customFileHeader") ?: "",
+                visibilityModifier = it.getArgumentValueByName("visibilityModifier")
+                    ?: interfaceDeclaration.getVisibility().name,
+                customFileHeader = it.getArgumentValueByName("customFileHeader") ?: KTORG_GENERATED_FILE_COMMENT,
                 customClassHeader = it.getArgumentValueByName("customClassHeader") ?: "",
             )
         }) {
@@ -184,7 +186,10 @@ class ClassMapper : DeclarationMapper {
                 annotationsToPropagate = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
 
-                visibilityModifier = it.visibilityModifier,
+                visibilityModifier = it.visibilityModifier.replace(
+                    KTORGEN_DEFAULT_VALUE,
+                    interfaceDeclaration.getVisibility().name,
+                ),
                 customFileHeader = it.customFileHeader,
                 customClassHeader = it.customClassHeader,
             )

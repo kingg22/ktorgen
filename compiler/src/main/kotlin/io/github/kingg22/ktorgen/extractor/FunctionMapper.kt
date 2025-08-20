@@ -4,14 +4,13 @@ package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
-import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import io.github.kingg22.ktorgen.DiagnosticTimer
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
@@ -42,9 +41,7 @@ import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
-import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotationsFunction
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
-import kotlin.reflect.KClass
 
 class FunctionMapper : DeclarationFunctionMapper {
     override fun mapToModel(
@@ -80,7 +77,7 @@ class FunctionMapper : DeclarationFunctionMapper {
             addImportsForFunctionAnnotations(functionAnnotations, onAddImport)
             timer.addStep("Extracting options of @KtorGenFunction")
 
-            var options = extractKtorGenFunction(declaration) ?: DefaultOptions()
+            var options = extractKtorGenFunction(declaration) ?: DefaultOptions(declaration.getVisibility().name)
             timer.addStep("Extracting the rest of annotations for function")
 
             var (annotations, optIn) = extractAnnotationsFiltered(declaration)
@@ -246,7 +243,7 @@ class FunctionMapper : DeclarationFunctionMapper {
 
             timer.addStep("Going to get Cookies")
             function.getAnnotationsByType(Cookie::class)
-                .map(Cookie::toCookieValues)
+                .map { it.toCookieValues() }
                 .toList()
                 .takeIf(List<*>::isNotEmpty)
                 ?.let { cookies ->
@@ -297,6 +294,7 @@ class FunctionMapper : DeclarationFunctionMapper {
     private fun extractKtorGenFunction(declaration: KSFunctionDeclaration): GenOptions? =
         declaration.getAnnotation<KtorGenFunction, GenOptions>(manualExtraction = {
             DefaultOptions(
+                visibilityModifier = declaration.getVisibility().name,
                 goingToGenerate = it.getArgumentValueByName("generate") ?: true,
                 propagateAnnotations = it.getArgumentValueByName("propagateAnnotations") ?: true,
                 annotationsToPropagate =
@@ -321,26 +319,7 @@ class FunctionMapper : DeclarationFunctionMapper {
                 annotationsToPropagate = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 customHeader = it.customHeader,
+                visibilityModifier = declaration.getVisibility().name,
             )
         }
-
-    private fun extractAnnotationsFiltered(
-        declaration: KSFunctionDeclaration,
-    ): Pair<Set<AnnotationSpec>, Set<AnnotationSpec>> {
-        val ktorGenFunctionsName = ktorGenAnnotationsFunction.mapNotNull(KClass<*>::simpleName)
-
-        val optIn = declaration.annotations
-            .filterNot { it.shortName.getShortName() in ktorGenFunctionsName }
-            .filter { it.shortName.getShortName() == "OptIn" }
-            .map(KSAnnotation::toAnnotationSpec)
-            .toSet()
-
-        val propagateAnnotations = declaration.annotations
-            .filterNot { it.shortName.getShortName() in ktorGenFunctionsName }
-            .map(KSAnnotation::toAnnotationSpec)
-            .filterNot { it in optIn }
-            .toSet()
-
-        return propagateAnnotations to optIn
-    }
 }
