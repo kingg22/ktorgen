@@ -1,4 +1,4 @@
-@file:JvmName("Constants")
+@file:JvmName("-Constants")
 @file:JvmMultifileClass
 
 package io.github.kingg22.ktorgen.core

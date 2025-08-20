@@ -6,6 +6,10 @@
 // - Show declarations: true
 
 // Library unique name: <io.github.kingg22:annotations>
+open annotation class io.github.kingg22.ktorgen.core/Generated : kotlin/Annotation { // io.github.kingg22.ktorgen.core/Generated|null[0]
+    constructor <init>() // io.github.kingg22.ktorgen.core/Generated.<init>|<init>(){}[0]
+}
+
 open annotation class io.github.kingg22.ktorgen.core/KtorGen : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGen|null[0]
     constructor <init>(kotlin/String = ..., kotlin/Boolean = ..., kotlin/String = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGen.<init>|<init>(kotlin.String;kotlin.Boolean;kotlin.String;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.String;kotlin.String;kotlin.String){}[0]
 

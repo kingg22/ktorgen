@@ -105,17 +105,20 @@ annotation class KtorGen(
      * Indicate the visibility modifier for all generated code (class, primary constructor, and extension functions)
      *
      * Can be `public` or `internal`.
-     * Is not valid: `private` and `protected`
+     * Is not valid: `private` and `protected`.
+     * By default, is visibility modifier of the interface.
      *
      * Don't confuse the visibility of generated code with interface visibility.
      * The interface can't be `private`
      *
-     * Combination of `internal interface` and `public` class and extensions is valid.
+     * Combination of `internal interface` and `public class` is valid,
+     * but can lead to compilation errors if exposed something internal in `public function`.
+     * For advanced use cases, use `internal` modifier directly on the interface and manually write functions.
      *
      * @see <a href="https://kotlinlang.org/docs/visibility-modifiers.html#packages">Kotlin Visibility Modifiers</a>
      */
     @property:KtorGenExperimental
-    val visibilityModifier: String = "public",
+    val visibilityModifier: String = KTORGEN_DEFAULT_NAME,
 
     /**
      * Custom header **comment** inserted at the top of the generated Kotlin file.
