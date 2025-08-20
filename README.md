@@ -15,11 +15,14 @@ Ktorgen is a 100% compile-time code generator for creating HTTP clients using Kt
 
 🔹 No runtime dependencies — you only need the annotations and the compiler in your build.
 
-🔹 100% compatible with Kotlin, Kotlin Multiplatform, [KSP 2](https://github.com/google/ksp), and Ktor Client.
+🔹 100% compatible with Kotlin, Kotlin Multiplatform,
+[KSP 2](https://github.com/google/ksp), and [Ktor Client](https://ktor.io/).
 
-🔹 Native Ktor configuration — no unnecessary overhead or wrappers added.
+🔹 100% Ktor configuration — no unnecessary overhead or wrappers added.
 
-🔹 Annotation retention: SOURCE / BINARY.
+🔹 Annotation retention: SOURCE, BINARY (_only for RequiresOptIn_).
+
+🔹 Generated code annotated with `@Generated` and `@Suppress` to avoid warnings and exclude of analysis tools.
 
 🔹 Support [suspend fun](https://kotlinlang.org/docs/async-programming.html#coroutines),
 [Coroutines Flow](https://kotlinlang.org/docs/flow.html) and
@@ -32,7 +35,7 @@ Ktorgen is a 100% compile-time code generator for creating HTTP clients using Kt
 🔹 Experimental support for [vararg parameters](https://kotlinlang.org/docs/functions.html#variable-number-of-arguments-varargs) and
 [Pair](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-pair/) type.
 
-📚 [Documentación completa de las anotaciones](https://kingg22.github.io/ktorgen/).
+📚 [More documentation of annotations](https://kingg22.github.io/ktorgen/).
 
 ## 📦 Instalación
 ![Maven Central Version](https://img.shields.io/maven-central/v/io.github.kingg22/ktorgen-annotations)
@@ -89,10 +92,11 @@ ktorgen-compiler = { group = "io.github.kingg22", name = "ktorgen-compiler", ver
   <img src="docs/jetbrains_highlights.png" alt="jetbrains_highlights">
   </details>
 
-  Now `@Header` is repeatable and type-safe because follow the format `name: value`, parse it, [problems with vararg empty](https://github.com/kingg22/ktorgen/commit/06e4e7fc4fdd2fd796d84ee8e959dfa61ff11646) is very annoying
+  Now `@Header` is repeatable and type-safe because follow the format `name: value` parse it,
+  problems with vararg empty is very annoying.
 
 ### Additional configuration for Kotlin Multiplatform projects with code in commonMain
-If you're coming from ktorfit, this configuration was applied by the ktorfit gradle plugin.
+*If you're coming from ktorfit, this configuration was applied by the ktorfit gradle plugin.*
 ```kotlin
 kotlin {
   sourceSets.commonMain {
@@ -142,6 +146,14 @@ tasks.matching { it.name != "kspCommonMainKotlinMetadata" && it.name.startsWith(
   Demo generated code
 
   ![Github api generated code](docs/generated_example.png)
+
+- Demo advanced usage
+
+  ![Github api advanced usage](docs/advanced_source_example.png)
+
+  Demo generated code
+
+  ![Github api advanced usage](docs/generated_advanced_example.png)
 
 ### 🔁 Migrating from Ktorfit to ktorgen
 Migrating is as simple as:
