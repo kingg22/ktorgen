@@ -4,10 +4,9 @@ import com.squareup.kotlinpoet.AnnotationSpec
 
 /** Options on each function */
 interface GenOptions {
+    val visibilityModifier: String
     val goingToGenerate: Boolean
         get() = true
-    val visibilityModifier: String
-        get() = "public"
     val propagateAnnotations: Boolean
         get() = true
     val annotationsToPropagate: Set<AnnotationSpec>
@@ -20,7 +19,7 @@ interface GenOptions {
         get() = ""
 
     fun copy(
-        goingToGenerate: Boolean = true,
+        goingToGenerate: Boolean = this.goingToGenerate,
         visibilityModifier: String = this.visibilityModifier,
         propagateAnnotations: Boolean = this.propagateAnnotations,
         annotationsToPropagate: Set<AnnotationSpec> = this.annotationsToPropagate,

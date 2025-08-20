@@ -1,4 +1,5 @@
-@file:OptIn(KtorGenExperimental::class)
+@file:JvmName("AnnotationExt")
+@file:JvmMultifileClass
 
 package io.github.kingg22.ktorgen.model.annotations
 

@@ -6,9 +6,9 @@ class DefaultOptions
 /** Options on Interface or Companion Object */
 constructor(
     override val generatedName: String,
+    override val visibilityModifier: String,
     override val basePath: String = "",
     override val goingToGenerate: Boolean = true,
-    override val visibilityModifier: String = "public",
     override val generateTopLevelFunction: Boolean = true,
     override val generateCompanionExtFunction: Boolean = false,
     override val generateHttpClientExtension: Boolean = false,
@@ -23,8 +23,8 @@ constructor(
 
     /** Options on Function */
     constructor(
+        visibilityModifier: String,
         goingToGenerate: Boolean = true,
-        visibilityModifier: String = "public",
         propagateAnnotations: Boolean = true,
         annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
         optIns: Set<AnnotationSpec> = emptySet(),

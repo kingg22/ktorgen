@@ -1,3 +1,5 @@
+@file:JvmName("TypeDataExt")
+@file:JvmMultifileClass
 @file:OptIn(ExperimentalContracts::class)
 
 package io.github.kingg22.ktorgen.model
