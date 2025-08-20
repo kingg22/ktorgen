@@ -75,12 +75,15 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     .addMember("%S", "detekt:all")
                     .build(),
             )
+            .addAnnotation(GeneratedAnnotation)
             .indent("    ") // use 4 spaces https://pinterest.github.io/ktlint/latest/rules/standard/#indentation
             .addFileComment(classData.customFileHeader) // add a header file
 
         // add imports
         timer.addStep("Processed file, adding required imports")
         classData.imports.forEach { fileBuilder.addImport(it.substringBeforeLast("."), it.substringAfterLast(".")) }
+
+        val classAnnotations = classData.buildAnnotations()
 
         if (classData.generateTopLevelFunction) {
             val function = generateTopLevelFactoryFunction(
@@ -91,7 +94,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             fileBuilder.addFunction(
                 function
                     .addModifiers(visibilityModifier)
-                    .addAnnotations(classData.buildAnnotations())
+                    .addAnnotations(classAnnotations)
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
             )
@@ -117,7 +120,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             fileBuilder.addFunction(
                 function
                     .addModifiers(visibilityModifier)
-                    .addAnnotations(classData.buildAnnotations())
+                    .addAnnotations(classAnnotations)
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
             )
@@ -134,7 +137,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             fileBuilder.addFunction(
                 function
                     .addModifiers(visibilityModifier)
-                    .addAnnotations(classData.buildAnnotations())
+                    .addAnnotations(classAnnotations)
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
             )
@@ -208,7 +211,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         } else if (optInAnnotation != null) {
             annotations.add(optInAnnotation!!)
         }
-        return annotations
+        return annotations + GeneratedAnnotation
     }
 
     /** This fill the primary constructor and super interfaces */
@@ -1021,5 +1024,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
         private const val VALUE = "\$value"
         private const val RETURN_TYPE_LITERAL = "return %T(%L)"
         private const val BODY_LITERAL = ".body<%T>()"
+        private val GeneratedAnnotation = AnnotationSpec.builder(
+            ClassName("io.github.kingg22.ktorgen.core", "Generated"),
+        ).build()
     }
 }
