@@ -32,8 +32,7 @@ class ClassMapper : DeclarationMapper {
         timer: (String) -> DiagnosticTimer.DiagnosticSender,
     ): ClassData {
         val interfaceName = declaration.simpleName.getShortName()
-        val timer = timer("Class Mapper for [$interfaceName]")
-        return timer.work { _ ->
+        return timer("Class Mapper for [$interfaceName]").work { timer ->
             val imports = mutableSetOf<String>()
 
             val packageName = declaration.packageName.asString()
@@ -50,31 +49,46 @@ class ClassMapper : DeclarationMapper {
             timer.addStep("Retrieved all properties")
 
             var options = extractKtorGen(declaration)
-                ?: DefaultOptions(
-                    generatedName = "_${interfaceName}Impl",
-                    visibilityModifier = declaration.getVisibility().name,
+                ?: run {
+                    if (companionObject) {
+                        extractKtorGen(
+                            declaration.declarations.filterIsInstance<KSClassDeclaration>()
+                                .first { it.isCompanionObject },
+                        )?.let { return@run it }
+                    }
+                    DefaultOptions(
+                        generatedName = "_${interfaceName}Impl",
+                        visibilityModifier = declaration.getVisibility().name,
+                    )
+                }
+            timer.addStep(
+                "Retrieved @KtorGen options. BasePath: '${options.basePath}', propagate annotations: ${options.propagateAnnotations}",
+            )
+
+            if (options.propagateAnnotations) {
+                var (annotations, optIn, functionAnnotation) = extractAnnotationsOfClassFiltered(declaration)
+                timer.addStep("Retrieved the rest of annotations and optIns")
+
+                if (optIn != null && options.optIns.isNotEmpty()) {
+                    optIn = optIn.toBuilder()
+                        .addMember(
+                            (1..options.optIns.size).joinToString { "%T::class" },
+                            *options.optIns.map { it.typeName }.toTypedArray(),
+                        ).build()
+                } else if (optIn == null && options.optIns.isNotEmpty()) {
+                    optIn = AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
+                        .addMember(
+                            (1..options.optIns.size).joinToString { "%T::class" },
+                            *options.optIns.map { it.typeName }.toTypedArray(),
+                        ).build()
+                }
+                annotations = (options.annotationsToPropagate + annotations).filterNot { it in options.optIns }.toSet()
+                options = options.copy(
+                    annotationsToPropagate = annotations,
+                    extensionFunctionAnnotation = options.extensionFunctionAnnotation + functionAnnotation,
+                    optInAnnotation = optIn,
                 )
-            timer.addStep("Retrieved @KtorGen options. BasePath: '${options.basePath}'")
-
-            var (annotations, optIn) = extractAnnotationsOfClassFiltered(declaration)
-            timer.addStep("Retrieved the rest of annotations and optIns")
-
-            if (optIn != null && options.optIns.isNotEmpty()) {
-                optIn = optIn.toBuilder()
-                    .addMember(
-                        (1..options.optIns.size).joinToString { "%T::class" },
-                        *options.optIns.map { it.typeName }.toTypedArray(),
-                    ).build()
-            } else if (optIn == null && options.optIns.isNotEmpty()) {
-                optIn = AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
-                    .addMember(
-                        (1..options.optIns.size).joinToString { "%T::class" },
-                        *options.optIns.map { it.typeName }.toTypedArray(),
-                    ).build()
             }
-            annotations = (options.annotationsToPropagate + annotations).filterNot { it in options.optIns }.toSet()
-            options =
-                options.copy(annotationsToPropagate = annotations, optInAnnotation = optIn) as GenOptions.GenTypeOption
 
             val functions = declaration.getDeclaredFunctions().map { func ->
                 DeclarationFunctionMapper.DEFAULT.mapToModel(func, imports::add, options.basePath) {
@@ -123,20 +137,37 @@ class ClassMapper : DeclarationMapper {
 
     private fun extractAnnotationsOfClassFiltered(
         declaration: KSClassDeclaration,
-    ): Pair<Set<AnnotationSpec>, AnnotationSpec?> {
+    ): Triple<Set<AnnotationSpec>, AnnotationSpec?, Set<AnnotationSpec>> {
         val optIn = declaration.annotations
-            .filterNot { it.shortName.getShortName() == KtorGen::class.simpleName!! }
             .filter { it.shortName.getShortName() == "OptIn" }
-            .map(KSAnnotation::toAnnotationSpec)
+            .map { it.toAnnotationSpec() }
             .toSet()
 
         val propagateAnnotations = declaration.annotations
             .filterNot { it.shortName.getShortName() == KtorGen::class.simpleName!! }
-            .map(KSAnnotation::toAnnotationSpec)
-            .filterNot { it in optIn }
+            .map { it.toAnnotationSpec() }
             .toSet()
 
-        return propagateAnnotations to optIn.singleOrNull()
+        val functionAnnotation = declaration.annotations
+            .filterNot { it.shortName.getShortName() == "OptIn" }
+            .filter { it.isAllowedForFunction() }
+            .map { it.toAnnotationSpec() }
+            .toSet()
+
+        return Triple(propagateAnnotations, optIn.singleOrNull(), functionAnnotation)
+    }
+
+    private fun KSAnnotation.isAllowedForFunction(): Boolean {
+        val type = annotationType.resolve().declaration as? KSClassDeclaration ?: return false
+        val targetAnnotation = type.annotations.firstOrNull {
+            it.shortName.getShortName() == Target::class.simpleName!!
+        } ?: return true // si no declara @Target, asumimos que es usable en cualquier sitio
+
+        val allowedTargets = targetAnnotation.arguments
+            .flatMap { it.value as? List<*> ?: emptyList<Any>() }
+            .mapNotNull { it?.toString()?.substringAfterLast('.') } // e.g., "CLASS", "FUNCTION"
+
+        return allowedTargets.any { it.equals(AnnotationTarget.FUNCTION.name, true) }
     }
 
     @OptIn(KtorGenExperimental::class)
@@ -156,20 +187,28 @@ class ClassMapper : DeclarationMapper {
                 propagateAnnotations = it.getArgumentValueByName("propagateAnnotations") ?: true,
                 annotationsToPropagate = it.getArgumentValueByName<List<KSType>>("annotations")
                     ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                    ?.map { n -> ClassName.bestGuess(n) }
-                    ?.map { a -> AnnotationSpec.builder(a).build() }
+                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
                     ?.toSet()
                     ?: emptySet(),
                 optIns = it.getArgumentValueByName<List<KSType>>("optInAnnotations")
                     ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                    ?.map { n -> ClassName.bestGuess(n) }
-                    ?.map { a -> AnnotationSpec.builder(a).build() }
+                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
+                    ?.toSet()
+                    ?: emptySet(),
+                extensionFunctionAnnotation = it.getArgumentValueByName<List<KSType>>("functionAnnotations")
+                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
+                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
                     ?.toSet()
                     ?: emptySet(),
 
-                visibilityModifier = it.getArgumentValueByName("visibilityModifier")
-                    ?: interfaceDeclaration.getVisibility().name,
-                customFileHeader = it.getArgumentValueByName("customFileHeader") ?: KTORG_GENERATED_FILE_COMMENT,
+                visibilityModifier = it.getArgumentValueByName<String>("visibilityModifier")?.replace(
+                    KTORGEN_DEFAULT_VALUE,
+                    interfaceDeclaration.getVisibility().name,
+                ) ?: interfaceDeclaration.getVisibility().name,
+                customFileHeader = it.getArgumentValueByName<String>("customFileHeader")?.replace(
+                    KTORGEN_DEFAULT_VALUE,
+                    interfaceDeclaration.getVisibility().name,
+                ) ?: KTORG_GENERATED_FILE_COMMENT,
                 customClassHeader = it.getArgumentValueByName("customClassHeader") ?: "",
             )
         }) {
@@ -185,12 +224,15 @@ class ClassMapper : DeclarationMapper {
                 propagateAnnotations = it.propagateAnnotations,
                 annotationsToPropagate = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
+                extensionFunctionAnnotation = it.functionAnnotations.map { a ->
+                    AnnotationSpec.builder(a).build()
+                }.toSet(),
 
                 visibilityModifier = it.visibilityModifier.replace(
                     KTORGEN_DEFAULT_VALUE,
                     interfaceDeclaration.getVisibility().name,
                 ),
-                customFileHeader = it.customFileHeader,
+                customFileHeader = it.customFileHeader.replace(KTORGEN_DEFAULT_VALUE, KTORG_GENERATED_FILE_COMMENT),
                 customClassHeader = it.customClassHeader,
             )
         }
