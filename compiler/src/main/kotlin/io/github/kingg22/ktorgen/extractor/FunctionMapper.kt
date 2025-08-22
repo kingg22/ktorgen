@@ -80,10 +80,12 @@ class FunctionMapper : DeclarationFunctionMapper {
             var options = extractKtorGenFunction(declaration) ?: DefaultOptions(declaration.getVisibility().name)
             timer.addStep("Extracting the rest of annotations for function")
 
-            var (annotations, optIn) = extractAnnotationsFiltered(declaration)
-            optIn = options.optIns + optIn
-            annotations = (options.annotationsToPropagate + annotations).filterNot { it in optIn }.toSet()
-            options = options.copy(annotationsToPropagate = annotations, optIns = optIn)
+            if (options.propagateAnnotations) {
+                var (annotations, optIn) = extractAnnotationsFiltered(declaration)
+                optIn = options.optIns + optIn
+                annotations = (options.annotationsToPropagate + annotations).filterNot { it in optIn }.toSet()
+                options = options.copy(annotationsToPropagate = annotations, optIns = optIn)
+            }
 
             val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)
             val modifiers = buildSet {
@@ -300,14 +302,12 @@ class FunctionMapper : DeclarationFunctionMapper {
                 annotationsToPropagate =
                 it.getArgumentValueByName<List<KSType>>("annotations")
                     ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                    ?.map { n -> ClassName.bestGuess(n) }
-                    ?.map { a -> AnnotationSpec.builder(a).build() }
+                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
                     ?.toSet()
                     ?: emptySet(),
                 optIns = it.getArgumentValueByName<List<KSType>>("optInAnnotations")
                     ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                    ?.map { n -> ClassName.bestGuess(n) }
-                    ?.map { a -> AnnotationSpec.builder(a).build() }
+                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
                     ?.toSet()
                     ?: emptySet(),
                 customHeader = it.getArgumentValueByName("customHeader") ?: "",
