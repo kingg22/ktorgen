@@ -12,7 +12,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
-import io.github.kingg22.ktorgen.DiagnosticTimer
+import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
@@ -27,10 +27,7 @@ import io.github.kingg22.ktorgen.model.KTOR_DECODE_URL_QUERY
 import io.github.kingg22.ktorgen.model.KTOR_URL_TAKE_FROM
 
 class ClassMapper : DeclarationMapper {
-    override fun mapToModel(
-        declaration: KSClassDeclaration,
-        timer: (String) -> DiagnosticTimer.DiagnosticSender,
-    ): ClassData {
+    override fun mapToModel(declaration: KSClassDeclaration, timer: (String) -> DiagnosticSender): ClassData {
         val interfaceName = declaration.simpleName.getShortName()
         return timer("Class Mapper for [$interfaceName]").work { timer ->
             val imports = mutableSetOf<String>()

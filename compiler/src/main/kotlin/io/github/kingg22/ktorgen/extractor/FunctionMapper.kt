@@ -1,5 +1,3 @@
-@file:OptIn(KtorGenExperimental::class)
-
 package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
@@ -11,7 +9,7 @@ import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
-import io.github.kingg22.ktorgen.DiagnosticTimer
+import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.core.KtorGenFunction
@@ -21,23 +19,7 @@ import io.github.kingg22.ktorgen.http.Fragment
 import io.github.kingg22.ktorgen.http.HTTP
 import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.Multipart
-import io.github.kingg22.ktorgen.model.DefaultOptions
-import io.github.kingg22.ktorgen.model.FunctionData
-import io.github.kingg22.ktorgen.model.GenOptions
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_ATTRIBUTE_KEY
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_COOKIE
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_FORM_DATA
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_FORM_DATA_CONTENT
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_HEADERS
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_MULTI_PART_FORM_DATA_CONTENT
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_SET_BODY
-import io.github.kingg22.ktorgen.model.KTOR_CONTENT_TYPE
-import io.github.kingg22.ktorgen.model.KTOR_CONTENT_TYPE_ADD
-import io.github.kingg22.ktorgen.model.KTOR_ENCODE_URL_PATH
-import io.github.kingg22.ktorgen.model.KTOR_GMT_DATE
-import io.github.kingg22.ktorgen.model.KTOR_HTTP_METHOD
-import io.github.kingg22.ktorgen.model.KTOR_PARAMETERS
-import io.github.kingg22.ktorgen.model.TypeData
+import io.github.kingg22.ktorgen.model.*
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
@@ -48,7 +30,7 @@ class FunctionMapper : DeclarationFunctionMapper {
         declaration: KSFunctionDeclaration,
         onAddImport: (String) -> Unit,
         basePath: String,
-        timer: (String) -> DiagnosticTimer.DiagnosticSender,
+        timer: (String) -> DiagnosticSender,
     ): FunctionData {
         val name = declaration.simpleName.asString()
         val timer = timer("Function Mapper for [$name]")
@@ -182,78 +164,75 @@ class FunctionMapper : DeclarationFunctionMapper {
     }
 
     @OptIn(KspExperimental::class)
-    private fun getFunctionAnnotations(
-        function: KSFunctionDeclaration,
-        timer: DiagnosticTimer.DiagnosticSender,
-        basePath: String,
-    ) = timer.work {
-        buildList {
-            timer.addStep("Start collect KtorGen annotations, first Http Method")
+    private fun getFunctionAnnotations(function: KSFunctionDeclaration, timer: DiagnosticSender, basePath: String) =
+        timer.work {
+            buildList {
+                timer.addStep("Start collect KtorGen annotations, first Http Method")
 
-            val method = httpAnnotationResolver(function, basePath)
-            if (method.isEmpty()) {
-                add(FunctionAnnotation.HttpMethodAnnotation(basePath, HttpMethod.Absent))
-                timer.addStep("Http method not found, adding absent value, need validation!", function)
-            } else {
-                require(method.size == 1) {
-                    "${KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED} Found: ${
-                        method.joinToString {
-                            it.httpMethod.value
-                        }
-                    } at ${function.simpleName.asString()}"
-                }
-                val http = method.first()
-                add(http)
-                timer.addStep("Processed http annotation $http")
-            }
-
-            timer.addStep("Going to get Fragment")
-            function.getAnnotation<Fragment, Any>(manualExtraction = {
-                add(
-                    FunctionAnnotation.Fragment(
-                        it.getArgumentValueByName<String>("value").orEmpty(),
-                        it.getArgumentValueByName("encoded") ?: false,
-                    ),
-                )
-                timer.addStep("Fragment found")
-            }) {
-                add(FunctionAnnotation.Fragment(it.value, it.encoded))
-                timer.addStep("Fragment found")
-            }
-
-            timer.addStep("Going to get Multipart")
-            function.getAnnotationsByType(Multipart::class).firstOrNull()?.let {
-                add(FunctionAnnotation.Multipart)
-                timer.addStep("Multipart found")
-            }
-
-            timer.addStep("Going to get FormUrlEncoded")
-            function.getAnnotationsByType(FormUrlEncoded::class).firstOrNull()?.let {
-                add(FunctionAnnotation.FormUrlEncoded)
-                timer.addStep("FormUrlEncoded found")
-            }
-
-            timer.addStep("Going to get Headers")
-            function.getAnnotationsByType(Header::class)
-                .map { it.name to it.value }
-                .toList()
-                .takeIf(List<*>::isNotEmpty)
-                ?.let { headers ->
-                    timer.addStep("Header found")
-                    add(FunctionAnnotation.Headers(headers))
+                val method = httpAnnotationResolver(function, basePath)
+                if (method.isEmpty()) {
+                    add(FunctionAnnotation.HttpMethodAnnotation(basePath, HttpMethod.Absent))
+                    timer.addStep("Http method not found, adding absent value, need validation!", function)
+                } else {
+                    require(method.size == 1) {
+                        "${KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED} Found: ${
+                            method.joinToString {
+                                it.httpMethod.value
+                            }
+                        } at ${function.simpleName.asString()}"
+                    }
+                    val http = method.first()
+                    add(http)
+                    timer.addStep("Processed http annotation $http")
                 }
 
-            timer.addStep("Going to get Cookies")
-            function.getAnnotationsByType(Cookie::class)
-                .map { it.toCookieValues() }
-                .toList()
-                .takeIf(List<*>::isNotEmpty)
-                ?.let { cookies ->
-                    timer.addStep("Cookies found")
-                    add(FunctionAnnotation.Cookies(cookies))
+                timer.addStep("Going to get Fragment")
+                function.getAnnotation<Fragment, Any>(manualExtraction = {
+                    add(
+                        FunctionAnnotation.Fragment(
+                            it.getArgumentValueByName<String>("value").orEmpty(),
+                            it.getArgumentValueByName("encoded") ?: false,
+                        ),
+                    )
+                    timer.addStep("Fragment found")
+                }) {
+                    add(FunctionAnnotation.Fragment(it.value, it.encoded))
+                    timer.addStep("Fragment found")
                 }
+
+                timer.addStep("Going to get Multipart")
+                function.getAnnotationsByType(Multipart::class).firstOrNull()?.let {
+                    add(FunctionAnnotation.Multipart)
+                    timer.addStep("Multipart found")
+                }
+
+                timer.addStep("Going to get FormUrlEncoded")
+                function.getAnnotationsByType(FormUrlEncoded::class).firstOrNull()?.let {
+                    add(FunctionAnnotation.FormUrlEncoded)
+                    timer.addStep("FormUrlEncoded found")
+                }
+
+                timer.addStep("Going to get Headers")
+                function.getAnnotationsByType(Header::class)
+                    .map { it.name to it.value }
+                    .toList()
+                    .takeIf(List<*>::isNotEmpty)
+                    ?.let { headers ->
+                        timer.addStep("Header found")
+                        add(FunctionAnnotation.Headers(headers))
+                    }
+
+                timer.addStep("Going to get Cookies")
+                function.getAnnotationsByType(Cookie::class)
+                    .map { it.toCookieValues() }
+                    .toList()
+                    .takeIf(List<*>::isNotEmpty)
+                    ?.let { cookies ->
+                        timer.addStep("Cookies found")
+                        add(FunctionAnnotation.Cookies(cookies))
+                    }
+            }
         }
-    }
 
     private fun httpAnnotationResolver(
         function: KSFunctionDeclaration,
@@ -293,6 +272,7 @@ class FunctionMapper : DeclarationFunctionMapper {
         )
     }
 
+    @OptIn(KtorGenExperimental::class)
     private fun extractKtorGenFunction(declaration: KSFunctionDeclaration): GenOptions? =
         declaration.getAnnotation<KtorGenFunction, GenOptions>(manualExtraction = {
             DefaultOptions(

@@ -1,6 +1,6 @@
 package io.github.kingg22.ktorgen.validator
 
-import io.github.kingg22.ktorgen.DiagnosticTimer
+import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.KtorGenOptions
 import io.github.kingg22.ktorgen.model.ClassData
@@ -16,7 +16,7 @@ class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Valida
     override fun validate(
         classData: ClassData,
         ktorGenOptions: KtorGenOptions,
-        diagnosticSender: (String) -> DiagnosticTimer.DiagnosticSender,
+        diagnosticSender: (String) -> DiagnosticSender,
         onFatalError: () -> Unit,
     ): ClassData? {
         // if we don't go to generate it, skip
@@ -29,8 +29,8 @@ class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Valida
             val sender = diagnosticSender(validator.name)
             sender.start()
             val result = validator.validate(context)
-            sender.finish()
             result.dump(sender)
+            sender.finish()
             errorCount += result.errorCount
         }
 

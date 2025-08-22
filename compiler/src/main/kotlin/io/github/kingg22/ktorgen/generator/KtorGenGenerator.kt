@@ -9,17 +9,17 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
-import io.github.kingg22.ktorgen.DiagnosticTimer
+import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_COMMENT
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
 
 fun interface KtorGenGenerator {
-    fun generate(classData: ClassData, timer: DiagnosticTimer.DiagnosticSender): FileSpec
+    fun generate(classData: ClassData, timer: DiagnosticSender): FileSpec
 
     companion object {
         /** Generate the Impl class using [KotlinpoetGenerator] of ksp */
-        fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator, timer: DiagnosticTimer.DiagnosticSender) {
+        fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator, timer: DiagnosticSender) {
             DEFAULT.generate(classData, timer).writeTo(codeGenerator, false)
         }
 

@@ -41,7 +41,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         if (invoked) return emptyList()
         invoked = true
 
-        val timer = DiagnosticTimer("KtorGen Annotations Processor", logger)
+        val timer = DiagnosticTimer("KtorGen Annotations Processor", logger::logging)
         var fatalError = false
 
         try {
@@ -122,12 +122,11 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             // deferred errors, util for debug and accumulative errors
             if (fatalError) {
-                timer.dumpErrorsAndWarnings()
                 // raise throwable to fail the build
-                throw Throwable(KtorGenLogger.KTOR_GEN + "See errors above")
+                throw Throwable(timer.buildErrorsAndWarningsMessage())
             }
             timer.finish()
-            timer.dumpWarnings()
+            if (timer.hasWarnings()) logger.error(timer.buildWarningsMessage(), null)
 
             return emptyList()
         } catch (e: Exception) {
@@ -141,9 +140,10 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         } finally {
             try {
                 if (!timer.isFinish()) timer.finish()
-                timer.dumpReport()
             } catch (e: Throwable) {
-                logger.error("Failed in diagnostic report $e")
+                logger.warn("Failed in diagnostic report $e", null)
+            } finally {
+                logger.info(timer.buildReport(), null)
             }
         }
     }

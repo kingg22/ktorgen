@@ -6,7 +6,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
-import io.github.kingg22.ktorgen.DiagnosticTimer
+import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.partDataKtor
@@ -18,7 +18,7 @@ import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 
 class KotlinpoetGenerator : KtorGenGenerator {
-    override fun generate(classData: ClassData, timer: DiagnosticTimer.DiagnosticSender): FileSpec = timer.work {
+    override fun generate(classData: ClassData, timer: DiagnosticSender): FileSpec = timer.work {
         // class
         val visibilityModifier = KModifier.valueOf(classData.visibilityModifier.uppercase())
 

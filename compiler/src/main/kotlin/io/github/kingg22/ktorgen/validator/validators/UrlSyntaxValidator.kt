@@ -23,8 +23,7 @@ class UrlSyntaxValidator : ValidatorStrategy {
 
             if (pathValue.contains("/{2,}".toRegex())) {
                 addWarning(
-                    KtorGenLogger.URL_SYNTAX_ERROR +
-                        "\nCurrent path: $pathValue",
+                    KtorGenLogger.URL_SYNTAX_ERROR + "Current path: $pathValue",
                     function,
                 )
             }

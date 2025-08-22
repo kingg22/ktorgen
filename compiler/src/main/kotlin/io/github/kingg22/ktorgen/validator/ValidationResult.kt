@@ -1,7 +1,7 @@
 package io.github.kingg22.ktorgen.validator
 
 import com.google.devtools.ksp.symbol.KSNode
-import io.github.kingg22.ktorgen.DiagnosticTimer
+import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.ParameterData
@@ -11,7 +11,7 @@ class ValidationResult(block: ValidationResult.() -> Unit) {
     private val errors: MutableList<FatalError> = mutableListOf()
     private val warnings: MutableList<Warning> = mutableListOf()
 
-    val errorCount: Int get() = errors.size
+    val errorCount get() = errors.size
 
     init {
         block(this)
@@ -30,13 +30,9 @@ class ValidationResult(block: ValidationResult.() -> Unit) {
         warnings.add(Warning(message.removePrefix(KtorGenLogger.KTOR_GEN), symbol))
     }
 
-    fun dump(logger: DiagnosticTimer.DiagnosticSender) {
-        if (errors.isNotEmpty()) {
-            errors.forEach { logger.addError(it.message, it.symbol) }
-        }
-        if (warnings.isNotEmpty()) {
-            warnings.forEach { logger.addWarning(it.message, it.symbol) }
-        }
+    fun dump(logger: DiagnosticSender) {
+        errors.forEach { logger.addError(it.message, it.symbol) }
+        warnings.forEach { logger.addWarning(it.message, it.symbol) }
     }
 
     private class FatalError(val message: String, val symbol: KSNode?)

@@ -3,22 +3,18 @@ package io.github.kingg22.ktorgen
 import com.google.devtools.ksp.symbol.FileLocation
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSValueParameter
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
 // Inspired on Paris Processor timer https://github.com/airbnb/paris/blob/d8b5edbc56253bcdd0d0c57930d2e91113dd0f37/paris-processor/src/main/java/com/airbnb/paris/processor/Timer.kt
-class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
+class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : DiagnosticSender {
     private val root = Step(name, StepType.ROOT)
-    private var rootStarted: Boolean
-        set(_) {
-            throw UnsupportedOperationException()
-        }
-        get() = root.isStarted()
+    private val rootStarted get() = root.isStarted()
 
-    fun start(): DiagnosticTimer {
+    override fun start() {
         check(!rootStarted) { "DiagnosticTimer on root already started" }
         root.start()
-        return this
     }
 
     /** Factory for inner phases */
@@ -31,63 +27,61 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         root.addStep(message)
     }
 
-    fun isFinish() = root.isFinish()
+    override fun isStarted(): Boolean = root.isStarted()
 
-    /** Print all the report in mode verbose to logger in level INFO */
-    fun dumpReport() {
-        logger.info(buildString { printStep(this, root, "") })
+    override fun isFinish() = root.isFinish()
+    override fun hasErrors(): Boolean = root.hasErrors()
+    override fun hasWarnings(): Boolean = root.hasWarnings()
+    override fun toString(): String = root.toString()
+
+    /** Generate all the report in mode verbose */
+    fun buildReport(): String = buildString { printStep(root, "") }
+
+    /** Generate report of all errors, this not mark as finish the root timer */
+    fun buildErrorsMessage() = buildString {
+        appendLine("❌ Errors found during \"${root.name}\" execution:")
+        appendFilteredSteps(root, 0) { it.type == MessageType.ERROR }
     }
 
-    /** Print all errors to logger in level ERROR, this not mark as finish the root timer */
-    fun dumpErrors() {
-        val message = buildString {
-            appendLine("❌ Errors found during \"${root.name}\" execution:")
-            appendFilteredSteps(root, this, 0) { it.type == StepType.ERROR }
-        }
-        logger.error(message, null)
+    /** Generate report of all warnings, this not mark as finish the root timer */
+    fun buildWarningsMessage() = buildString {
+        appendLine("⚠️ Warnings found during \"${root.name}\" execution:")
+        appendFilteredSteps(root, 0) { it.type == MessageType.WARNING }
     }
 
-    /** Print all warnings to logger in level ERROR (options modify it as warn), this not mark as finish the root timer */
-    fun dumpWarnings() {
-        val message = buildString {
-            appendLine("⚠️ Warnings found during \"${root.name}\" execution:")
-            appendFilteredSteps(root, this, 0) { it.type == StepType.WARNING }
-        }
-        logger.error(message, null)
-    }
-
-    /** Print errors and warning to logger in level EXCEPTION, this not mark as finish the root timer */
-    fun dumpErrorsAndWarnings() {
-        val header = buildString {
-            appendLine("❌ Errors and ⚠️ Warnings found during \"${root.name}\" execution:")
-            appendFilteredSteps(root, this, 0) { it.type == StepType.WARNING || it.type == StepType.ERROR }
-        }
-        logger.exception(Throwable(header))
+    /** Generate report of errors and warning, this not mark as finish the root timer */
+    fun buildErrorsAndWarningsMessage() = buildString {
+        appendLine("❌ Errors and ⚠️ Warnings found during \"${root.name}\" execution:")
+        appendFilteredSteps(root, 0) { it.type == MessageType.WARNING || it.type == MessageType.ERROR }
     }
 
     /** Finish the root timer */
-    fun finish() = root.finish()
+    override fun finish() = root.finish()
+    override fun createTask(name: String): DiagnosticSender = root.createTask(name)
+    override fun addStep(message: String, symbol: KSNode?) = root.addStep(message, symbol)
+    override fun addWarning(message: String, symbol: KSNode?) = root.addWarning(message, symbol)
+    override fun addError(message: String, symbol: KSNode?) = root.addError(message, symbol)
+    override fun die(message: String, symbol: KSNode?): Nothing = root.die(message, symbol)
 
-    private fun printStep(builder: StringBuilder, step: Step, indent: String) {
+    private fun StringBuilder.printStep(step: Step, indent: String) {
         val icon = iconFor(step)
         val label = step.type.label
 
-        builder.appendLine("$indent$icon $label: ${step.name} completed in (${step.formattedDuration()})")
-        step.printDiagnostic(builder, indent)
+        appendLine("$indent$icon $label: ${step.name} completed in (${step.formattedDuration()})")
+        step.printDiagnostic(this, indent)
 
         for (child in step.children) {
-            printStep(builder, child, "$indent    ")
+            printStep(child, "$indent    ")
         }
     }
 
     private fun iconFor(step: Step): String = when (step.type) {
-        StepType.PHASE, StepType.TASK -> if (step.haveErrors()) "❌" else "✔️"
+        StepType.PHASE, StepType.TASK -> if (step.hasErrors()) "❌" else "✔️"
         else -> step.type.icon
     }
 
-    private fun appendFilteredSteps(
+    private fun StringBuilder.appendFilteredSteps(
         step: Step,
-        builder: StringBuilder,
         indentLevel: Int,
         filter: (DiagnosticMessage) -> Boolean,
     ) {
@@ -96,14 +90,14 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         val hasRelevantChildren = step.children.any { it.containsMessagesRecursively(filter) }
 
         if (messages.isNotEmpty() || hasRelevantChildren) {
-            builder.appendLine("$indent${iconFor(step)} ${step.name} (${step.formattedDuration()})")
+            appendLine("$indent${iconFor(step)} ${step.name} (${step.formattedDuration()})")
             messages.forEach { msg ->
-                builder.appendLine("$indent  ${msg.type.icon}${msg.type}: ${msg.message}")
-                msg.generateSymbolInfo().takeIf(String::isNotEmpty)?.let { symbolInfo ->
-                    builder.appendLine("$indent    -> $symbolInfo")
+                appendLine("$indent  ${msg.type.icon}${msg.type}: ${msg.message}")
+                msg.generateSymbolInfo.takeIf(String::isNotEmpty)?.let { symbolInfo ->
+                    appendLine("$indent    -> $symbolInfo")
                 }
             }
-            step.children.forEach { child -> appendFilteredSteps(child, builder, indentLevel + 1, filter) }
+            step.children.forEach { child -> this.appendFilteredSteps(child, indentLevel + 1, filter) }
         }
     }
 
@@ -117,9 +111,20 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         val messages = mutableListOf<DiagnosticMessage>()
         val children = mutableListOf<Step>()
 
+        override fun toString() = (
+            "${type.label} ${type.icon} $name " +
+                "(${if (isCompleted()) formattedDuration() else "Start at: $startNanos, not finished yet"}). " +
+                "${messages.size} messages, ${children.size} children.\n" +
+                "Messages: [${messages.joinToString().trim()}]\n" +
+                "Children: [${children.joinToString().trim()}]"
+            ).trim()
+
         override fun isStarted() = startNanos != 0L
         override fun isFinish() = endNanos != 0L
-        override fun haveErrors() = children.any { it.type == StepType.ERROR } || type == StepType.ERROR
+        override fun hasErrors(): Boolean =
+            messages.any { it.type == MessageType.ERROR } || children.any { it.hasErrors() }
+        override fun hasWarnings(): Boolean =
+            messages.any { it.type == MessageType.WARNING } || children.any { it.hasWarnings() }
 
         override fun start() {
             check((this == root || rootStarted) && !isStarted()) { "Step $name already started" }
@@ -129,10 +134,12 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         override fun finish() {
             check(rootStarted && isStarted()) { "Step $name not started yet" }
             check(!isFinish()) { "Step $name already finish" }
-            if (!children.all(Step::isCompleted)) {
-                logger.logging(
+            if (!children.all(DiagnosticSender::isCompleted)) {
+                onDebugLog(
                     "A children step of $name is not completed. " +
-                        "Children status: ${children.count(Step::isCompleted)}/${children.size} completed.",
+                        "Children status: " +
+                        "${children.count(DiagnosticSender::isCompleted)}/${children.size} completed." +
+                        "This is an implementation errors.",
                 )
             }
             endNanos = System.nanoTime()
@@ -142,37 +149,36 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
             children.add(step)
         }
 
-        override fun createTask(name: String): DiagnosticSender = Step(name, StepType.TASK).apply {
-            addChild(this)
+        override fun createTask(name: String): DiagnosticSender = Step(name, StepType.TASK).also { task ->
+            addChild(task)
         }
 
         override fun addStep(message: String, symbol: KSNode?) {
-            messages.add(DiagnosticMessage(StepType.STEP, message.trim(), symbol))
+            messages.add(DiagnosticMessage(MessageType.STEP, message.trim(), symbol))
         }
 
         override fun addWarning(message: String, symbol: KSNode?) {
-            messages.add(DiagnosticMessage(StepType.WARNING, message.trim(), symbol))
+            messages.add(DiagnosticMessage(MessageType.WARNING, message.trim(), symbol))
         }
 
         override fun addError(message: String, symbol: KSNode?) {
-            messages.add(DiagnosticMessage(StepType.ERROR, message.trim(), symbol))
+            messages.add(DiagnosticMessage(MessageType.ERROR, message.trim(), symbol))
         }
 
         override fun die(message: String, symbol: KSNode?): Nothing {
-            messages.add(DiagnosticMessage(StepType.ERROR, message.trim(), symbol))
+            messages.add(DiagnosticMessage(MessageType.ERROR, message.trim(), symbol))
             var suppressException: Throwable? = null
 
             try {
-                dumpErrorsAndWarnings()
                 // cancel in order of hierarchy
                 (root.retrieveAllChildrenStep() + root)
-                    .filter(Step::isStarted)
-                    .filter(Step::isInProgress)
-                    .forEach(Step::finish)
+                    .filter(DiagnosticSender::isStarted)
+                    .filter(DiagnosticSender::isInProgress)
+                    .forEach(DiagnosticSender::finish)
             } catch (e: Throwable) {
                 suppressException = e
             }
-            val exception = Throwable("Fatal error occurred, see report above")
+            val exception = Throwable("Fatal error occurred. \n${buildErrorsAndWarningsMessage()}")
             suppressException?.let { exception.addSuppressed(suppressException) }
             throw exception
         }
@@ -181,7 +187,7 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
             for (msg in messages) {
                 val emoji = msg.type.icon
                 val prefix = "    "
-                builder.appendLine("$indent$prefix$emoji ${msg.type.name}: ${msg.message}${msg.generateSymbolInfo()}")
+                builder.appendLine("$indent$prefix$emoji ${msg.type.name}: ${msg.message}${msg.generateSymbolInfo}")
             }
         }
 
@@ -191,7 +197,8 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
             return "$ms ms"
         }
 
-        fun retrieveAllChildrenStep(): List<Step> = this.children.flatMap(Step::retrieveAllChildrenStep) + this.children
+        private fun retrieveAllChildrenStep(): List<DiagnosticSender> =
+            this.children.flatMap { it.retrieveAllChildrenStep() } + this.children
 
         private fun Double.roundTo(numFractionDigits: Int): Double {
             val factor = 10.0.pow(numFractionDigits.toDouble())
@@ -199,89 +206,42 @@ class DiagnosticTimer(name: String, private val logger: KtorGenLogger) {
         }
     }
 
-    private class DiagnosticMessage(val type: StepType, val message: String, private val symbol: KSNode?) {
-        fun generateSymbolInfo(): String {
-            if (symbol == null) return ""
-            if (symbol.location is FileLocation && symbol is KSDeclaration) {
-                val symbolName = symbol.qualifiedName?.asString() ?: "<unknown>"
+    private class DiagnosticMessage(val type: MessageType, val message: String, private val symbol: KSNode?) {
+        val generateSymbolInfo: String by lazy {
+            if (symbol == null) return@lazy ""
+            if (symbol.location is FileLocation) {
                 val fileLocation = symbol.location as? FileLocation
                 val fileName = fileLocation?.filePath?.substringAfterLast('/')
                 val line = fileLocation?.lineNumber
 
-                return "at $symbolName($fileName:$line)"
+                if (symbol is KSDeclaration) {
+                    val symbolName = symbol.qualifiedName?.asString() ?: "<unknown>"
+                    return@lazy "at $symbolName($fileName:$line)"
+                } else if (symbol is KSValueParameter) {
+                    val type = symbol.type.resolve()
+                    val vararg = if (symbol.isVararg) "vararg" else ""
+                    val function = symbol.parent as? KSDeclaration
+                    val functionName = function?.qualifiedName?.asString() ?: ""
+                    return@lazy "Parameter: $vararg ${symbol.name?.asString() ?: "<unknown>"}: " +
+                        "${type.declaration.simpleName.asString()}${if (type.isMarkedNullable) "?" else ""} " +
+                        "at $functionName($fileName:$line)"
+                }
             }
-            return ""
+            return@lazy ""
         }
+
+        override fun toString(): String = "$type ${type.icon}: $message $generateSymbolInfo".trim()
+    }
+
+    private enum class MessageType(val icon: String) {
+        WARNING("⚠️"),
+        ERROR("❌"),
+        STEP("🟢"),
     }
 
     private enum class StepType(val label: String, val icon: String) {
         ROOT("Processor", "⚙️"),
         PHASE("Phase", "ℹ️"),
         TASK("Task", "🛠️"),
-        STEP("Step", "🟢"),
-        WARNING("Warning", "⚠️"),
-        ERROR("Error", "❌"),
-    }
-
-    interface DiagnosticSender {
-        fun isStarted(): Boolean
-        fun isFinish(): Boolean
-        fun isInProgress() = isStarted() && !isFinish()
-        fun isCompleted() = isStarted() && isFinish()
-        fun haveErrors(): Boolean
-
-        /** Start the step. Only called on start and after root is started */
-        fun start()
-
-        /** Finish the step. Only called on finish and after root is started */
-        fun finish()
-
-        /** Crea a child task, **need** start it */
-        fun createTask(name: String): DiagnosticSender
-
-        /** Informational message of the process */
-        fun addStep(message: String, symbol: KSNode? = null)
-
-        /** Notice a warn message, can be related to a symbol */
-        fun addWarning(message: String, symbol: KSNode? = null)
-
-        /** No fatal error report, can be related to a symbol */
-        fun addError(message: String, symbol: KSNode? = null)
-
-        /** Fatal error, can be related to a symbol. This is a controlled exception. */
-        fun die(message: String, symbol: KSNode? = null): Nothing
-
-        /** Run all the work in try-catch-finally, this handle start finish and die when throw exceptions */
-        fun <R> work(block: (RecuperableDiagnosis) -> R): R {
-            val diagnosis = RecuperableDiagnosis(this)
-            return try {
-                start()
-                val result = block(diagnosis)
-                finish()
-                result
-            } catch (e: Exception) {
-                val (message, symbol) = diagnosis.onDieProvider ?: Pair(e.message ?: "", null)
-                die(message, symbol)
-            }
-        }
-
-        /** If the condition is false, die */
-        fun require(condition: Boolean, message: String, symbol: KSNode? = null) {
-            if (!condition) die(message, symbol)
-        }
-
-        /** If the value is null, die */
-        fun <T> requireNotNull(value: T?, message: String, symbol: KSNode? = null): T {
-            if (value == null) die(message, symbol)
-            return value
-        }
-
-        class RecuperableDiagnosis(sender: DiagnosticSender) : DiagnosticSender by sender {
-            var onDieProvider: Pair<String, KSNode?>? = null
-
-            inline fun onDieProvide(crossinline onDie: (() -> Pair<String, KSNode?>?)) {
-                onDieProvider = onDie()
-            }
-        }
     }
 }

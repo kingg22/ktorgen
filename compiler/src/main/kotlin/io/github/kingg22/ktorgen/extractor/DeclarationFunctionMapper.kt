@@ -1,7 +1,7 @@
 package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import io.github.kingg22.ktorgen.DiagnosticTimer
+import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.model.FunctionData
 
 fun interface DeclarationFunctionMapper {
@@ -10,7 +10,7 @@ fun interface DeclarationFunctionMapper {
         declaration: KSFunctionDeclaration,
         onAddImport: (String) -> Unit,
         basePath: String,
-        timer: (String) -> DiagnosticTimer.DiagnosticSender,
+        timer: (String) -> DiagnosticSender,
     ): FunctionData
 
     companion object {
