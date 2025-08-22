@@ -84,6 +84,9 @@ class KotlinpoetGenerator : KtorGenGenerator {
         classData.imports.forEach { fileBuilder.addImport(it.substringBeforeLast("."), it.substringAfterLast(".")) }
 
         val classAnnotations = classData.buildAnnotations()
+        val optInAnnotation = classAnnotations.firstOrNull { it.typeName == ClassName("kotlin", "OptIn") }
+        val functionAnnotation =
+            setOfNotNull(GeneratedAnnotation, optInAnnotation) + classData.extensionFunctionAnnotation
 
         if (classData.generateTopLevelFunction) {
             val function = generateTopLevelFactoryFunction(
@@ -94,7 +97,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             fileBuilder.addFunction(
                 function
                     .addModifiers(visibilityModifier)
-                    .addAnnotations(classAnnotations)
+                    .addAnnotations(functionAnnotation)
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
             )
@@ -120,7 +123,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             fileBuilder.addFunction(
                 function
                     .addModifiers(visibilityModifier)
-                    .addAnnotations(classAnnotations)
+                    .addAnnotations(functionAnnotation)
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
             )
@@ -137,7 +140,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             fileBuilder.addFunction(
                 function
                     .addModifiers(visibilityModifier)
-                    .addAnnotations(classAnnotations)
+                    .addAnnotations(functionAnnotation)
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
             )
@@ -429,15 +432,18 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     "this.takeFrom(%P)",
                     func.urlTemplate.let { (template, keys) ->
                         val values = keys.map { key ->
-                            val param = func.parameterDataList
-                                .firstOrNull { it.findAnnotationOrNull<ParameterAnnotation.Path>()?.value == key }
+                            val (path, encoded) = func.parameterDataList
+                                .firstNotNullOfOrNull {
+                                    val path = it.findAnnotationOrNull<ParameterAnnotation.Path>()
+                                    if (path?.value == key) path else null
+                                }
                                 ?: error("Missing @Path parameter for {$key}") // after validation is never throw
 
-                            val (path, encoded) = param.findAnnotationOrNull<ParameterAnnotation.Path>()!!
                             if (encoded) {
                                 CodeBlock.of("$%L", path).toString() // ${id}
                             } else {
-                                CodeBlock.of("\${\"$%L\".encodeURLPath()}", path).toString() // ${"$id".encodeURLPath()}
+                                CodeBlock.of($$"${\"$%L\".encodeURLPath()}", path).toString()
+                                // ${"$id".encodeURLPath()}
                             }
                         }.toTypedArray()
                         template.format(*values)
