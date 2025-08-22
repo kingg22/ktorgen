@@ -1,6 +1,7 @@
 package io.github.kingg22.ktorgen.validator.validators
 
 import io.github.kingg22.ktorgen.KtorGenLogger
+import io.github.kingg22.ktorgen.model.UrlPathRegex
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
@@ -11,12 +12,21 @@ class UrlSyntaxValidator : ValidatorStrategy {
 
     override fun validate(context: ValidationContext) = ValidationResult {
         for (function in context.functions.filter { it.goingToGenerate }) {
-            val pathValue = function.httpMethodAnnotation.path
+            val pathValue = function.httpMethodAnnotation.path.replace(UrlPathRegex, "valid")
+            // prevent false positive when have path template, but in runtime can throw exception Url function
 
             if (pathValue.isNotBlank() &&
                 function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Url>() }
             ) {
                 addError(KtorGenLogger.URL_WITH_PATH_VALUE, function)
+            }
+
+            if (pathValue.contains("/{2,}".toRegex())) {
+                addWarning(
+                    KtorGenLogger.URL_SYNTAX_ERROR +
+                        "\nCurrent path: $pathValue",
+                    function,
+                )
             }
 
             if (function.parameterDataList.count { it.hasAnnotation<ParameterAnnotation.Url>() } > 1 ||
