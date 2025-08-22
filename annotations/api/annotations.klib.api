@@ -11,7 +11,7 @@ open annotation class io.github.kingg22.ktorgen.core/Generated : kotlin/Annotati
 }
 
 open annotation class io.github.kingg22.ktorgen.core/KtorGen : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGen|null[0]
-    constructor <init>(kotlin/String = ..., kotlin/Boolean = ..., kotlin/String = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGen.<init>|<init>(kotlin.String;kotlin.Boolean;kotlin.String;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.String;kotlin.String;kotlin.String){}[0]
+    constructor <init>(kotlin/String = ..., kotlin/Boolean = ..., kotlin/String = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGen.<init>|<init>(kotlin.String;kotlin.Boolean;kotlin.String;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.String;kotlin.String;kotlin.String){}[0]
 
     final val annotations // io.github.kingg22.ktorgen.core/KtorGen.annotations|{}annotations[0]
         final fun <get-annotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGen.annotations.<get-annotations>|<get-annotations>(){}[0]
@@ -21,6 +21,8 @@ open annotation class io.github.kingg22.ktorgen.core/KtorGen : kotlin/Annotation
         final fun <get-customClassHeader>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.customClassHeader.<get-customClassHeader>|<get-customClassHeader>(){}[0]
     final val customFileHeader // io.github.kingg22.ktorgen.core/KtorGen.customFileHeader|{}customFileHeader[0]
         final fun <get-customFileHeader>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.customFileHeader.<get-customFileHeader>|<get-customFileHeader>(){}[0]
+    final val functionAnnotations // io.github.kingg22.ktorgen.core/KtorGen.functionAnnotations|{}functionAnnotations[0]
+        final fun <get-functionAnnotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGen.functionAnnotations.<get-functionAnnotations>|<get-functionAnnotations>(){}[0]
     final val generate // io.github.kingg22.ktorgen.core/KtorGen.generate|{}generate[0]
         final fun <get-generate>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGen.generate.<get-generate>|<get-generate>(){}[0]
     final val generateCompanionExtFunction // io.github.kingg22.ktorgen.core/KtorGen.generateCompanionExtFunction|{}generateCompanionExtFunction[0]

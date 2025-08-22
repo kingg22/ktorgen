@@ -14,21 +14,29 @@ import kotlin.reflect.KClass
  * ```kotlin
  * interface UserRoute {
  *     // Interface definition
+ *     // empty definition don't generate code*
  *
  *     @KtorGen
  *     companion object
  * }
  *
- * val route = UserRoute.create(httpClient) // Companion factory (if enabled and Companion is available)
- * // or
- * val route = UserRoute(httpClient) // Top-level factory function (if enabled)
+ * val route: UserRoute
+ *
+ * route = _UserRouteImpl(httpClient) // Constructor of impl class
+ * route = UserRoute(httpClient) // Factory top-level function (if enabled)
+ * route = UserRoute.create(httpClient) // Companion factory (if enabled and Companion is available)
+ * route = httpClient.userRoute() // Extension function of HttpClient (if enabled)
  * ```
  *
  * The generated implementation will:
- * - Be named with an optional prefix or custom name.
- * - Implement the target interface.
- * - Propagated annotations.
+ * - [Be named with an optional prefix or custom name][name].
+ * - [Implement the target interface][generate] with the same [visibility modifier][visibilityModifier].
  * - Receive an `HttpClient` as its primary constructor argument.
+ * - [Propagate annotations][propagateAnnotations].
+ * - Mark all generated code with [@Generated][Generated] and add [comments][customFileHeader].
+ * - [Declare a factory top level function][generateTopLevelFunction].
+ *
+ * @see KtorGenFunction
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
@@ -62,6 +70,7 @@ annotation class KtorGen(
      * Whether to generate a top-level function in the same package as the interface.
      *
      * This function will allow instantiating the implementation by passing an `HttpClient`.
+     *
      * Example: `fun UserRoute(client: HttpClient): UserRoute`
      */
     val generateTopLevelFunction: Boolean = true,
@@ -70,6 +79,7 @@ annotation class KtorGen(
      * Whether to generate a `create(client)` extension function of interface's companion object.
      *
      * This **requires** the annotation to be placed on the companion itself or **declared a companion object explicit**.
+     *
      * Example: `UserRoute.create(client)`
      */
     val generateCompanionExtFunction: Boolean = false,
@@ -81,27 +91,66 @@ annotation class KtorGen(
      */
     val generateHttpClientExtension: Boolean = false,
 
-    /** If `true`, the processor will attempt to copy supported annotations from the original method into the generated method. */
+    /**
+     * _[KtorGenExperimental]_
+     *
+     * If `true`,
+     * the processor will attempt to copy supported annotations from the source interface into the generated class and extension functions.
+     */
     @property:KtorGenExperimental
     val propagateAnnotations: Boolean = true,
 
     /**
-     * Additional annotations or only these annotations to propagate as-is from the interface method to the generated implementation.
+     * _[KtorGenExperimental]_
      *
-     * For example, [JvmSynthetic::class], [Deprecated::class]
+     * Additional annotations or only these annotations to propagate as-is from the interface to the generated
+     * implementation class and extension functions, [see more info about functions][functionAnnotations].
+     *
+     * The annotations need to have empty constructor like [@JvmSynthetic][kotlin.jvm.JvmSynthetic].
+     * Annotations requires properties like [@JvmName][kotlin.jvm.JvmName] can't be used.
+     * In that case, declare manually a function with the generated class.
+     *
+     * For example, `[ExperimentalApi::class]`
+     * @see KtorGenFunction.annotations
      */
     @property:KtorGenExperimental
     val annotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * Opt-in annotations that should be propagated, usually marked with `@RequiresOptIn`.
+     * _[KtorGenExperimental]_
      *
-     * For example, [ExperimentalApi::class], [InternalKtorApi::class]
+     * Opt-in annotations that should be propagated to generated class and extension functions,
+     * need be marked with [@RequiresOptIn][RequiresOptIn] or [@SubclassOptInRequired][SubclassOptInRequired],
+     * otherwise the generated code will not compile because requirements of [@OptIn][OptIn].
+     *
+     * For example, `[ExperimentalApi::class], [InternalKtorApi::class]`
      */
     @property:KtorGenExperimental
     val optInAnnotations: Array<KClass<out Annotation>> = [],
 
     /**
+     * _[KtorGenExperimental]_
+     *
+     * Additional annotations or only these annotations to propagate as-is to the generated extension functions:
+     * - [Top level Function factory][generateTopLevelFunction]
+     * - [Companion factory][generateCompanionExtFunction]
+     * - [HttpClient extension][generateHttpClientExtension]
+     *
+     * The default behavior is [propagate annotations][propagateAnnotations] of [interface][annotations] applicable to functions and
+     * [opt-in annotations][optInAnnotations].
+     *
+     * The annotations need to have empty constructor like [@JvmSynthetic][kotlin.jvm.JvmSynthetic].
+     * Annotations requires properties like [@JvmName][kotlin.jvm.JvmName] can't be used.
+     * In that case, declare manually a function with the generated class.
+     *
+     * For example, `[JvmSynthetic::class]`
+     */
+    @property:KtorGenExperimental
+    val functionAnnotations: Array<KClass<out Annotation>> = [],
+
+    /**
+     * _[KtorGenExperimental]_
+     *
      * Indicate the visibility modifier for all generated code (class, primary constructor, and extension functions)
      *
      * Can be `public` or `internal`.
@@ -113,7 +162,8 @@ annotation class KtorGen(
      *
      * Combination of `internal interface` and `public class` is valid,
      * but can lead to compilation errors if exposed something internal in `public function`.
-     * For advanced use cases, use `internal` modifier directly on the interface and manually write functions.
+     * For advanced use cases,
+     * use `internal` modifier directly on the interface and manually write functions or only use constructor.
      *
      * @see <a href="https://kotlinlang.org/docs/visibility-modifiers.html#packages">Kotlin Visibility Modifiers</a>
      */
