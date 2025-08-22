@@ -16,6 +16,7 @@ constructor(
     override val annotationsToPropagate: Set<AnnotationSpec> = emptySet(),
     override val optIns: Set<AnnotationSpec> = emptySet(),
     override val optInAnnotation: AnnotationSpec? = null,
+    override val extensionFunctionAnnotation: Set<AnnotationSpec> = emptySet(),
     override val customFileHeader: String = KTORG_GENERATED_FILE_COMMENT,
     customClassHeader: String = "",
 ) : GenOptions.GenTypeOption {
@@ -53,6 +54,7 @@ constructor(
         annotationsToPropagate: Set<AnnotationSpec>,
         optIns: Set<AnnotationSpec>,
         optInAnnotation: AnnotationSpec?,
+        extensionFunctionAnnotation: Set<AnnotationSpec>,
         customFileHeader: String,
         customClassHeader: String,
     ): GenOptions.GenTypeOption = DefaultOptions(
@@ -67,6 +69,7 @@ constructor(
         annotationsToPropagate = annotationsToPropagate,
         optIns = optIns,
         optInAnnotation = optInAnnotation,
+        extensionFunctionAnnotation = extensionFunctionAnnotation,
         customFileHeader = customFileHeader,
         customClassHeader = customClassHeader,
     )

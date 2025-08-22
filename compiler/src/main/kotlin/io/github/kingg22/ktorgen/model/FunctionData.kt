@@ -49,10 +49,9 @@ class FunctionData(
     }
 
     private fun parseUrlTemplate(url: String): UrlTemplateResult {
-        val regex = "\\{([^}]+)}".toRegex()
         val keys = mutableListOf<String>()
 
-        val template = regex.replace(url) { match ->
+        val template = UrlPathRegex.replace(url) { match ->
             val key = match.groupValues[1]
             keys.add(key)
             "%s"

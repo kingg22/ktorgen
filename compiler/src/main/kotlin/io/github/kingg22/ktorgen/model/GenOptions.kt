@@ -41,6 +41,8 @@ interface GenOptions {
             get() = false
         val customFileHeader: String
             get() = KTORG_GENERATED_FILE_COMMENT
+        val extensionFunctionAnnotation: Set<AnnotationSpec>
+            get() = emptySet()
 
         @Suppress("kotlin:S107")
         fun copy(
@@ -55,6 +57,7 @@ interface GenOptions {
             annotationsToPropagate: Set<AnnotationSpec> = this.annotationsToPropagate,
             optIns: Set<AnnotationSpec> = this.optIns,
             optInAnnotation: AnnotationSpec? = this.optInAnnotation,
+            extensionFunctionAnnotation: Set<AnnotationSpec> = this.extensionFunctionAnnotation,
             customFileHeader: String = this.customFileHeader,
             customClassHeader: String = this.customHeader,
         ): GenTypeOption
