@@ -1,11 +1,9 @@
 package io.github.kingg22.ktorgen.model
 
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
-import kotlin.Boolean
 
 class FunctionData(
     val name: String,
