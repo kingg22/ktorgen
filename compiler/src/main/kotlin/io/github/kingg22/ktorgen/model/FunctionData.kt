@@ -2,10 +2,10 @@ package io.github.kingg22.ktorgen.model
 
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import kotlin.Boolean
 
 class FunctionData(
     val name: String,
@@ -17,8 +17,8 @@ class FunctionData(
     val isSuspend: Boolean = false,
     val modifierSet: Set<KModifier>,
     val isImplemented: Boolean,
-    options: GenOptions,
-) : GenOptions by options {
+    options: FunctionGenerationOptions,
+) : FunctionGenerationOptions(options) {
     val urlTemplate by lazy { parseUrlTemplate(httpMethodAnnotation.path) }
     val isBody by lazy { parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Body>() } }
     val isFormUrl by lazy {
@@ -59,13 +59,4 @@ class FunctionData(
 
         return UrlTemplateResult(template, keys)
     }
-
-    // TODO change parent to use this
-    class FunctionGenerationOptions(
-        val generate: Boolean = true,
-        val annotations: Set<AnnotationSpec> = emptySet(),
-        val optIns: Set<ClassName> = emptySet(),
-        val optInAnnotation: AnnotationSpec? = null,
-        val customHeader: String = "",
-    )
 }
