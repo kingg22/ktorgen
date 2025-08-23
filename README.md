@@ -8,6 +8,7 @@
 
 ![GitHub License](https://img.shields.io/github/license/kingg22/ktorgen)
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/kingg22/ktorgen/main)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=kingg22_ktorgen&metric=alert_status&token=958b0f9aa5f280c62c52a9f18026711a6df10759)](https://sonarcloud.io/summary/new_code?id=kingg22_ktorgen)
 
 Ktorgen is a 100% compile-time code generator for creating HTTP clients using Ktor Client and interface annotations, inspired by [Retrofit](https://github.com/square/retrofit) and [Ktorfit](https://github.com/Foso/Ktorfit).
 
