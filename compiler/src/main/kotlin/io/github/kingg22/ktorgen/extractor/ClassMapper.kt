@@ -17,8 +17,7 @@ import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.model.ClassData
-import io.github.kingg22.ktorgen.model.DefaultOptions
-import io.github.kingg22.ktorgen.model.GenOptions
+import io.github.kingg22.ktorgen.model.ClassGenerationOptions
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_CALL_BODY
@@ -53,7 +52,7 @@ class ClassMapper : DeclarationMapper {
                                 .first { it.isCompanionObject },
                         )?.let { return@run it }
                     }
-                    DefaultOptions(
+                    ClassGenerationOptions.default(
                         generatedName = "_${interfaceName}Impl",
                         visibilityModifier = declaration.getVisibility().name,
                     )
@@ -79,7 +78,7 @@ class ClassMapper : DeclarationMapper {
                             *options.optIns.map { it.typeName }.toTypedArray(),
                         ).build()
                 }
-                annotations = (options.annotationsToPropagate + annotations).filterNot { it in options.optIns }.toSet()
+                annotations = (options.annotations + annotations).filterNot { it in options.optIns }.toSet()
                 options = options.copy(
                     annotationsToPropagate = annotations,
                     extensionFunctionAnnotation = options.extensionFunctionAnnotation + functionAnnotation,
@@ -168,9 +167,9 @@ class ClassMapper : DeclarationMapper {
     }
 
     @OptIn(KtorGenExperimental::class)
-    private fun extractKtorGen(interfaceDeclaration: KSClassDeclaration): GenOptions.GenTypeOption? =
-        interfaceDeclaration.getAnnotation<KtorGen, GenOptions.GenTypeOption>(manualExtraction = {
-            DefaultOptions(
+    private fun extractKtorGen(interfaceDeclaration: KSClassDeclaration) =
+        interfaceDeclaration.getAnnotation<KtorGen, ClassGenerationOptions>(manualExtraction = {
+            ClassGenerationOptions(
                 generatedName =
                 it.getArgumentValueByName<String>("name")?.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE }
                     ?: "_${interfaceDeclaration.simpleName.getShortName()}Impl",
@@ -182,7 +181,7 @@ class ClassMapper : DeclarationMapper {
                 generateHttpClientExtension = it.getArgumentValueByName("generateHttpClientExtension") ?: false,
 
                 propagateAnnotations = it.getArgumentValueByName("propagateAnnotations") ?: true,
-                annotationsToPropagate = it.getArgumentValueByName<List<KSType>>("annotations")
+                annotations = it.getArgumentValueByName<List<KSType>>("annotations")
                     ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
                     ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
                     ?.toSet()
@@ -201,15 +200,44 @@ class ClassMapper : DeclarationMapper {
                 visibilityModifier = it.getArgumentValueByName<String>("visibilityModifier")?.replace(
                     KTORGEN_DEFAULT_VALUE,
                     interfaceDeclaration.getVisibility().name,
-                ) ?: interfaceDeclaration.getVisibility().name,
+                )?.uppercase() ?: interfaceDeclaration.getVisibility().name,
+                classVisibilityModifier = it.getArgumentValueByName<String>("classVisibilityModifier")?.replace(
+                    KTORGEN_DEFAULT_VALUE,
+                    interfaceDeclaration.getVisibility().name,
+                )?.uppercase() ?: KTORGEN_DEFAULT_VALUE,
+                constructorVisibilityModifier =
+                it.getArgumentValueByName<String>("constructorVisibilityModifier")?.replace(
+                    KTORGEN_DEFAULT_VALUE,
+                    interfaceDeclaration.getVisibility().name,
+                )?.uppercase() ?: KTORGEN_DEFAULT_VALUE,
+                functionVisibilityModifier = it.getArgumentValueByName<String>("functionVisibilityModifier")?.replace(
+                    KTORGEN_DEFAULT_VALUE,
+                    interfaceDeclaration.getVisibility().name,
+                )?.uppercase() ?: KTORGEN_DEFAULT_VALUE,
+
                 customFileHeader = it.getArgumentValueByName<String>("customFileHeader")?.replace(
                     KTORGEN_DEFAULT_VALUE,
                     interfaceDeclaration.getVisibility().name,
                 ) ?: KTORG_GENERATED_FILE_COMMENT,
                 customClassHeader = it.getArgumentValueByName("customClassHeader") ?: "",
-            )
+            ).copy { options ->
+                options.copy(
+                    classVisibilityModifier = options.classVisibilityModifier.replace(
+                        KTORGEN_DEFAULT_VALUE,
+                        options.visibilityModifier,
+                    ).uppercase(),
+                    constructorVisibilityModifier = options.constructorVisibilityModifier.replace(
+                        KTORGEN_DEFAULT_VALUE,
+                        options.visibilityModifier,
+                    ).uppercase(),
+                    functionVisibilityModifier = options.functionVisibilityModifier.replace(
+                        KTORGEN_DEFAULT_VALUE,
+                        options.visibilityModifier,
+                    ).uppercase(),
+                )
+            }
         }) {
-            DefaultOptions(
+            ClassGenerationOptions(
                 generatedName = it.name.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE }
                     ?: "_${interfaceDeclaration.simpleName.getShortName()}Impl",
                 goingToGenerate = it.generate,
@@ -219,7 +247,7 @@ class ClassMapper : DeclarationMapper {
                 generateHttpClientExtension = it.generateHttpClientExtension,
 
                 propagateAnnotations = it.propagateAnnotations,
-                annotationsToPropagate = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
+                annotations = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 extensionFunctionAnnotation = it.functionAnnotations.map { a ->
                     AnnotationSpec.builder(a).build()
@@ -228,9 +256,28 @@ class ClassMapper : DeclarationMapper {
                 visibilityModifier = it.visibilityModifier.replace(
                     KTORGEN_DEFAULT_VALUE,
                     interfaceDeclaration.getVisibility().name,
-                ),
+                ).uppercase(),
+                classVisibilityModifier = it.classVisibilityModifier,
+                constructorVisibilityModifier = it.constructorVisibilityModifier,
+                functionVisibilityModifier = it.functionVisibilityModifier,
+
                 customFileHeader = it.customFileHeader.replace(KTORGEN_DEFAULT_VALUE, KTORG_GENERATED_FILE_COMMENT),
                 customClassHeader = it.customClassHeader,
-            )
+            ).copy { options ->
+                options.copy(
+                    classVisibilityModifier = options.classVisibilityModifier.replace(
+                        KTORGEN_DEFAULT_VALUE,
+                        options.visibilityModifier,
+                    ).uppercase(),
+                    constructorVisibilityModifier = options.constructorVisibilityModifier.replace(
+                        KTORGEN_DEFAULT_VALUE,
+                        options.visibilityModifier,
+                    ).uppercase(),
+                    functionVisibilityModifier = options.functionVisibilityModifier.replace(
+                        KTORGEN_DEFAULT_VALUE,
+                        options.visibilityModifier,
+                    ).uppercase(),
+                )
+            }
         }
 }

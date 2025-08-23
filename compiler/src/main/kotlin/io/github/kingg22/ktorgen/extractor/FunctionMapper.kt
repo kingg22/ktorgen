@@ -2,7 +2,6 @@ package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
-import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
@@ -59,14 +58,14 @@ class FunctionMapper : DeclarationFunctionMapper {
             addImportsForFunctionAnnotations(functionAnnotations, onAddImport)
             timer.addStep("Extracting options of @KtorGenFunction")
 
-            var options = extractKtorGenFunction(declaration) ?: DefaultOptions(declaration.getVisibility().name)
+            var options = extractKtorGenFunction(declaration) ?: FunctionGenerationOptions.DEFAULT
             timer.addStep("Extracting the rest of annotations for function")
 
             if (options.propagateAnnotations) {
                 var (annotations, optIn) = extractAnnotationsFiltered(declaration)
                 optIn = options.optIns + optIn
                 annotations = (options.annotationsToPropagate + annotations).filterNot { it in optIn }.toSet()
-                options = options.copy(annotationsToPropagate = annotations, optIns = optIn)
+                options = options.copy(annotations = annotations, optIns = optIn)
             }
 
             val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)
@@ -273,11 +272,10 @@ class FunctionMapper : DeclarationFunctionMapper {
     }
 
     @OptIn(KtorGenExperimental::class)
-    private fun extractKtorGenFunction(declaration: KSFunctionDeclaration): GenOptions? =
-        declaration.getAnnotation<KtorGenFunction, GenOptions>(manualExtraction = {
-            DefaultOptions(
-                visibilityModifier = declaration.getVisibility().name,
-                goingToGenerate = it.getArgumentValueByName("generate") ?: true,
+    private fun extractKtorGenFunction(declaration: KSFunctionDeclaration) =
+        declaration.getAnnotation<KtorGenFunction, FunctionGenerationOptions>(manualExtraction = {
+            FunctionGenerationOptions(
+                generate = it.getArgumentValueByName("generate") ?: true,
                 propagateAnnotations = it.getArgumentValueByName("propagateAnnotations") ?: true,
                 annotationsToPropagate =
                 it.getArgumentValueByName<List<KSType>>("annotations")
@@ -291,15 +289,16 @@ class FunctionMapper : DeclarationFunctionMapper {
                     ?.toSet()
                     ?: emptySet(),
                 customHeader = it.getArgumentValueByName("customHeader") ?: "",
+                optInAnnotation = null,
             )
         }) {
-            DefaultOptions(
-                goingToGenerate = it.generate,
+            FunctionGenerationOptions(
+                generate = it.generate,
                 propagateAnnotations = it.propagateAnnotations,
                 annotationsToPropagate = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 customHeader = it.customHeader,
-                visibilityModifier = declaration.getVisibility().name,
+                optInAnnotation = null,
             )
         }
 }
