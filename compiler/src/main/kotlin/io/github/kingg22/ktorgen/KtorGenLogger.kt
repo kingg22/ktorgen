@@ -87,11 +87,19 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
         const val ANY_TYPE_INVALID = "'Any' type is not valid, break validation and serialization."
         const val PRIVATE_INTERFACE_CANT_GENERATE =
             "Private Interface KSP can create a valid class to implement it. Make public or internal. "
-        const val ONLY_PUBLIC_INTERNAL_CLASS = "Only public or internal visibility modifier for class is valid. "
+        const val ONLY_PUBLIC_INTERNAL_CLASS =
+            "Only public or internal or private visibility modifier for class is valid. "
         const val MISSING_COMPANION_TO_GENERATE =
             "Missing declare explicit the companion to generate an extension function or remove @KtorGen(generateCompanionExtFunction = false). This limitation is of KSP and how kotlin generate the companion class. See KSP limitations: https://kotlinlang.org/docs/ksp-why-ksp.html#limitations and Kotlin Companion objects https://kotlinlang.org/docs/object-declarations.html#companion-objects"
         const val TWO_KTORGEN_ANNOTATIONS = "2 annotation of @KtorGen is not valid, please remove of them."
         const val URL_SYNTAX_ERROR =
             "URL syntax error. See https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Path "
+        const val PRIVATE_CLASS_NO_ACCESS =
+            "Private class can't be accessed without a function or property in the same file. Make public or internal the class OR indicate to generate a function. "
+        const val PRIVATE_CONSTRUCTOR =
+            "Private constructor is not valid, make public or internal. KtorGen can't generate a function for private constructor. "
+        const val PRIVATE_FUNCTION = "Private function is not valid, make public or internal to can access it."
+        const val INVALID_VISIBILITY_MODIFIER =
+            "Invalid visibility modifier, see https://kotlinlang.org/docs/visibility-modifiers.html"
     }
 }

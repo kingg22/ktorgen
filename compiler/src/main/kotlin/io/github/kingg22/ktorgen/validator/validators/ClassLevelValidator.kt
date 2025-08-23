@@ -1,6 +1,7 @@
 package io.github.kingg22.ktorgen.validator.validators
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSNode
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.KtorGenLogger
@@ -14,36 +15,72 @@ class ClassLevelValidator : ValidatorStrategy {
     override val name: String = "Class Level"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        if (context.visibilityGeneratedClass.equals("public", true).not() &&
-            context.visibilityGeneratedClass.equals("internal", true).not()
+        val interfaceDeclaration = context.classData.ksClassDeclaration
+
+        val classVisibility = context.classData.classVisibilityModifier
+        if (classVisibility.isBlank() ||
+            classVisibility.equals("public", true).not() &&
+            classVisibility.equals("internal", true).not() &&
+            classVisibility.equals("private", true).not()
         ) {
             addError(
-                KtorGenLogger.ONLY_PUBLIC_INTERNAL_CLASS + "Current ${context.visibilityGeneratedClass}",
-                context.classData.ksClassDeclaration,
+                KtorGenLogger.ONLY_PUBLIC_INTERNAL_CLASS + "Current '$classVisibility'",
+                interfaceDeclaration,
             )
         }
+        validateKModifier(classVisibility, interfaceDeclaration)
+
+        val constructorVisibility = context.classData.constructorVisibilityModifier
+        if (constructorVisibility.isBlank() ||
+            constructorVisibility.equals("private", true) ||
+            constructorVisibility.equals("protected", true)
+        ) {
+            addError(
+                KtorGenLogger.PRIVATE_CONSTRUCTOR + "Current '$constructorVisibility'",
+                interfaceDeclaration,
+            )
+        }
+        validateKModifier(constructorVisibility, interfaceDeclaration)
+
+        if (context.classData.classVisibilityModifier.equals("private", true) &&
+            context.classData.generateTopLevelFunction.not() &&
+            context.classData.generateCompanionExtFunction.not() &&
+            context.classData.generateHttpClientExtension.not()
+        ) {
+            addError(KtorGenLogger.PRIVATE_CLASS_NO_ACCESS, interfaceDeclaration)
+        }
+
+        val functionVisibility = context.classData.functionVisibilityModifier
+        if (functionVisibility.isBlank() ||
+            functionVisibility.equals("private", true) ||
+            functionVisibility.equals("protected", true)
+        ) {
+            addError(
+                KtorGenLogger.PRIVATE_FUNCTION + "Current '$functionVisibility'",
+                interfaceDeclaration,
+            )
+        }
+        validateKModifier(functionVisibility, interfaceDeclaration)
 
         if (context.classData.modifierSet.any { it == KModifier.PRIVATE }) {
             addError(
                 KtorGenLogger.PRIVATE_INTERFACE_CANT_GENERATE + "Current ${context.classData.modifierSet}",
-                context.classData.ksClassDeclaration,
+                interfaceDeclaration,
             )
         }
 
         if (context.classData.haveCompanionObject.not() && context.classData.generateCompanionExtFunction) {
-            addError(KtorGenLogger.MISSING_COMPANION_TO_GENERATE, context.classData.ksClassDeclaration)
+            addError(KtorGenLogger.MISSING_COMPANION_TO_GENERATE, interfaceDeclaration)
         }
 
         if (context.classData.haveCompanionObject) {
-            val kClassDeclaration = context.classData.ksClassDeclaration
-
-            val companionDeclaration = kClassDeclaration.declarations
+            val companionDeclaration = interfaceDeclaration.declarations
                 .filterIsInstance<KSClassDeclaration>()
                 .firstOrNull { it.isCompanionObject } ?: error("Unexpected not found companion object declaration")
 
             if (companionDeclaration.annotations
                     .any { it.shortName.getShortName() == KtorGen::class.simpleName!! } &&
-                kClassDeclaration.annotations
+                interfaceDeclaration.annotations
                     .any { it.shortName.getShortName() == KtorGen::class.simpleName!! }
             ) {
                 addError(KtorGenLogger.TWO_KTORGEN_ANNOTATIONS, companionDeclaration)
@@ -54,6 +91,10 @@ class ClassLevelValidator : ValidatorStrategy {
             .filter { it.isImplemented.not() && it.goingToGenerate.not() }
             .forEach { addError(KtorGenLogger.ABSTRACT_FUNCTION_IGNORED, it) }
 
+        validateFunctions(context)
+    }
+
+    private fun ValidationResult.validateFunctions(context: ValidationContext) {
         for (function in context.functions.filter { it.goingToGenerate }) {
             if (function.returnTypeData.typeName == ANY ||
                 function.returnTypeData.typeName == ANY.copy(nullable = true)
@@ -94,6 +135,17 @@ class ClassLevelValidator : ValidatorStrategy {
             if (function.parameterDataList.count { it.isValidTakeFrom || it.isHttpRequestBuilderLambda } > 1) {
                 addError(KtorGenLogger.ONLY_ONE_HTTP_REQUEST_BUILDER, function)
             }
+        }
+    }
+
+    private fun ValidationResult.validateKModifier(modifier: String, symbol: KSNode?) {
+        try {
+            KModifier.valueOf(modifier.uppercase())
+        } catch (_: IllegalArgumentException) {
+            addError(
+                KtorGenLogger.INVALID_VISIBILITY_MODIFIER + "Current '$modifier'",
+                symbol,
+            )
         }
     }
 }
