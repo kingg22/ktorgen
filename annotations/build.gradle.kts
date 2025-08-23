@@ -103,11 +103,12 @@ ktlint {
 }
 
 dokka.dokkaSourceSets.configureEach {
-    skipEmptyPackages = true
-    skipDeprecated = false
-    reportUndocumented = true
-    enableJdkDocumentationLink = true
-    enableKotlinStdLibDocumentationLink = true
+    skipEmptyPackages.set(true)
+    skipDeprecated.set(false)
+    reportUndocumented.set(true)
+    enableJdkDocumentationLink.set(true)
+    enableKotlinStdLibDocumentationLink.set(true)
+    suppressGeneratedFiles.set(true)
 }
 
 mavenPublishing {
