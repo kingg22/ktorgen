@@ -5,6 +5,6 @@ package io.github.kingg22.ktorgen.core
  * for instance by static analysis tools.
  */
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.FILE)
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 @MustBeDocumented
 annotation class Generated

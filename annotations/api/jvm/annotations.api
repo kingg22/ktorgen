@@ -4,9 +4,12 @@ public abstract interface annotation class io/github/kingg22/ktorgen/core/Genera
 public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGen : java/lang/annotation/Annotation {
 	public abstract fun annotations ()[Ljava/lang/Class;
 	public abstract fun basePath ()Ljava/lang/String;
+	public abstract fun classVisibilityModifier ()Ljava/lang/String;
+	public abstract fun constructorVisibilityModifier ()Ljava/lang/String;
 	public abstract fun customClassHeader ()Ljava/lang/String;
 	public abstract fun customFileHeader ()Ljava/lang/String;
 	public abstract fun functionAnnotations ()[Ljava/lang/Class;
+	public abstract fun functionVisibilityModifier ()Ljava/lang/String;
 	public abstract fun generate ()Z
 	public abstract fun generateCompanionExtFunction ()Z
 	public abstract fun generateHttpClientExtension ()Z

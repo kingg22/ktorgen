@@ -92,18 +92,19 @@ annotation class KtorGen(
     val generateHttpClientExtension: Boolean = false,
 
     /**
-     * _[KtorGenExperimental]_
+     * _[KtorGenExperimental]_ Indicate if annotations from the source interface should be copied to the generated class and extension functions.
      *
-     * If `true`,
-     * the processor will attempt to copy supported annotations from the source interface into the generated class and extension functions.
+     * If `true`, the processor will attempt to copy all annotations.
+     * @see KtorGenFunction.propagateAnnotations
+     * @see functionAnnotations
+     * @see optInAnnotations
+     * @see annotations
      */
     @property:KtorGenExperimental
     val propagateAnnotations: Boolean = true,
 
     /**
-     * _[KtorGenExperimental]_
-     *
-     * Additional annotations or only these annotations to propagate as-is from the interface to the generated
+     * _[KtorGenExperimental]_ Additional annotations or only these annotations to propagate as-is from the interface to the generated
      * implementation class and extension functions, [see more info about functions][functionAnnotations].
      *
      * The annotations need to have empty constructor like [@JvmSynthetic][kotlin.jvm.JvmSynthetic].
@@ -117,9 +118,7 @@ annotation class KtorGen(
     val annotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * _[KtorGenExperimental]_
-     *
-     * Opt-in annotations that should be propagated to generated class and extension functions,
+     * _[KtorGenExperimental]_ Opt-in annotations that should be propagated to generated class and extension functions,
      * need be marked with [@RequiresOptIn][RequiresOptIn] or [@SubclassOptInRequired][SubclassOptInRequired],
      * otherwise the generated code will not compile because requirements of [@OptIn][OptIn].
      *
@@ -129,9 +128,7 @@ annotation class KtorGen(
     val optInAnnotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * _[KtorGenExperimental]_
-     *
-     * Additional annotations or only these annotations to propagate as-is to the generated extension functions:
+     * _[KtorGenExperimental]_ Additional annotations or only these annotations to propagate as-is to the generated extension functions:
      * - [Top level Function factory][generateTopLevelFunction]
      * - [Companion factory][generateCompanionExtFunction]
      * - [HttpClient extension][generateHttpClientExtension]
@@ -149,9 +146,8 @@ annotation class KtorGen(
     val functionAnnotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * _[KtorGenExperimental]_
-     *
-     * Indicate the visibility modifier for all generated code (class, primary constructor, and extension functions)
+     * _[KtorGenExperimental]_ Indicate the visibility modifier for all generated code
+     * (class, primary constructor, and extension functions)
      *
      * Can be `public` or `internal`.
      * Is not valid: `private` and `protected`.
@@ -169,6 +165,33 @@ annotation class KtorGen(
      */
     @property:KtorGenExperimental
     val visibilityModifier: String = KTORGEN_DEFAULT_NAME,
+
+    /**
+     * _[KtorGenExperimental]_ Control the visibility modifier of the generated class only.
+     *
+     * Can be `public` or `internal` or `private`.
+     * By default, is the same behavior as [visibilityModifier].
+     */
+    @property:KtorGenExperimental
+    val classVisibilityModifier: String = KTORGEN_DEFAULT_NAME,
+
+    /**
+     * _[KtorGenExperimental]_ Control the visibility modifier of the generated primary constructor only.
+     *
+     * Can be `public` or `internal`.
+     * By default, is the same behavior as [visibilityModifier].
+     */
+    @property:KtorGenExperimental
+    val constructorVisibilityModifier: String = KTORGEN_DEFAULT_NAME,
+
+    /**
+     * _[KtorGenExperimental]_ Control the visibility modifier of the generated extension functions only.
+     *
+     * Can be `public` or `internal`.
+     * By default, is the same behavior as [visibilityModifier].
+     */
+    @property:KtorGenExperimental
+    val functionVisibilityModifier: String = KTORGEN_DEFAULT_NAME,
 
     /**
      * Custom header **comment** inserted at the top of the generated Kotlin file.

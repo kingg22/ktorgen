@@ -37,18 +37,17 @@ annotation class KtorGenFunction(
     val generate: Boolean = true,
 
     /**
-     * _[KtorGenExperimental]_
+     * _[KtorGenExperimental]_ Indicate if annotations from the source method should be copied to the generated method.
      *
-     * If `true`,
-     * the processor will attempt to copy supported annotations from the original method into the generated method.
+     * If `true`, the processor will attempt to copy all annotations.
+     * @see optInAnnotations
+     * @see annotations
      */
     @property:KtorGenExperimental
     val propagateAnnotations: Boolean = true,
 
     /**
-     * _[KtorGenExperimental]_
-     *
-     * Additional annotations or only these annotations to propagate as-is from the interface method to the generated implementation.
+     * _[KtorGenExperimental]_ Additional annotations or only these annotations to propagate as-is from the interface method to the generated implementation.
      *
      * The annotations need to have empty constructor like [@JvmSynthetic][kotlin.jvm.JvmSynthetic].
      * Annotations requires properties like [@JvmName][kotlin.jvm.JvmName] can't be used.
@@ -60,9 +59,7 @@ annotation class KtorGenFunction(
     val annotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * _[KtorGenExperimental]_
-     *
-     * Opt-in annotations that should be propagated to generated method,
+     * _[KtorGenExperimental]_ Opt-in annotations that should be propagated to generated method,
      * need be marked with [@RequiresOptIn][RequiresOptIn] or [@SubclassOptInRequired][SubclassOptInRequired],
      * otherwise the generated code will not compile because requirements of [@OptIn][OptIn].
      *
