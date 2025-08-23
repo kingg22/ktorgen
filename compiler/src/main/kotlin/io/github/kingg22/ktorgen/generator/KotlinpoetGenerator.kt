@@ -21,7 +21,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
     override fun generate(classData: ClassData, timer: DiagnosticSender): FileSpec = timer.work {
         // class
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
-            .addModifiers(KModifier.valueOf(classData.visibilityModifier.uppercase()))
+            .addModifiers(KModifier.valueOf(classData.classVisibilityModifier.uppercase()))
             .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
             .addKdoc(classData.customClassHeader)
             .addAnnotations(classData.buildAnnotations())

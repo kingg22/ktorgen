@@ -5,7 +5,6 @@ import com.squareup.kotlinpoet.AnnotationSpec
 open class ClassGenerationOptions(
     val generatedName: String,
     goingToGenerate: Boolean,
-    val visibilityModifier: String,
     val classVisibilityModifier: String,
     val constructorVisibilityModifier: String,
     val functionVisibilityModifier: String,
@@ -32,7 +31,6 @@ open class ClassGenerationOptions(
     ) : this(
         generatedName = options.generatedName,
         goingToGenerate = options.goingToGenerate,
-        visibilityModifier = options.visibilityModifier,
         classVisibilityModifier = options.classVisibilityModifier,
         constructorVisibilityModifier = options.constructorVisibilityModifier,
         functionVisibilityModifier = options.functionVisibilityModifier,
@@ -56,7 +54,6 @@ open class ClassGenerationOptions(
         generatedName: String = this.generatedName,
         basePath: String = this.basePath,
         goingToGenerate: Boolean = true,
-        visibilityModifier: String = this.visibilityModifier,
         classVisibilityModifier: String = this.classVisibilityModifier,
         constructorVisibilityModifier: String = this.constructorVisibilityModifier,
         functionVisibilityModifier: String = this.functionVisibilityModifier,
@@ -77,7 +74,6 @@ open class ClassGenerationOptions(
         generateTopLevelFunction = generateTopLevelFunction,
         generateCompanionExtFunction = generateCompanionExtFunction,
         generateHttpClientExtension = generateHttpClientExtension,
-        visibilityModifier = visibilityModifier,
         classVisibilityModifier = classVisibilityModifier,
         constructorVisibilityModifier = constructorVisibilityModifier,
         functionVisibilityModifier = functionVisibilityModifier,
@@ -93,7 +89,6 @@ open class ClassGenerationOptions(
     companion object {
         fun default(generatedName: String, visibilityModifier: String) = ClassGenerationOptions(
             generatedName = generatedName,
-            visibilityModifier = visibilityModifier,
             classVisibilityModifier = visibilityModifier,
             constructorVisibilityModifier = visibilityModifier,
             functionVisibilityModifier = visibilityModifier,

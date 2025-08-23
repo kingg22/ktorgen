@@ -169,6 +169,11 @@ class ClassMapper : DeclarationMapper {
     @OptIn(KtorGenExperimental::class)
     private fun extractKtorGen(interfaceDeclaration: KSClassDeclaration) =
         interfaceDeclaration.getAnnotation<KtorGen, ClassGenerationOptions>(manualExtraction = {
+            val visibilityModifier = it.getArgumentValueByName<String>("visibilityModifier")?.replace(
+                KTORGEN_DEFAULT_VALUE,
+                interfaceDeclaration.getVisibility().name,
+            )?.uppercase() ?: interfaceDeclaration.getVisibility().name
+
             ClassGenerationOptions(
                 generatedName =
                 it.getArgumentValueByName<String>("name")?.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE }
@@ -197,46 +202,32 @@ class ClassMapper : DeclarationMapper {
                     ?.toSet()
                     ?: emptySet(),
 
-                visibilityModifier = it.getArgumentValueByName<String>("visibilityModifier")?.replace(
-                    KTORGEN_DEFAULT_VALUE,
-                    interfaceDeclaration.getVisibility().name,
-                )?.uppercase() ?: interfaceDeclaration.getVisibility().name,
                 classVisibilityModifier = it.getArgumentValueByName<String>("classVisibilityModifier")?.replace(
                     KTORGEN_DEFAULT_VALUE,
-                    interfaceDeclaration.getVisibility().name,
-                )?.uppercase() ?: KTORGEN_DEFAULT_VALUE,
+                    visibilityModifier,
+                )?.uppercase() ?: visibilityModifier,
                 constructorVisibilityModifier =
                 it.getArgumentValueByName<String>("constructorVisibilityModifier")?.replace(
                     KTORGEN_DEFAULT_VALUE,
-                    interfaceDeclaration.getVisibility().name,
-                )?.uppercase() ?: KTORGEN_DEFAULT_VALUE,
+                    visibilityModifier,
+                )?.uppercase() ?: visibilityModifier,
                 functionVisibilityModifier = it.getArgumentValueByName<String>("functionVisibilityModifier")?.replace(
                     KTORGEN_DEFAULT_VALUE,
-                    interfaceDeclaration.getVisibility().name,
-                )?.uppercase() ?: KTORGEN_DEFAULT_VALUE,
+                    visibilityModifier,
+                )?.uppercase() ?: visibilityModifier,
 
                 customFileHeader = it.getArgumentValueByName<String>("customFileHeader")?.replace(
                     KTORGEN_DEFAULT_VALUE,
                     interfaceDeclaration.getVisibility().name,
                 ) ?: KTORG_GENERATED_FILE_COMMENT,
                 customClassHeader = it.getArgumentValueByName("customClassHeader") ?: "",
-            ).copy { options ->
-                options.copy(
-                    classVisibilityModifier = options.classVisibilityModifier.replace(
-                        KTORGEN_DEFAULT_VALUE,
-                        options.visibilityModifier,
-                    ).uppercase(),
-                    constructorVisibilityModifier = options.constructorVisibilityModifier.replace(
-                        KTORGEN_DEFAULT_VALUE,
-                        options.visibilityModifier,
-                    ).uppercase(),
-                    functionVisibilityModifier = options.functionVisibilityModifier.replace(
-                        KTORGEN_DEFAULT_VALUE,
-                        options.visibilityModifier,
-                    ).uppercase(),
-                )
-            }
+            )
         }) {
+            val visibilityModifier = it.visibilityModifier.replace(
+                KTORGEN_DEFAULT_VALUE,
+                interfaceDeclaration.getVisibility().name,
+            ).uppercase()
+
             ClassGenerationOptions(
                 generatedName = it.name.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE }
                     ?: "_${interfaceDeclaration.simpleName.getShortName()}Impl",
@@ -253,31 +244,21 @@ class ClassMapper : DeclarationMapper {
                     AnnotationSpec.builder(a).build()
                 }.toSet(),
 
-                visibilityModifier = it.visibilityModifier.replace(
+                classVisibilityModifier = it.classVisibilityModifier.replace(
                     KTORGEN_DEFAULT_VALUE,
-                    interfaceDeclaration.getVisibility().name,
+                    visibilityModifier,
                 ).uppercase(),
-                classVisibilityModifier = it.classVisibilityModifier,
-                constructorVisibilityModifier = it.constructorVisibilityModifier,
-                functionVisibilityModifier = it.functionVisibilityModifier,
+                constructorVisibilityModifier = it.constructorVisibilityModifier.replace(
+                    KTORGEN_DEFAULT_VALUE,
+                    visibilityModifier,
+                ).uppercase(),
+                functionVisibilityModifier = it.functionVisibilityModifier.replace(
+                    KTORGEN_DEFAULT_VALUE,
+                    visibilityModifier,
+                ).uppercase(),
 
                 customFileHeader = it.customFileHeader.replace(KTORGEN_DEFAULT_VALUE, KTORG_GENERATED_FILE_COMMENT),
                 customClassHeader = it.customClassHeader,
-            ).copy { options ->
-                options.copy(
-                    classVisibilityModifier = options.classVisibilityModifier.replace(
-                        KTORGEN_DEFAULT_VALUE,
-                        options.visibilityModifier,
-                    ).uppercase(),
-                    constructorVisibilityModifier = options.constructorVisibilityModifier.replace(
-                        KTORGEN_DEFAULT_VALUE,
-                        options.visibilityModifier,
-                    ).uppercase(),
-                    functionVisibilityModifier = options.functionVisibilityModifier.replace(
-                        KTORGEN_DEFAULT_VALUE,
-                        options.visibilityModifier,
-                    ).uppercase(),
-                )
-            }
+            )
         }
 }
