@@ -20,19 +20,20 @@ import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 class KotlinpoetGenerator : KtorGenGenerator {
     override fun generate(classData: ClassData, timer: DiagnosticSender): FileSpec = timer.work {
         // class
-        val visibilityModifier = KModifier.valueOf(classData.visibilityModifier.uppercase())
-
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
-            .addModifiers(visibilityModifier)
+            .addModifiers(KModifier.valueOf(classData.visibilityModifier.uppercase()))
             .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
-            .addKdoc(classData.customHeader)
+            .addKdoc(classData.customClassHeader)
             .addAnnotations(classData.buildAnnotations())
             .addOriginatingKSFile(classData.ksFile)
         timer.addStep("Creating class for ${classData.interfaceName} to ${classData.generatedName}")
 
         // constructor with properties
         val (constructor, properties, httpClient) =
-            generatePrimaryConstructorAndProperties(classData, visibilityModifier)
+            generatePrimaryConstructorAndProperties(
+                classData,
+                KModifier.valueOf(classData.constructorVisibilityModifier.uppercase()),
+            )
 
         // override functions
         val functions = classData.functions.filter { it.goingToGenerate }
@@ -88,6 +89,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
         val functionAnnotation =
             setOfNotNull(GeneratedAnnotation, optInAnnotation) + classData.extensionFunctionAnnotation
 
+        val functionVisibilityModifier = KModifier.valueOf(classData.functionVisibilityModifier.uppercase())
+
         if (classData.generateTopLevelFunction) {
             val function = generateTopLevelFactoryFunction(
                 classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
@@ -96,7 +99,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             )
             fileBuilder.addFunction(
                 function
-                    .addModifiers(visibilityModifier)
+                    .addModifiers(functionVisibilityModifier)
                     .addAnnotations(functionAnnotation)
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
@@ -122,7 +125,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
             fileBuilder.addFunction(
                 function
-                    .addModifiers(visibilityModifier)
+                    .addModifiers(functionVisibilityModifier)
                     .addAnnotations(functionAnnotation)
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
@@ -139,7 +142,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             )
             fileBuilder.addFunction(
                 function
-                    .addModifiers(visibilityModifier)
+                    .addModifiers(functionVisibilityModifier)
                     .addAnnotations(functionAnnotation)
                     .addOriginatingKSFile(classData.ksFile)
                     .build(),
@@ -203,8 +206,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
         )
     }
 
-    private fun GenOptions.buildAnnotations(): Set<AnnotationSpec> {
-        val annotations = annotationsToPropagate.toMutableSet()
+    private fun Options.buildAnnotations(): Set<AnnotationSpec> {
+        val annotations = annotations.toMutableSet()
         if (optIns.isNotEmpty() && optInAnnotation == null) {
             annotations += AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
                 .addMember(
@@ -212,7 +215,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     *optIns.map { it.typeName }.toTypedArray(),
                 ).build()
         } else if (optInAnnotation != null) {
-            annotations.add(optInAnnotation!!)
+            annotations.add(optInAnnotation)
         }
         return annotations + GeneratedAnnotation
     }

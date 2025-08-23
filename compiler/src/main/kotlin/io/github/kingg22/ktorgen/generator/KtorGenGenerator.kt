@@ -32,7 +32,7 @@ fun interface KtorGenGenerator {
                 val classBuilder = TypeSpec.classBuilder(classData.generatedName)
                     .addModifiers(KModifier.PUBLIC)
                     .addSuperinterface(ClassName(classData.packageNameString, interfaceName))
-                    .addKdoc(classData.customHeader)
+                    .addKdoc(classData.customClassHeader)
 
                 classData.functions.forEach { func ->
                     val funBuilder = FunSpec.builder(func.name)
@@ -57,7 +57,7 @@ fun interface KtorGenGenerator {
                 }
 
                 val fileBuilder = FileSpec.builder(classData.packageNameString, classData.generatedName)
-                    .addFileComment(classData.customHeader)
+                    .addFileComment(classData.customClassHeader)
                     .addAnnotation(
                         AnnotationSpec.builder(Suppress::class)
                             .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
