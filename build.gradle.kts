@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.dokka) apply false
     alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
-    alias(libs.plugins.kotlinxBinaryCompatibility) apply false
     alias(libs.plugins.kotlinxKover) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.ktlint) apply false
