@@ -1,28 +1,17 @@
-@file:Suppress("UnstableApiUsage")
-@file:OptIn(ExperimentalBCVApi::class, ExperimentalWasmDsl::class)
-
-import com.android.build.api.dsl.androidLibrary
-import kotlinx.validation.ExperimentalBCVApi
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.kotlinxBinaryCompatibility)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.mavenPublish)
 }
 
 group = "io.github.kingg22"
+description = "Kotlin annotations for generating Ktor Client interface implementations using the KtorGen KSP processor."
 version = libs.versions.ktorgen.version.get()
-
-apiValidation {
-    klib {
-        enabled = true
-    }
-}
 
 kotlin {
     compilerOptions {
@@ -30,12 +19,14 @@ kotlin {
         allWarningsAsErrors.set(true)
     }
 
-    /*
-    // after kotlin 2.2.0
+    @OptIn(ExperimentalAbiValidation::class)
     abiValidation {
         enabled.set(true)
+        klib {
+            enabled.set(true)
+            keepUnsupportedTargets.set(true)
+        }
     }
-     */
 
     applyDefaultHierarchyTemplate()
 
@@ -111,6 +102,10 @@ dokka.dokkaSourceSets.configureEach {
     suppressGeneratedFiles.set(true)
 }
 
+tasks.check {
+    dependsOn(tasks.checkLegacyAbi)
+}
+
 mavenPublishing {
     publishToMavenCentral()
 
@@ -120,8 +115,7 @@ mavenPublishing {
 
     pom {
         name = "KtorGen - Annotations"
-        description =
-            "Kotlin annotations for generating Ktor Client interface implementations using the KtorGen KSP processor."
+        description = project.description
         inceptionYear = "2025"
         url = "https://github.com/kingg22/ktorgen"
         licenses {
