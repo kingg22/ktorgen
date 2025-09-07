@@ -16,6 +16,8 @@ androidx-room-compiler-testing = "2.8.0-rc02"
 dokka = "2.0.0"
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
+# https://github.com/google/truth/releases
+google-truth = "1.4.4"
 # https://github.com/JetBrains/kotlin/releases
 # match according to androidx https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L55
 kotlin = "2.2.10"
@@ -45,6 +47,7 @@ ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", v
 kotlin-poet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlin-poet" }
 kotlin-poet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlin-poet" }
 androidx-room-compiler-testing = { group = "androidx.room", name = "room-compiler-processing-testing", version.ref = "androidx-room-compiler-testing" }
+google-truth = { group = "com.google.truth", name = "truth", version.ref = "google-truth" }
 
 # samples
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }

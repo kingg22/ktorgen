@@ -9,6 +9,7 @@ plugins {
 }
 
 group = "io.github.kingg22"
+description = "A Kotlin Symbol Processing (KSP) that generates Ktor Client implementations from annotated interfaces."
 version = libs.versions.ktorgen.version.get()
 
 java {
@@ -31,8 +32,10 @@ dependencies {
     implementation(libs.kotlin.poet.ksp)
 
     // temporal remove until add unit test
-    // testImplementation(kotlin("test"))
-    // testImplementation(libs.androidx.room.compiler.testing)
+    testImplementation(kotlin("test"))
+    testImplementation(libs.androidx.room.compiler.testing)
+    testImplementation(libs.google.truth)
+    testRuntimeClasspath(libs.ktor.client.core)
 }
 
 ktlint {
@@ -66,8 +69,7 @@ mavenPublishing {
 
     pom {
         name = "KtorGen – KSP Annotation Processor"
-        description =
-            "A Kotlin Symbol Processing (KSP) that generates Ktor Client implementations from annotated interfaces."
+        description = project.description
         inceptionYear = "2025"
         url = "https://github.com/kingg22/ktorgen"
         licenses {
