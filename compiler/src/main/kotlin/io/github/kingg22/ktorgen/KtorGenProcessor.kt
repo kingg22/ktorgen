@@ -120,15 +120,14 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             }
             timer.addStep("Generated all classes")
 
+            timer.finish()
+
             // deferred errors, util for debug and accumulative errors
             if (fatalError) {
-                // raise throwable to fail the build
-                throw Throwable(timer.buildErrorsAndWarningsMessage())
+                logger.error(timer.buildErrorsAndWarningsMessage(), null)
+            } else if (timer.hasWarnings()) {
+                logger.error(timer.buildWarningsMessage(), null)
             }
-            timer.finish()
-            if (timer.hasWarnings()) logger.error(timer.buildWarningsMessage(), null)
-
-            return emptyList()
         } catch (e: Exception) {
             logger.exception(
                 IllegalStateException(
@@ -136,7 +135,8 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                     e,
                 ),
             )
-            throw e
+        } catch (e: Throwable) {
+            logger.exception(e)
         } finally {
             try {
                 if (!timer.isFinish()) timer.finish()
@@ -146,6 +146,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 logger.info(timer.buildReport(), null)
             }
         }
+        return emptyList()
     }
 
     private fun getAnnotatedInterfaceTypes(resolver: Resolver) =
