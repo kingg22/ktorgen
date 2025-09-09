@@ -435,17 +435,17 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     "this.takeFrom(%P)",
                     func.urlTemplate.let { (template, keys) ->
                         val values = keys.map { key ->
-                            val (path, encoded) = func.parameterDataList
-                                .firstNotNullOfOrNull {
-                                    val path = it.findAnnotationOrNull<ParameterAnnotation.Path>()
-                                    if (path?.value == key) path else null
-                                }
-                                ?: error("Missing @Path parameter for {$key}") // after validation is never throw
+                            val param = func.parameterDataList.first { parameter ->
+                                parameter.findAnnotationOrNull<ParameterAnnotation.Path>()?.value == key
+                            }
 
-                            if (encoded) {
-                                CodeBlock.of("$%L", path).toString() // ${id}
+                            val paramName = param.nameString
+                            val isEncoded = param.findAnnotationOrNull<ParameterAnnotation.Path>()?.encoded ?: false
+
+                            if (isEncoded) {
+                                CodeBlock.of("$%L", paramName).toString() // ${userId}
                             } else {
-                                CodeBlock.of($$"${\"$%L\".encodeURLPath()}", path).toString()
+                                CodeBlock.of($$"${\"$%L\".encodeURLPath()}", paramName).toString()
                                 // ${"$id".encodeURLPath()}
                             }
                         }.toTypedArray()
