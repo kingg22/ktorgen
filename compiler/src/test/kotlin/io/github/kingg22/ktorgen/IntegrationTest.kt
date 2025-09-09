@@ -1,7 +1,6 @@
 package io.github.kingg22.ktorgen
 
 import androidx.room.compiler.processing.util.Source
-import androidx.room.compiler.processing.util.runKspProcessorTest
 import kotlin.test.Test
 
 class IntegrationTest {
@@ -24,13 +23,43 @@ class IntegrationTest {
             """.trimIndent(),
         )
 
-        runKspProcessorTest(
-            sources = listOf(source),
-            options = mapOf("ktorgen_check_type" to "1"),
-            symbolProcessorProviders = listOf(KtorGenSymbolProcessorProvider()),
-        ) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasError()
             compilationResultSubject.hasErrorCount(1)
+        }
+    }
+
+    @Test
+    fun validGetGeneratesImplAndCanBeReferenced() {
+        val api = Source.kotlin(
+            "foo.bar.MyApi.kt",
+            """
+                package foo.bar
+
+                import io.github.kingg22.ktorgen.http.GET
+
+                interface MyApi {
+                    @GET("/users")
+                    suspend fun listUsers(): List<String>
+                }
+            """.trimIndent(),
+        )
+        val useGenerated = Source.kotlin(
+            "foo.bar.UseImpl.kt",
+            """
+                package foo.bar
+
+                import io.ktor.client.HttpClient
+
+                // Refer to the generated class to ensure it exists and is public
+                // Use the generated class to ensure it compiles and the function default, need cast because return interface
+                @Suppress("unused")
+                val ref: _MyApiImpl = MyApi(httpClient = HttpClient()) as _MyApiImpl
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(api, useGenerated) { compilationResultSubject ->
+            compilationResultSubject.hasErrorCount(0)
         }
     }
 }
