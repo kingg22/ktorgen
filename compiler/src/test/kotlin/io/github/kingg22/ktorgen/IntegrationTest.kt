@@ -1,11 +1,9 @@
 package io.github.kingg22.ktorgen
 
-import androidx.room.compiler.processing.ExperimentalProcessingApi
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.runKspProcessorTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalProcessingApi::class)
 class IntegrationTest {
     @Test
     fun getWithBodyThrowWarningsAsError() {

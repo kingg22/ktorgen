@@ -1,5 +1,6 @@
 // import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.kotlinJvm)
@@ -59,6 +60,14 @@ kover {
     }
 }
  */
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+tasks.named<KotlinCompile>("compileTestKotlin") {
+    compilerOptions.optIn.add("androidx.room.compiler.processing.ExperimentalProcessingApi")
+}
 
 mavenPublishing {
     publishToMavenCentral()
