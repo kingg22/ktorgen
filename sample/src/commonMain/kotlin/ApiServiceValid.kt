@@ -28,8 +28,8 @@ interface ApiServiceValid {
         @Cookie("session_id") @Cookie("session") session: Int,
     ): List<IssueData>
 
-    @GET("users/{id}")
-    suspend fun getUserById(@Path("id") id: String): IssueData
+    @GET("users/{id}/{repo}")
+    suspend fun getUserById(@Path("id") userId: String, @Path repo: String): IssueData
 
     @POST("users")
     suspend fun createUser(@Body user: IssueData): IssueData
