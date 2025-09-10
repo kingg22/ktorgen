@@ -20,7 +20,7 @@ jetbrains-jvm-annotations = "26.0.2"
 google-truth = "1.4.5"
 # https://github.com/JetBrains/kotlin/releases
 # match according to androidx https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L55
-kotlin = "2.2.10"
+kotlin = "2.2.20"
 # https://github.com/square/kotlinpoet/releases
 kotlin-poet = "2.2.0"
 # https://github.com/Kotlin/kotlinx-kover/releases
