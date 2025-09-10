@@ -129,14 +129,14 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 logger.error(timer.buildWarningsMessage(), null)
             }
         } catch (e: Exception) {
-            logger.exception(
-                IllegalStateException(
-                    "${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e",
-                    e,
-                ),
-            )
+            logger.error("${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e")
         } catch (e: Throwable) {
-            logger.exception(e)
+            if (e.message == null) {
+                logger.exception(e)
+                logger.error("${KtorGenLogger.KTOR_GEN} Unknown exception caught as Throwable. \n $e")
+            } else {
+                logger.error(e.message!!, null)
+            }
         } finally {
             try {
                 if (!timer.isFinish()) timer.finish()
