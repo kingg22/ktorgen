@@ -17,7 +17,7 @@ dokka = "2.0.0"
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
 # https://github.com/google/truth/releases
-google-truth = "1.4.4"
+google-truth = "1.4.5"
 # https://github.com/JetBrains/kotlin/releases
 # match according to androidx https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L55
 kotlin = "2.2.10"
