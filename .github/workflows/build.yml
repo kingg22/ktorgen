@@ -24,6 +24,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Cache konan
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.konan/dependencies
+          key: ${{ runner.os }}-konan
+          restore-keys: ${{ runner.os }}-konan
+
       - name: Change wrapper permissions
         run: chmod +x ./gradlew
 
