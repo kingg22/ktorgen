@@ -1,10 +1,10 @@
-// import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
+import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.kotlinJvm)
-    // alias(libs.plugins.kotlinxKover)
+    alias(libs.plugins.kotlinxKover)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.mavenPublish)
 }
@@ -42,24 +42,20 @@ dependencies {
 ktlint {
     version.set(libs.versions.ktlint.pinterest.get())
 }
-/*
+
 kover {
     reports.total {
         verify {
-            // temporal disable
             rule("Basic Line Coverage") {
-                disabled.set(true)
                 minBound(60, CoverageUnit.LINE)
             }
 
             rule("Basic Branch Coverage") {
-                disabled.set(true)
                 minBound(20, CoverageUnit.BRANCH)
             }
         }
     }
 }
- */
 
 tasks.test {
     useJUnitPlatform()
