@@ -1004,7 +1004,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 val encoded = fieldMap.encoded
                 val decodeSuffix = if (encoded) ".decodeURLQueryComponent(plusIsSpace = true)" else ""
 
-                fieldCode.beginControlFlow("%L?.forEach", parameterData.nameString)
+                fieldCode.beginControlFlow("%L?.forEach { entry ->", parameterData.nameString)
                 fieldCode.beginControlFlow(ENTRY_VALUE_NN_LET)
                 fieldCode.addStatement("this.append(entry.key, %P%L)", VALUE, decodeSuffix)
                 fieldCode.endControlFlow()
