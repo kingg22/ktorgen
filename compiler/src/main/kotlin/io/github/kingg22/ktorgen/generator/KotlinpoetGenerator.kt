@@ -789,7 +789,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 block.beginControlFlow(ENTRY_VALUE_NN_LET)
                 block.addStatement(
                     "%L(entry.key, %P)",
-                    if (encoded) "encodedParameters.append" else "parameter",
+                    if (encoded) "this.encodedParameters.append" else "this.parameters.append",
                     VALUE,
                 )
                 block.endControlFlow()
