@@ -88,6 +88,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Cache konan
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.konan/dependencies
+          key: ${{ runner.os }}-konan
+          restore-keys: ${{ runner.os }}-konan
+
+      - name: Change wrapper permissions
+        run: chmod +x ./gradlew
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+          validate-wrappers: false
+
       # If the analyze step fails for one of the languages you are analyzing with
       # "We were unable to automatically build your code", modify the matrix above
       # to set the build mode to "manual" for that language. Then modify this step
@@ -95,7 +112,7 @@ jobs:
       # ℹ️ Command-line programs to run using the OS shell.
       # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
       - if: matrix.build-mode == 'manual'
-        name: Manual build (Kotlin Multiplatform, only JVM)
+        name: Manual build
         shell: bash
         run: |
           ./gradlew build --no-build-cache --no-configuration-cache
