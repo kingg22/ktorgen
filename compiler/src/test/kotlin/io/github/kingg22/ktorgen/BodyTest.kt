@@ -52,7 +52,7 @@ class BodyTest {
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceImpl.kt""",
+                "com.example.api._TestServiceImpl".toRelativePath(),
             )
             generatedFile.contains(expectedBodyDataArgumentText)
         }
@@ -81,7 +81,7 @@ class BodyTest {
             compilationResultSubject.hasErrorCount(1)
             compilationResultSubject.hasErrorContaining(KtorGenLogger.CONTENT_TYPE_BODY_UNKNOWN.trim())
             compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceWithoutContentTypeHeaderImpl.kt""",
+                "com.example.api._TestServiceWithoutContentTypeHeaderImpl".toRelativePath(),
             ).contains(expectedBodyDataArgumentText)
         }
     }
@@ -106,7 +106,7 @@ class BodyTest {
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceImpl.kt""",
+                "com.example.api._TestServiceImpl".toRelativePath(),
             )
             generatedFile.doesNotContain(notExpectedBodyDataArgumentText)
         }

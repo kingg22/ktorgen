@@ -28,7 +28,7 @@ class HeaderMapTest {
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceImpl.kt""",
+                "com.example.api._TestServiceImpl".toRelativePath(),
             )
             for (expectedLine in expectedHeadersArgumentText) {
                 actualSource.contains(expectedLine)
@@ -63,7 +63,7 @@ class HeaderMapTest {
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceImpl.kt""",
+                "com.example.api._TestServiceImpl".toRelativePath(),
             )
             for (expectedLine in expectedHeadersArgumentText) {
                 actualSource.contains(expectedLine)

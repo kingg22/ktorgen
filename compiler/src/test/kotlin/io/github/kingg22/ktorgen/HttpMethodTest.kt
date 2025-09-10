@@ -25,7 +25,7 @@ class HttpMethodTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceImpl.kt""",
+                "com.example.api._TestServiceImpl".toRelativePath(),
             )
             actualSource.contains(expectedSource)
         }
@@ -53,7 +53,7 @@ class HttpMethodTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceImpl.kt""",
+                "com.example.api._TestServiceImpl".toRelativePath(),
             )
             actualSource.contains(expectedSource)
         }
@@ -87,7 +87,7 @@ class HttpMethodTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceImpl.kt""",
+                "com.example.api._TestServiceImpl".toRelativePath(),
             )
             for (expectedLine in expectedFunctionText) {
                 actualSource.contains(expectedLine)

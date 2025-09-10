@@ -29,7 +29,7 @@ class TagTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceImpl.kt""",
+                "com.example.api._TestServiceImpl".toRelativePath(),
             ).let { actualSource ->
                 for (expectedLine in expectedHeadersArgumentText) {
                     actualSource.contains(expectedLine)

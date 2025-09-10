@@ -38,7 +38,7 @@ class HeaderTest {
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val resultFile = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceImpl.kt""",
+                "com.example.api._TestServiceImpl".toRelativePath(),
             )
 
             expectedLines.forEach { line ->

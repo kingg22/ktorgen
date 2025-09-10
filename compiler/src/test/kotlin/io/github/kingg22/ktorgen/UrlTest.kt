@@ -25,7 +25,7 @@ class UrlTest {
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject
-                .generatedSourceFileWithPath("""com\example\api\_TestServiceImpl.kt""")
+                .generatedSourceFileWithPath("com.example.api._TestServiceImpl".toRelativePath())
                 .contains(expectedFunctionSource)
         }
     }
@@ -50,7 +50,7 @@ class UrlTest {
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceWithPathImpl.kt""",
+                "com.example.api._TestServiceWithPathImpl".toRelativePath(),
             )
             actualSource.contains(expectedFunctionText)
         }
@@ -77,7 +77,7 @@ class UrlTest {
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             val generated = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceWithPathInferredNameImpl.kt""",
+                "com.example.api._TestServiceWithPathInferredNameImpl".toRelativePath(),
             )
             generated.contains(expectedFunctionText)
         }
@@ -104,7 +104,7 @@ class UrlTest {
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             val generated = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceWithUrlImpl.kt""",
+                "com.example.api._TestServiceWithUrlImpl".toRelativePath(),
             )
             generated.contains(expectedFunctionSource)
         }
@@ -129,7 +129,7 @@ class UrlTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject
-                .generatedSourceFileWithPath("""com\example\api\_TestServiceGetEmptyImpl.kt""")
+                .generatedSourceFileWithPath("com.example.api._TestServiceGetEmptyImpl".toRelativePath())
                 .contains("override suspend fun test(): String")
         }
     }
@@ -179,7 +179,7 @@ class UrlTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                """com\example\api\_TestServiceWithEncodedPathImpl.kt""",
+                "com.example.api._TestServiceWithEncodedPathImpl".toRelativePath(),
             )
             actualSource.contains(expectedFunctionText)
         }
