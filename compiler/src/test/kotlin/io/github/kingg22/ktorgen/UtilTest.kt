@@ -18,12 +18,12 @@ val KTORGEN_STRICT_CHECK = mapOf("ktorgen_check_type" to "1")
  */
 inline fun runKtorGenProcessor(
     vararg sources: Source,
-    processorOptions: Map<String, String> = emptyMap(),
+    processorOptions: Map<String, String> = KTORGEN_STRICT_CHECK,
     kotlincArguments: List<String> = emptyList(),
     noinline onCompilationResult: (CompilationResultSubject) -> Unit,
 ) = runKspProcessorTest(
     sources = sources.toList(),
-    options = KTORGEN_STRICT_CHECK + processorOptions,
+    options = processorOptions,
     symbolProcessorProviders = listOf(KtorGenSymbolProcessorProvider()),
     kotlincArguments = listOf("-Wextra", "-Werror") + kotlincArguments,
     onCompilationResult = onCompilationResult,
@@ -36,3 +36,5 @@ inline fun String.toRelativePath() = replace('.', File.separatorChar)
     .removeSuffix("kt")
     .removeSuffix(File.separator)
     .replace("${File.separatorChar}${File.separatorChar}", File.separator) + ".kt"
+
+val TEST_SERVICE_IMPL_PATH = "com.example.api._TestServiceImpl".toRelativePath()
