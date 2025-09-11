@@ -31,37 +31,27 @@ interface DiagnosticSender {
 
     /** Fatal error, can be related to a symbol. This is a controlled exception. */
     fun die(message: String, symbol: KSNode? = null): Nothing
+}
 
-    /** Run all the work in try-catch-finally, this handle start finish and die when throw exceptions */
-    fun <R> work(block: (RecuperableDiagnosis) -> R): R {
-        val diagnosis = RecuperableDiagnosis(this)
-        return try {
-            start()
-            val result = block(diagnosis)
-            finish()
-            result
-        } catch (e: Exception) {
-            val (message, symbol) = diagnosis.onDieProvider ?: Pair(e.message ?: "", null)
-            die(message, symbol)
-        }
-    }
+/** Run all the work in try-catch-finally, this handle start finish and die when throw exceptions */
+inline fun <R> DiagnosticSender.work(block: (DiagnosticSender) -> R): R = try {
+    start()
+    val result = block(this)
+    finish()
+    result
+} catch (e: Exception) {
+    die(e.message ?: "", null)
+}
 
-    /** If the condition is false, die */
-    fun require(condition: Boolean, message: String, symbol: KSNode? = null) {
-        if (!condition) die(message, symbol)
-    }
+/** If the condition is false, die */
+@Suppress("NOTHING_TO_INLINE")
+inline fun DiagnosticSender.require(condition: Boolean, message: String, symbol: KSNode? = null) {
+    if (!condition) die(message, symbol)
+}
 
-    /** If the value is null, die */
-    fun <T> requireNotNull(value: T?, message: String, symbol: KSNode? = null): T {
-        if (value == null) die(message, symbol)
-        return value
-    }
-
-    class RecuperableDiagnosis(sender: DiagnosticSender) : DiagnosticSender by sender {
-        var onDieProvider: Pair<String, KSNode?>? = null
-
-        inline fun onDieProvide(crossinline onDie: (() -> Pair<String, KSNode?>?)) {
-            onDieProvider = onDie()
-        }
-    }
+/** If the value is null, die */
+@Suppress("NOTHING_TO_INLINE")
+inline fun <T> DiagnosticSender.requireNotNull(value: T?, message: String, symbol: KSNode? = null): T {
+    if (value == null) die(message, symbol)
+    return value
 }
