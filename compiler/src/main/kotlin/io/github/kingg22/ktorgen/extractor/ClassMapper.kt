@@ -58,7 +58,7 @@ class ClassMapper : DeclarationMapper {
                     )
                 }
             timer.addStep(
-                "Retrieved @KtorGen options. BasePath: '${options.basePath}', propagate annotations: ${options.propagateAnnotations}",
+                "Retrieved @KtorGen options, going to propagate annotations? ${options.propagateAnnotations}. Options: $options",
             )
 
             if (options.propagateAnnotations) {
@@ -84,6 +84,7 @@ class ClassMapper : DeclarationMapper {
                     extensionFunctionAnnotation = options.extensionFunctionAnnotation + functionAnnotation,
                     optInAnnotation = optIn,
                 )
+                timer.addStep("Updated options with annotations and optIns propagated: $options")
             }
 
             val functions = declaration.getDeclaredFunctions().map { func ->

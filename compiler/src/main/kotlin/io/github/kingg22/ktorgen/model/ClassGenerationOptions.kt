@@ -47,13 +47,11 @@ open class ClassGenerationOptions(
         optInAnnotation = options.optInAnnotation,
     )
 
-    fun copy(block: (ClassGenerationOptions) -> ClassGenerationOptions) = block(this)
-
     @Suppress("kotlin:S107")
     fun copy(
         generatedName: String = this.generatedName,
         basePath: String = this.basePath,
-        goingToGenerate: Boolean = true,
+        goingToGenerate: Boolean = this.goingToGenerate,
         classVisibilityModifier: String = this.classVisibilityModifier,
         constructorVisibilityModifier: String = this.constructorVisibilityModifier,
         functionVisibilityModifier: String = this.functionVisibilityModifier,
@@ -85,6 +83,9 @@ open class ClassGenerationOptions(
         customClassHeader = customClassHeader,
         optInAnnotation = optInAnnotation,
     )
+
+    override fun toString() =
+        "ClassGenerationOptions(generatedName='$generatedName', classVisibilityModifier='$classVisibilityModifier', constructorVisibilityModifier='$constructorVisibilityModifier', functionVisibilityModifier='$functionVisibilityModifier', customFileHeader='$customFileHeader', customClassHeader='$customClassHeader', basePath='$basePath', generateTopLevelFunction=$generateTopLevelFunction, generateCompanionExtFunction=$generateCompanionExtFunction, generateHttpClientExtension=$generateHttpClientExtension, extensionFunctionAnnotation=$extensionFunctionAnnotation, options=${super.toString()})"
 
     companion object {
         fun default(generatedName: String, visibilityModifier: String) = ClassGenerationOptions(

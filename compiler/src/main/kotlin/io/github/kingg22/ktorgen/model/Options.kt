@@ -11,4 +11,6 @@ abstract class Options(
 ) {
     val goingToGenerate = generate
     val annotationsToPropagate = annotations
+    override fun toString() =
+        "Options(generate=$generate, annotations=$annotations, propagateAnnotations=$propagateAnnotations, optIns=$optIns, optInAnnotation=$optInAnnotation)"
 }

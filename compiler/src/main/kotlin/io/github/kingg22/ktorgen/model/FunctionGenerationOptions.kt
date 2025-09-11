@@ -25,8 +25,6 @@ open class FunctionGenerationOptions(
         customHeader = options.customHeader,
     )
 
-    fun copy(block: (FunctionGenerationOptions) -> FunctionGenerationOptions) = block(this)
-
     fun copy(
         generate: Boolean = this.generate,
         propagateAnnotations: Boolean = this.propagateAnnotations,
@@ -42,6 +40,8 @@ open class FunctionGenerationOptions(
         optInAnnotation = optInAnnotation,
         customHeader = customHeader,
     )
+
+    override fun toString() = "FunctionGenerationOptions(customHeader='$customHeader', options=${super.toString()})"
 
     companion object {
         val DEFAULT = FunctionGenerationOptions(
