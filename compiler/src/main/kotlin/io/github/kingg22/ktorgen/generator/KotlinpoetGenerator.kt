@@ -946,7 +946,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                     }
 
                     else -> {
-                        partCode.beginControlFlow("%L?.forEach", parameterData.nameString)
+                        partCode.beginControlFlow("%L?.forEach { entry ->", parameterData.nameString)
                         partCode.beginControlFlow(ENTRY_VALUE_NN_LET)
                             .addStatement("this.append(entry.key, %P)", VALUE)
                         partCode.endControlFlow()
