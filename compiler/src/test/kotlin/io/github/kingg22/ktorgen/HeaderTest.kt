@@ -37,12 +37,42 @@ class HeaderTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
-            val resultFile = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
-            )
-
+            val resultFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             expectedLines.forEach { line ->
                 resultFile.contains(line)
+            }
+        }
+    }
+
+    @Test
+    fun testHeadersAnnotationFoundAddHeader() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+                package com.example.api
+
+                import io.github.kingg22.ktorgen.http.GET
+                import io.github.kingg22.ktorgen.http.Header
+
+                interface TestService {
+                    @Header("x", "y")
+                    @GET("posts")
+                    suspend fun test(): String
+                }
+            """.trimIndent(),
+        )
+
+        val expectedHeadersArgumentText = listOf(
+            "this.headers {",
+            """this.append("x", "y")""",
+        )
+
+        runKtorGenProcessor(source) { compilationResultSubject ->
+            compilationResultSubject.hasNoWarnings()
+            compilationResultSubject.hasErrorCount(0)
+            val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+            expectedHeadersArgumentText.forEach { line ->
+                generatedFile.contains(line)
             }
         }
     }
