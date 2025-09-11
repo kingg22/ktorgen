@@ -50,22 +50,42 @@ inline fun <reified A : Annotation, R : Any> KSAnnotated.getAllAnnotation(
     this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
 }
 
-fun extractAnnotationsFiltered(declaration: KSAnnotated): Pair<Set<AnnotationSpec>, Set<AnnotationSpec>> {
+fun extractAnnotationsFiltered(
+    declaration: KSAnnotated,
+): Triple<Set<AnnotationSpec>, Set<AnnotationSpec>, List<KSAnnotated>> {
     val ktorGenParametersNames = ktorGenAnnotations.mapNotNull(KClass<*>::simpleName)
 
-    val optIn = declaration.annotations
-        .filterNot { it.shortName.getShortName() in ktorGenParametersNames }
-        .filter { it.shortName.getShortName() == "OptIn" }
-        .map(KSAnnotation::toAnnotationSpec)
-        .toSet()
+    val deferredSymbols = mutableListOf<KSAnnotated>()
 
-    val propagateAnnotations = declaration.annotations
+    val (propagateAnnotations, optIn) = declaration.annotations
         .filterNot { it.shortName.getShortName() in ktorGenParametersNames }
-        .map(KSAnnotation::toAnnotationSpec)
-        .filterNot { it in optIn }
-        .toSet()
+        .filterNot {
+            val type = it.annotationType.resolve()
+            val isError = type.isError
+            if (isError) deferredSymbols += it.annotationType
+            isError
+        }
+        .mapNotNull {
+            try {
+                it.toAnnotationSpec()
+            } catch (e: Throwable) {
+                if ((e is IllegalStateException || e is IllegalArgumentException) &&
+                    e.message?.contains("not resolv") == true
+                ) {
+                    deferredSymbols += it.annotationType
+                    null
+                } else {
+                    throw e
+                }
+            }
+        }
+        .distinct()
+        .partition {
+            // true is simple annotation, false indicate optIn annotation
+            it.typeName != ClassName("kotlin", "OptIn")
+        }
 
-    return propagateAnnotations to optIn
+    return Triple(propagateAnnotations.toSet(), optIn.toSet(), deferredSymbols)
 }
 
 fun mergeOptIns(existing: Set<AnnotationSpec>, extra: Set<AnnotationSpec>): AnnotationSpec? {
