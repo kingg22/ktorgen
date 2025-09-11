@@ -62,10 +62,19 @@ class FunctionMapper : DeclarationFunctionMapper {
             timer.addStep("Extracting the rest of annotations for function")
 
             if (options.propagateAnnotations) {
-                var (annotations, optIn) = extractAnnotationsFiltered(declaration)
-                optIn = options.optIns + optIn
-                annotations = (options.annotationsToPropagate + annotations).filterNot { it in optIn }.toSet()
-                options = options.copy(annotations = annotations, optIns = optIn)
+                val (annotations, optIns) = extractAnnotationsFiltered(declaration)
+
+                val mergedOptIn = mergeOptIns(optIns, options.optIns)
+
+                val mergedAnnotations = (options.annotationsToPropagate + annotations)
+                    .filterNot { ann -> ann.typeName == ClassName("kotlin", "OptIn") }
+                    .toSet()
+
+                options = options.copy(
+                    annotations = mergedAnnotations,
+                    optInAnnotation = mergedOptIn,
+                    optIns = emptySet(),
+                )
             }
 
             val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)

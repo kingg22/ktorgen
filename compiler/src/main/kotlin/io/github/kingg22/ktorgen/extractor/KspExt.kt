@@ -9,6 +9,7 @@ import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotations
 import kotlin.contracts.ExperimentalContracts
@@ -65,4 +66,20 @@ fun extractAnnotationsFiltered(declaration: KSAnnotated): Pair<Set<AnnotationSpe
         .toSet()
 
     return propagateAnnotations to optIn
+}
+
+fun mergeOptIns(existing: Set<AnnotationSpec>, extra: Set<AnnotationSpec>): AnnotationSpec? {
+    val existingClasses = existing.flatMap { it.members }.toSet()
+    val extraClasses = extra.flatMap { it.members }.toSet()
+
+    val merged = (existingClasses + extraClasses).distinct()
+
+    return if (merged.isEmpty()) {
+        null
+    } else {
+        AnnotationSpec
+            .builder(ClassName("kotlin", "OptIn"))
+            .apply { merged.forEach { addMember(it) } }
+            .build()
+    }
 }
