@@ -59,6 +59,8 @@ kover {
 
 tasks.test {
     useJUnitPlatform()
+    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+    forkEvery = 50
 }
 
 tasks.named<KotlinCompile>("compileTestKotlin") {
