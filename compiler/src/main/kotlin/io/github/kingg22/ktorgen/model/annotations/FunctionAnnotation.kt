@@ -18,7 +18,9 @@ sealed interface FunctionAnnotation {
      * [io.github.kingg22.ktorgen.http.OPTIONS],
      * [io.github.kingg22.ktorgen.http.PATCH],
      */
-    class HttpMethodAnnotation(val path: String, val httpMethod: HttpMethod) : FunctionAnnotation
+    class HttpMethodAnnotation(val path: String, val httpMethod: HttpMethod) : FunctionAnnotation {
+        override fun toString() = "HttpMethodAnnotation(path='$path', httpMethod=$httpMethod)"
+    }
 
     /** See [io.github.kingg22.ktorgen.http.Header] */
     class Headers(val value: List<Pair<String, String>>) : FunctionAnnotation {
