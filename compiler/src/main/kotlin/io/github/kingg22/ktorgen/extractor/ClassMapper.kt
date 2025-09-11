@@ -10,7 +10,6 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticSender
@@ -26,10 +25,8 @@ import io.github.kingg22.ktorgen.model.KTOR_CLIENT_REQUEST
 import io.github.kingg22.ktorgen.model.KTOR_DECODE_URL_QUERY
 import io.github.kingg22.ktorgen.model.KTOR_REQUEST_TAKE_FROM
 import io.github.kingg22.ktorgen.model.KTOR_URL_TAKE_FROM
-import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotations
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
-import kotlin.reflect.KClass
 
 class ClassMapper : DeclarationMapper {
     override fun mapToModel(
@@ -43,15 +40,30 @@ class ClassMapper : DeclarationMapper {
 
             val packageName = declaration.packageName.asString()
 
-            val filteredSupertypes = declaration.superTypes.filterNot { it.toTypeName() == ANY }
+            val filteredSupertypes = declaration.superTypes.filterNot {
+                val type = it.resolve()
+                if (type.isError) {
+                    deferredSymbols += type.declaration
+                    true
+                } else {
+                    it.toTypeName() == ANY
+                }
+            }
             timer.addStep("Retrieved all supertypes")
 
             val companionObject = declaration.declarations
                 .filterIsInstance<KSClassDeclaration>()
                 .any { it.isCompanionObject }
+
             timer.addStep("Have companion object: $companionObject")
 
             val properties = declaration.getDeclaredProperties()
+
+            properties.forEach {
+                val type = it.type.resolve()
+                if (type.isError) deferredSymbols += type.declaration
+            }
+
             timer.addStep("Retrieved all properties")
 
             var options = extractKtorGen(declaration)
@@ -72,9 +84,12 @@ class ClassMapper : DeclarationMapper {
             )
 
             if (options.propagateAnnotations) {
-                val (annotations, optIns) = extractAnnotationsFiltered(declaration)
-                val functionAnnotations = extractFunctionAnnotationsFiltered(declaration)
+                val (annotations, optIns, unresolvedSymbols) = extractAnnotationsFiltered(declaration)
+                val (functionAnnotations, functionOptIn, symbols) = extractFunctionAnnotationsFiltered(declaration)
+
                 timer.addStep("Retrieved the rest of annotations and optIns")
+                deferredSymbols += symbols
+                deferredSymbols += unresolvedSymbols
 
                 val mergedOptIn = mergeOptIns(optIns, options.optIns)
 
@@ -88,7 +103,8 @@ class ClassMapper : DeclarationMapper {
 
                 options = options.copy(
                     annotationsToPropagate = mergedAnnotations,
-                    extensionFunctionAnnotation = (options.extensionFunctionAnnotation + functionAnnotations)
+                    extensionFunctionAnnotation =
+                    (options.extensionFunctionAnnotation + functionAnnotations + functionOptIn)
                         .filterNot { ann ->
                             options.optIns.any { it.typeName == ann.typeName } ||
                                 (optIns.any { it.typeName == ann.typeName })
@@ -96,6 +112,7 @@ class ClassMapper : DeclarationMapper {
                     optInAnnotation = mergedOptIn,
                     optIns = if (mergedOptIn != null) emptySet() else options.optIns,
                 )
+
                 timer.addStep("Updated options with annotations and optIns propagated: $options")
             }
 
@@ -158,15 +175,9 @@ class ClassMapper : DeclarationMapper {
         }
     }
 
-    private fun extractFunctionAnnotationsFiltered(declaration: KSClassDeclaration): Set<AnnotationSpec> {
-        val ktorGenParametersNames = ktorGenAnnotations.mapNotNull(KClass<*>::simpleName)
-
-        return declaration.annotations
-            .filterNot { it.shortName.getShortName() in ktorGenParametersNames }
-            .filter { it.isAllowedForFunction() }
-            .map { it.toAnnotationSpec() }
-            .toSet()
-    }
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun extractFunctionAnnotationsFiltered(declaration: KSClassDeclaration) =
+        extractAnnotationsFiltered(declaration) { it.isAllowedForFunction() }
 
     private fun KSAnnotation.isAllowedForFunction(): Boolean {
         val type = annotationType.resolve().declaration as? KSClassDeclaration ?: return false
