@@ -24,6 +24,8 @@ import io.github.kingg22.ktorgen.model.KTOR_CLIENT_CALL_BODY
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_REQUEST
 import io.github.kingg22.ktorgen.model.KTOR_DECODE_URL_QUERY
 import io.github.kingg22.ktorgen.model.KTOR_URL_TAKE_FROM
+import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotations
+import kotlin.reflect.KClass
 
 class ClassMapper : DeclarationMapper {
     override fun mapToModel(declaration: KSClassDeclaration, timer: (String) -> DiagnosticSender): ClassData {
@@ -62,27 +64,29 @@ class ClassMapper : DeclarationMapper {
             )
 
             if (options.propagateAnnotations) {
-                var (annotations, optIn, functionAnnotation) = extractAnnotationsOfClassFiltered(declaration)
+                val (annotations, optIns) = extractAnnotationsFiltered(declaration)
+                val functionAnnotations = extractFunctionAnnotationsFiltered(declaration)
                 timer.addStep("Retrieved the rest of annotations and optIns")
 
-                if (optIn != null && options.optIns.isNotEmpty()) {
-                    optIn = optIn.toBuilder()
-                        .addMember(
-                            (1..options.optIns.size).joinToString { "%T::class" },
-                            *options.optIns.map { it.typeName }.toTypedArray(),
-                        ).build()
-                } else if (optIn == null && options.optIns.isNotEmpty()) {
-                    optIn = AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
-                        .addMember(
-                            (1..options.optIns.size).joinToString { "%T::class" },
-                            *options.optIns.map { it.typeName }.toTypedArray(),
-                        ).build()
-                }
-                annotations = (options.annotations + annotations).filterNot { it in options.optIns }.toSet()
+                val mergedOptIn = mergeOptIns(optIns, options.optIns)
+
+                val mergedAnnotations = (options.annotations + annotations)
+                    .filterNot { ann ->
+                        ann.typeName == ClassName("kotlin", "OptIn") ||
+                            options.optIns.any { it.typeName == ann.typeName } ||
+                            (optIns.any { it.typeName == ann.typeName })
+                    }
+                    .toSet()
+
                 options = options.copy(
-                    annotationsToPropagate = annotations,
-                    extensionFunctionAnnotation = options.extensionFunctionAnnotation + functionAnnotation,
-                    optInAnnotation = optIn,
+                    annotationsToPropagate = mergedAnnotations,
+                    extensionFunctionAnnotation = (options.extensionFunctionAnnotation + functionAnnotations)
+                        .filterNot { ann ->
+                            options.optIns.any { it.typeName == ann.typeName } ||
+                                (optIns.any { it.typeName == ann.typeName })
+                        }.toSet(),
+                    optInAnnotation = mergedOptIn,
+                    optIns = if (mergedOptIn != null) emptySet() else options.optIns,
                 )
                 timer.addStep("Updated options with annotations and optIns propagated: $options")
             }
@@ -132,26 +136,14 @@ class ClassMapper : DeclarationMapper {
         }
     }
 
-    private fun extractAnnotationsOfClassFiltered(
-        declaration: KSClassDeclaration,
-    ): Triple<Set<AnnotationSpec>, AnnotationSpec?, Set<AnnotationSpec>> {
-        val optIn = declaration.annotations
-            .filter { it.shortName.getShortName() == "OptIn" }
-            .map { it.toAnnotationSpec() }
-            .toSet()
+    private fun extractFunctionAnnotationsFiltered(declaration: KSClassDeclaration): Set<AnnotationSpec> {
+        val ktorGenParametersNames = ktorGenAnnotations.mapNotNull(KClass<*>::simpleName)
 
-        val propagateAnnotations = declaration.annotations
-            .filterNot { it.shortName.getShortName() == KtorGen::class.simpleName!! }
-            .map { it.toAnnotationSpec() }
-            .toSet()
-
-        val functionAnnotation = declaration.annotations
-            .filterNot { it.shortName.getShortName() == "OptIn" }
+        return declaration.annotations
+            .filterNot { it.shortName.getShortName() in ktorGenParametersNames }
             .filter { it.isAllowedForFunction() }
             .map { it.toAnnotationSpec() }
             .toSet()
-
-        return Triple(propagateAnnotations, optIn.singleOrNull(), functionAnnotation)
     }
 
     private fun KSAnnotation.isAllowedForFunction(): Boolean {
