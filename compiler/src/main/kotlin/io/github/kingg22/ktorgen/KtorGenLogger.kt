@@ -3,9 +3,9 @@ package io.github.kingg22.ktorgen
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSNode
 
-class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: Int) : KSPLogger by kspLogger {
-    override fun error(message: String, symbol: KSNode?) {
-        when (loggingType) {
+class KtorGenLogger(private val kspLogger: KSPLogger, private val options: KtorGenOptions) : KSPLogger by kspLogger {
+    override fun warn(message: String, symbol: KSNode?) {
+        when (options.errorsLoggingType) {
             0 -> {
                 // Do nothing
             }
@@ -18,6 +18,14 @@ class KtorGenLogger(private val kspLogger: KSPLogger, private val loggingType: I
                 // Turn errors into compile warnings
                 kspLogger.warn("$KTOR_GEN $message", symbol)
             }
+        }
+    }
+
+    override fun exception(e: Throwable) {
+        if (options.printStackTraceOnException) {
+            kspLogger.exception(e.apply { printStackTrace() })
+        } else {
+            kspLogger.exception(e)
         }
     }
 
