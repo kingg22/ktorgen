@@ -3,6 +3,7 @@ package io.github.kingg22.ktorgen.extractor
 import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.getVisibility
+import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -26,11 +27,17 @@ import io.github.kingg22.ktorgen.model.KTOR_DECODE_URL_QUERY
 import io.github.kingg22.ktorgen.model.KTOR_REQUEST_TAKE_FROM
 import io.github.kingg22.ktorgen.model.KTOR_URL_TAKE_FROM
 import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotations
+import io.github.kingg22.ktorgen.requireNotNull
+import io.github.kingg22.ktorgen.work
 import kotlin.reflect.KClass
 
 class ClassMapper : DeclarationMapper {
-    override fun mapToModel(declaration: KSClassDeclaration, timer: (String) -> DiagnosticSender): ClassData {
+    override fun mapToModel(
+        declaration: KSClassDeclaration,
+        timer: (String) -> DiagnosticSender,
+    ): Pair<ClassData?, List<KSAnnotated>> {
         val interfaceName = declaration.simpleName.getShortName()
+        val deferredSymbols = mutableListOf<KSAnnotated>()
         return timer("Class Mapper for [$interfaceName]").work { timer ->
             val imports = mutableSetOf<String>()
 
@@ -92,12 +99,20 @@ class ClassMapper : DeclarationMapper {
                 timer.addStep("Updated options with annotations and optIns propagated: $options")
             }
 
-            val functions = declaration.getDeclaredFunctions().map { func ->
-                DeclarationFunctionMapper.DEFAULT.mapToModel(func, imports::add, options.basePath) {
+            val functions = declaration.getDeclaredFunctions().mapNotNull { func ->
+                val (functionData, symbols) = DeclarationFunctionMapper.DEFAULT.mapToModel(
+                    func,
+                    imports::add,
+                    options.basePath,
+                ) {
                     timer.createTask(it)
-                }.also {
-                    timer.addStep("Processed function: ${it.name}")
                 }
+                functionData?.let {
+                    timer.addStep("Processed function: ${it.name}")
+                    return@mapNotNull it
+                }
+                deferredSymbols += symbols
+                return@mapNotNull null
             }.toList()
 
             if (functions.isNotEmpty()) {
@@ -114,6 +129,11 @@ class ClassMapper : DeclarationMapper {
             }
 
             timer.addStep("Processed all functions")
+
+            if (deferredSymbols.isNotEmpty()) {
+                timer.addStep("Found deferred symbols, skipping to next round of processing")
+                return@work null to deferredSymbols
+            }
 
             // an operation terminal of sequences must be in one site
             ClassData(
@@ -134,7 +154,7 @@ class ClassMapper : DeclarationMapper {
                 options = options,
             ).also {
                 timer.addStep("Mapper complete of ${it.interfaceName} to ${it.generatedName}")
-            }
+            } to emptyList()
         }
     }
 
