@@ -1,5 +1,7 @@
 package io.github.kingg22.ktorgen.http
 
+import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
+
 /**
  * Annotate a single part of a multipart request.
  *
@@ -16,7 +18,7 @@ package io.github.kingg22.ktorgen.http
 @MustBeDocumented
 annotation class Part(
     /** The name of the part */
-    val value: String = "",
+    val value: String = KTORGEN_DEFAULT_NAME,
     /** The `Content-Transfer-Encoding` of this part. */
     val encoding: String = "binary",
 )

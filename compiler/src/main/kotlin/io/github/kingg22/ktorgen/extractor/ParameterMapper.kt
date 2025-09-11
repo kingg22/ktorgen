@@ -113,11 +113,18 @@ class ParameterMapper : DeclarationParameterMapper {
         declaration.getAnnotation<Part, ParameterAnnotation.Part>(
             manualExtraction = {
                 ParameterAnnotation.Part(
-                    it.getArgumentValueByName<String>("value") ?: declaration.name.safeString(),
+                    it.getArgumentValueByName<String>("value")
+                        ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
+                        ?: declaration.name.safeString(),
                     it.getArgumentValueByName<String>("encoding") ?: "binary",
                 )
             },
-        ) { ParameterAnnotation.Part(it.value, it.encoding) }?.let { add(it) }
+        ) {
+            ParameterAnnotation.Part(
+                it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
+                it.encoding,
+            )
+        }?.let { add(it) }
 
         declaration.getAnnotation<PartMap, ParameterAnnotation.PartMap>(
             manualExtraction = {
@@ -174,10 +181,9 @@ class ParameterMapper : DeclarationParameterMapper {
         val receiverType = args[0].type?.resolve()?.declaration?.qualifiedName?.asString()
         val returnType = args[1].type?.resolve()?.declaration?.qualifiedName?.asString()
 
-        return receiverType == "io.ktor.client.request.HttpRequestBuilder" &&
-            returnType == "kotlin.Unit"
+        return receiverType == "io.ktor.client.request.HttpRequestBuilder" && returnType == "kotlin.Unit"
     }
 
     /** Avoid NPE when don't have string representation */
-    private fun KSName?.safeString(): String = this?.asString() ?: ""
+    private fun KSName?.safeString() = this?.asString() ?: ""
 }
