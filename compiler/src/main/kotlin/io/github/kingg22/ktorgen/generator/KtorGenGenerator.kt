@@ -13,6 +13,7 @@ import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_COMMENT
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
+import io.github.kingg22.ktorgen.work
 
 fun interface KtorGenGenerator {
     fun generate(classData: ClassData, timer: DiagnosticSender): FileSpec

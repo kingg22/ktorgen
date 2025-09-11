@@ -16,6 +16,8 @@ import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
+import io.github.kingg22.ktorgen.requireNotNull
+import io.github.kingg22.ktorgen.work
 
 class KotlinpoetGenerator : KtorGenGenerator {
     override fun generate(classData: ClassData, timer: DiagnosticSender): FileSpec = timer.work {
@@ -213,7 +215,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         if (optIns.isNotEmpty() && optInAnnotation == null) {
             annotations += AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
                 .addMember(
-                    optIns.joinToString(", ") { "%T::class" },
+                    optIns.joinToString { "%T::class" },
                     *optIns.map { it.typeName }.toTypedArray(),
                 ).build()
         } else if (optInAnnotation != null) {
