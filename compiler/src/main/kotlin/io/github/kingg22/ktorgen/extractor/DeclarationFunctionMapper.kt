@@ -1,5 +1,6 @@
 package io.github.kingg22.ktorgen.extractor
 
+import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.model.FunctionData
@@ -11,7 +12,7 @@ fun interface DeclarationFunctionMapper {
         onAddImport: (String) -> Unit,
         basePath: String,
         timer: (String) -> DiagnosticSender,
-    ): FunctionData
+    ): Pair<FunctionData?, List<KSAnnotated>>
 
     companion object {
         val DEFAULT: DeclarationFunctionMapper by lazy { FunctionMapper() }
