@@ -50,11 +50,13 @@ inline fun <reified A : Annotation, R : Any> KSAnnotated.getAllAnnotation(
     this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
 }
 
-fun extractAnnotationsFiltered(
-    declaration: KSAnnotated,
-): Triple<Set<AnnotationSpec>, Set<AnnotationSpec>, List<KSAnnotated>> {
-    val ktorGenParametersNames = ktorGenAnnotations.mapNotNull(KClass<*>::simpleName)
+private val ktorGenParametersNames = ktorGenAnnotations.mapNotNull(KClass<*>::simpleName)
 
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun extractAnnotationsFiltered(
+    declaration: KSAnnotated,
+    noinline filter: (KSAnnotation) -> Boolean = { true },
+): Triple<Set<AnnotationSpec>, Set<AnnotationSpec>, List<KSAnnotated>> {
     val deferredSymbols = mutableListOf<KSAnnotated>()
 
     val (propagateAnnotations, optIn) = declaration.annotations
@@ -65,6 +67,7 @@ fun extractAnnotationsFiltered(
             if (isError) deferredSymbols += it.annotationType
             isError
         }
+        .filter(filter)
         .mapNotNull {
             try {
                 it.toAnnotationSpec()
@@ -88,7 +91,8 @@ fun extractAnnotationsFiltered(
     return Triple(propagateAnnotations.toSet(), optIn.toSet(), deferredSymbols)
 }
 
-fun mergeOptIns(existing: Set<AnnotationSpec>, extra: Set<AnnotationSpec>): AnnotationSpec? {
+@Suppress("NOTHING_TO_INLINE")
+inline fun mergeOptIns(existing: Set<AnnotationSpec>, extra: Set<AnnotationSpec>): AnnotationSpec? {
     val existingClasses = existing.flatMap { it.members }.toSet()
     val extraClasses = extra.flatMap { it.members }.toSet()
 
