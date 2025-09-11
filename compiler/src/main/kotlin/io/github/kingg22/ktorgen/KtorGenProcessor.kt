@@ -34,26 +34,30 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         var partDataKtor: KSType? = null
     }
     private val logger = KtorGenLogger(env.logger, ktorGenOptions.errorsLoggingType)
-    private var invoked = false
+    private val timer = DiagnosticTimer("KtorGen Annotations Processor", logger::logging)
+    private var roundCount = 0
+    private var firstInvoked = false
+        set(value) {
+            if (value) timer.start()
+            field = value
+        }
 
     @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        if (invoked) return emptyList()
-        invoked = true
-
-        val timer = DiagnosticTimer("KtorGen Annotations Processor", logger::logging)
-        var fatalError = false
-
-        try {
-            timer.start()
-
+        roundCount++
+        if (roundCount == 1) {
+            firstInvoked = true
             listType = resolver.getKotlinClassByName("kotlin.collections.List")
                 ?.asStarProjectedType()
                 ?: error("${KtorGenLogger.KTOR_GEN} List not found")
             arrayType = resolver.builtIns.arrayType
             partDataKtor = resolver.getKotlinClassByName(KTOR_CLIENT_PART_DATA)?.asType(emptyList())
             timer.addStep("Retrieve KSTypes")
+        }
+        var fatalError = false
+        val deferredSymbols = mutableListOf<KSAnnotated>()
 
+        try {
             // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
             val annotatedFunctionsGroupedByClass =
                 getAnnotatedFunctions(resolver).groupBy { it.closestClassDeclaration() }
@@ -62,12 +66,15 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             )
 
             // 2. Mapeamos las clases con funciones válidas
-            val mapperPhase = timer.createPhase("Extraction and Mapper")
+            val mapperPhase = timer.createPhase("Extraction and Mapper, round $roundCount")
             mapperPhase.start()
 
             val classDataWithMethods = annotatedFunctionsGroupedByClass.mapNotNull { (classDec) ->
                 if (classDec == null) return@mapNotNull null
-                DeclarationMapper.DEFAULT.mapToModel(classDec) { mapperPhase.createTask(it) }
+                val (classData, symbols) = DeclarationMapper.DEFAULT.mapToModel(classDec) { mapperPhase.createTask(it) }
+                if (classData != null) return@mapNotNull classData
+                deferredSymbols += symbols
+                return@mapNotNull null
             }
             timer.addStep(
                 "Process all class data obtained by functions. Count: ${annotatedFunctionsGroupedByClass.size}",
@@ -85,8 +92,13 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                         "After sum (functions + ktorGen interfaces (or its companion)) - already extracted, count: ${it.count()}",
                     )
                 }
-                .map { classDeclaration ->
-                    DeclarationMapper.DEFAULT.mapToModel(classDeclaration) { mapperPhase.createTask(it) }
+                .mapNotNull { classDeclaration ->
+                    val (classData, symbols) = DeclarationMapper.DEFAULT.mapToModel(classDeclaration) {
+                        mapperPhase.createTask(it)
+                    }
+                    if (classData != null) return@mapNotNull classData
+                    deferredSymbols += symbols
+                    return@mapNotNull null
                 }
             timer.addStep(
                 "Processed all interfaces and companion with @KtorGen. Count: ${classDataWithMethods.size + classWithoutMethods.count()}",
@@ -94,7 +106,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             mapperPhase.finish()
 
             // 5. Unimos todas las clases a validar (las que tienen y no tienen funciones)
-            val validationPhase = timer.createPhase("Validation")
+            val validationPhase = timer.createPhase("Validation for round $roundCount")
 
             val fullClassList = (classDataWithMethods + classWithoutMethods)
                 .distinctBy { it.interfaceName }
@@ -116,11 +128,13 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             // 6. Generamos el código
             for (classData in fullClassList) {
-                KtorGenGenerator.generateKsp(classData, env.codeGenerator, timer.createPhase("Code Generation"))
+                KtorGenGenerator.generateKsp(
+                    classData,
+                    env.codeGenerator,
+                    timer.createPhase("Code Generation for ${classData.interfaceName} and round $roundCount"),
+                )
             }
             timer.addStep("Generated all classes")
-
-            timer.finish()
 
             // deferred errors, util for debug and accumulative errors
             if (fatalError) {
@@ -137,16 +151,21 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             } else {
                 logger.error(e.message!!, null)
             }
-        } finally {
-            try {
-                if (!timer.isFinish()) timer.finish()
-            } catch (e: Throwable) {
-                logger.warn("Failed in diagnostic report $e", null)
-            } finally {
-                logger.info(timer.buildReport(), null)
-            }
         }
-        return emptyList()
+        return deferredSymbols
+    }
+
+    override fun finish() {
+        super.finish()
+        var message: String? = null
+        try {
+            if (!timer.isFinish()) timer.finish()
+            message = timer.buildReport()
+        } catch (e: Throwable) {
+            logger.info("Failed in diagnostic report with exception: $e", null)
+        } finally {
+            if (message != null) logger.info(message, null)
+        }
     }
 
     private fun getAnnotatedInterfaceTypes(resolver: Resolver) =
