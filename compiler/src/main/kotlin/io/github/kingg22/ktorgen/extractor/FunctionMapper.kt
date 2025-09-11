@@ -75,7 +75,8 @@ class FunctionMapper : DeclarationFunctionMapper {
             timer.addStep("Extracting the rest of annotations for function")
 
             if (options.propagateAnnotations) {
-                val (annotations, optIns) = extractAnnotationsFiltered(declaration)
+                val (annotations, optIns, symbols) = extractAnnotationsFiltered(declaration)
+                deferredSymbols += symbols
 
                 val mergedOptIn = mergeOptIns(optIns, options.optIns)
 

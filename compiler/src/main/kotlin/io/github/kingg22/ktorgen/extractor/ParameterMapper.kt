@@ -25,9 +25,11 @@ class ParameterMapper : DeclarationParameterMapper {
         val paramName = declaration.name?.asString().orEmpty()
         return timer("Parameter Mapper for [$paramName]").work { timer ->
             val type = declaration.type.resolve()
-            if (type.isError) return@work null to listOf(declaration)
+            if (type.isError) return@work null to listOf(declaration.type)
 
-            val (annotations, optIns) = extractAnnotationsFiltered(declaration)
+            val (annotations, optIns, symbols) = extractAnnotationsFiltered(declaration)
+            if (symbols.isNotEmpty()) return@work null to symbols
+
             val optInAnnotation = if (optIns.isNotEmpty()) {
                 AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
                     .addMember(
