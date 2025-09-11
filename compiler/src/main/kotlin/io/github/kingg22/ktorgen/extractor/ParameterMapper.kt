@@ -25,7 +25,7 @@ class ParameterMapper : DeclarationParameterMapper {
         val paramName = declaration.name?.asString().orEmpty()
         return timer("Parameter Mapper for [$paramName]").work { timer ->
             val type = declaration.type.resolve()
-            if (type.isError) return@work null to listOf()
+            if (type.isError) return@work null to listOf(declaration)
 
             val (annotations, optIns) = extractAnnotationsFiltered(declaration)
             val optInAnnotation = if (optIns.isNotEmpty()) {
