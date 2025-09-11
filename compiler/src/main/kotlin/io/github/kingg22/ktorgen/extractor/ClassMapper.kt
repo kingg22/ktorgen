@@ -23,6 +23,7 @@ import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_CALL_BODY
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_REQUEST
 import io.github.kingg22.ktorgen.model.KTOR_DECODE_URL_QUERY
+import io.github.kingg22.ktorgen.model.KTOR_REQUEST_TAKE_FROM
 import io.github.kingg22.ktorgen.model.KTOR_URL_TAKE_FROM
 import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotations
 import kotlin.reflect.KClass
@@ -106,6 +107,7 @@ class ClassMapper : DeclarationMapper {
                         KTOR_CLIENT_CALL_BODY,
                         KTOR_CLIENT_REQUEST,
                         KTOR_URL_TAKE_FROM,
+                        KTOR_REQUEST_TAKE_FROM,
                         KTOR_DECODE_URL_QUERY,
                     ),
                 )

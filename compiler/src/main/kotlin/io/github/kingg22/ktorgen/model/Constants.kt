@@ -35,6 +35,7 @@ const val KTOR_CLIENT_FORM_DATA = "io.ktor.client.request.forms.formData"
 const val KTOR_CLIENT_PART_DATA = "io.ktor.http.content.PartData"
 const val KTOR_PARAMETERS = "io.ktor.http.Parameters"
 const val KTOR_URL_TAKE_FROM = "io.ktor.http.takeFrom"
+const val KTOR_REQUEST_TAKE_FROM = "io.ktor.client.request.takeFrom"
 const val KTOR_DECODE_URL_QUERY = "io.ktor.http.decodeURLQueryComponent"
 
 val HttpClientClassName = ClassName("io.ktor.client", "HttpClient")
