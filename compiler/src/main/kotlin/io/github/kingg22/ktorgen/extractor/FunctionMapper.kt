@@ -2,6 +2,7 @@ package io.github.kingg22.ktorgen.extractor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
@@ -23,6 +24,8 @@ import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
+import io.github.kingg22.ktorgen.requireNotNull
+import io.github.kingg22.ktorgen.work
 
 class FunctionMapper : DeclarationFunctionMapper {
     override fun mapToModel(
@@ -30,20 +33,30 @@ class FunctionMapper : DeclarationFunctionMapper {
         onAddImport: (String) -> Unit,
         basePath: String,
         timer: (String) -> DiagnosticSender,
-    ): FunctionData {
+    ): Pair<FunctionData?, List<KSAnnotated>> {
         val name = declaration.simpleName.asString()
+        val deferredSymbols = mutableListOf<KSAnnotated>()
         val timer = timer("Function Mapper for [$name]")
         return timer.work { _ ->
-            val parameters = declaration.parameters.map { param ->
-                DeclarationParameterMapper.DEFAULT.mapToModel(param) { timer.createTask(it) }.also {
-                    timer.addStep("Processed param: ${it.nameString}")
+            val parameters = declaration.parameters.mapNotNull { param ->
+                val (parameterData, symbols) = DeclarationParameterMapper.DEFAULT.mapToModel(param) {
+                    timer.createTask(it)
                 }
+                parameterData?.let {
+                    timer.addStep("Processed param: ${it.nameString}")
+                    return@mapNotNull parameterData
+                }
+                deferredSymbols += symbols
+                return@mapNotNull null
             }
             timer.addStep("Adding imports of parameters")
             addImportsForParametersAnnotations(parameters.flatMap { p -> p.ktorgenAnnotations }, onAddImport)
 
+            val type = declaration.returnType?.resolve()
+            if (type != null && type.isError) deferredSymbols += type.declaration
+
             val returnType = TypeData(
-                requireNotNull(declaration.returnType?.resolve()) { KtorGenLogger.FUNCTION_NOT_RETURN_TYPE + name },
+                timer.requireNotNull(type, KtorGenLogger.FUNCTION_NOT_RETURN_TYPE + name, declaration),
             )
             timer.addStep(
                 "Processed return type: ${returnType.parameterType.declaration.simpleName.asString()}",
@@ -88,6 +101,12 @@ class FunctionMapper : DeclarationFunctionMapper {
             }
 
             timer.addStep("Finishing mapping")
+
+            if (deferredSymbols.isNotEmpty()) {
+                timer.addStep("Found deferred symbols, skipping to next round of processing")
+                return@work null to deferredSymbols
+            }
+
             FunctionData(
                 name = name,
                 returnTypeData = returnType,
@@ -100,7 +119,7 @@ class FunctionMapper : DeclarationFunctionMapper {
                 modifierSet = modifiers,
                 ksFunctionDeclaration = declaration,
                 options = options,
-            )
+            ) to emptyList()
         }
     }
 
@@ -127,7 +146,9 @@ class FunctionMapper : DeclarationFunctionMapper {
                 }
 
                 is FunctionAnnotation.HttpMethodAnnotation -> onAddImport(KTOR_HTTP_METHOD)
-                is FunctionAnnotation.Fragment -> { /* No Op */ }
+                is FunctionAnnotation.Fragment -> {
+                    /* No Op */
+                }
             }
         }
     }
