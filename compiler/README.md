@@ -1,5 +1,32 @@
 # Annotation processor of KtorGen
 
+## Workflow
+```mermaid
+sequenceDiagram
+    participant KtorGenProcessor
+    participant Resolver
+    participant DeclarationMapper
+    participant FunctionMapper
+    participant ParameterMapper
+    participant KtorGenGenerator
+    participant Logger
+    participant DiagnosticTimer
+
+    KtorGenProcessor->>DiagnosticTimer: start() (on first round)
+    KtorGenProcessor->>Resolver: getKotlinClassByName()
+    KtorGenProcessor->>DeclarationMapper: mapToModel(classDec)
+    DeclarationMapper-->>KtorGenProcessor: (ClassData?, deferredSymbols)
+    KtorGenProcessor->>FunctionMapper: mapToModel(func)
+    FunctionMapper-->>KtorGenProcessor: (FunctionData?, deferredSymbols)
+    KtorGenProcessor->>ParameterMapper: mapToModel(param)
+    ParameterMapper-->>KtorGenProcessor: (ParameterData?, deferredSymbols)
+    KtorGenProcessor->>KtorGenGenerator: generateKsp(classData)
+    KtorGenGenerator-->>KtorGenProcessor: code generated
+    KtorGenProcessor->>Logger: log report
+    KtorGenProcessor->>DiagnosticTimer: finish() (on finish)
+    KtorGenProcessor-->>Resolver: return deferredSymbols (for next round)
+```
+
 ## Rules:
 ** Obvious rules:
 * No return type (KSP error) → fatal error
