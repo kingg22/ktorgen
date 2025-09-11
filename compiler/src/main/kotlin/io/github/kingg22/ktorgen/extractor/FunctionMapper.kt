@@ -67,13 +67,17 @@ class FunctionMapper : DeclarationFunctionMapper {
                 val mergedOptIn = mergeOptIns(optIns, options.optIns)
 
                 val mergedAnnotations = (options.annotationsToPropagate + annotations)
-                    .filterNot { ann -> ann.typeName == ClassName("kotlin", "OptIn") }
+                    .filterNot { ann ->
+                        ann.typeName == ClassName("kotlin", "OptIn") ||
+                            options.optIns.any { it.typeName == ann.typeName } ||
+                            (optIns.any { it.typeName == ann.typeName })
+                    }
                     .toSet()
 
                 options = options.copy(
                     annotations = mergedAnnotations,
                     optInAnnotation = mergedOptIn,
-                    optIns = emptySet(),
+                    optIns = if (mergedOptIn != null) emptySet() else options.optIns,
                 )
             }
 
