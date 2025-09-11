@@ -208,14 +208,16 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
     private fun Options.buildAnnotations(): Set<AnnotationSpec> {
         val annotations = annotations.toMutableSet()
+
+        // si tengo optIns pendientes y no hay optInAnnotation unificado → generar uno
         if (optIns.isNotEmpty() && optInAnnotation == null) {
             annotations += AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
                 .addMember(
-                    (1..optIns.size).joinToString { "%T::class" },
+                    optIns.joinToString(", ") { "%T::class" },
                     *optIns.map { it.typeName }.toTypedArray(),
                 ).build()
         } else if (optInAnnotation != null) {
-            annotations.add(optInAnnotation)
+            annotations += optInAnnotation
         }
         return annotations + GeneratedAnnotation
     }
