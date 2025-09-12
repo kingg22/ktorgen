@@ -7,6 +7,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
@@ -40,15 +41,7 @@ class ClassMapper : DeclarationMapper {
 
             val packageName = declaration.packageName.asString()
 
-            val filteredSupertypes = declaration.superTypes.filterNot {
-                val type = it.resolve()
-                if (type.isError) {
-                    deferredSymbols += type.declaration
-                    true
-                } else {
-                    it.toTypeName() == ANY
-                }
-            }
+            val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols)
             timer.addStep("Retrieved all supertypes")
 
             val companionObject = declaration.declarations
@@ -147,7 +140,7 @@ class ClassMapper : DeclarationMapper {
 
             timer.addStep("Processed all functions")
 
-            if (deferredSymbols.isNotEmpty()) {
+            if (deferredSymbols.isNotEmpty() && options.goingToGenerate) {
                 timer.addStep("Found deferred symbols, skipping to next round of processing")
                 return@work null to deferredSymbols
             }
@@ -174,6 +167,29 @@ class ClassMapper : DeclarationMapper {
             } to emptyList()
         }
     }
+
+    private fun filterSupertypes(supertypes: Sequence<KSTypeReference>, deferredSymbols: MutableList<KSAnnotated>) =
+        supertypes.filterNot {
+            val type = it.resolve()
+            if (type.isError) {
+                // Verificar si la superinterfaz tiene @KtorGen con generate=false
+                val superDeclaration = type.declaration as? KSClassDeclaration
+                if (superDeclaration != null) {
+                    val superOptions = extractKtorGen(superDeclaration)
+                    if (superOptions?.generate == false) {
+                        true // Ignorar completamente
+                    } else {
+                        deferredSymbols += type.declaration
+                        true
+                    }
+                } else {
+                    deferredSymbols += type.declaration
+                    true
+                }
+            } else {
+                it.toTypeName() == ANY
+            }
+        }
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun extractFunctionAnnotationsFiltered(declaration: KSClassDeclaration) =
