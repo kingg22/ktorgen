@@ -4,7 +4,7 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSNode
 
 class KtorGenLogger(private val kspLogger: KSPLogger, private val options: KtorGenOptions) : KSPLogger by kspLogger {
-    override fun warn(message: String, symbol: KSNode?) {
+    override fun error(message: String, symbol: KSNode?) {
         when (options.errorsLoggingType) {
             0 -> {
                 // Do nothing

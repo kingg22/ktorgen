@@ -51,14 +51,6 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             firstInvoked = true
             onFirstRound(resolver)
         }
-        if (resolver.getNewFiles().count() == 0) {
-            // deferred errors, util for debug and accumulative errors
-            if (fatalError) {
-                logger.error(timer.buildErrorsAndWarningsMessage(), null)
-            } else if (timer.hasWarnings()) {
-                logger.warn(timer.buildWarningsMessage(), null)
-            }
-        }
         val deferredSymbols = mutableListOf<KSAnnotated>()
 
         try {
@@ -89,6 +81,12 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 )
             }
             timer.addStep("Generated all classes")
+            // deferred errors, util for debug and accumulative errors
+            if (fatalError) {
+                logger.error(timer.buildErrorsAndWarningsMessage(), null)
+            } else if (timer.hasWarnings()) {
+                logger.error(timer.buildWarningsMessage(), null)
+            }
         } catch (e: Exception) {
             logger.error("${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e")
         } catch (e: Throwable) {
