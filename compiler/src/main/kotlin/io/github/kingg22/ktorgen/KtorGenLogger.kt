@@ -4,6 +4,8 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSNode
 
 class KtorGenLogger(private val kspLogger: KSPLogger, private val options: KtorGenOptions) : KSPLogger by kspLogger {
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun fatalError(message: String, symbol: KSNode? = null) = kspLogger.error(message, symbol)
     override fun error(message: String, symbol: KSNode?) {
         when (options.errorsLoggingType) {
             0 -> {
