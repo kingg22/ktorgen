@@ -43,7 +43,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             field = value
         }
     private var fatalError = false
-    private val generatedClasses = mutableListOf<KSClassDeclaration>()
+    private val deferredSymbols = mutableListOf<Pair<KSClassDeclaration, List<KSAnnotated>>>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         roundCount++
@@ -51,11 +51,15 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             firstInvoked = true
             onFirstRound(resolver)
         }
-        val deferredSymbols = mutableListOf<KSAnnotated>()
 
         try {
-            val fullClassList = extractAndMapDeclaration(resolver, deferredSymbols)
+            val fullClassList = extractAndMapDeclaration(resolver) { ksClassDeclaration, symbols ->
+                if (symbols.isNotEmpty()) deferredSymbols += ksClassDeclaration to symbols
+            }
+            if (!firstInvoked) cleanDeferredSymbolsWith(fullClassList)
+
             timer.addStep("After filter ignored interfaces, have ${fullClassList.size} to validate")
+
             val validationPhase = timer.createPhase("Validation for round $roundCount")
             validationPhase.start()
 
@@ -69,8 +73,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             timer.addStep(
                 "Valid class data ${validClassData.size}, going to generate all. Have fatal error: $fatalError",
             )
-
-            validClassData.forEach { generatedClasses += it.ksClassDeclaration }
+            cleanDeferredSymbolsWith(validClassData.toSet())
 
             // 6. Generamos el código
             for (classData in validClassData) {
@@ -80,15 +83,17 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                     timer.createPhase("Code Generation for ${classData.interfaceName} and round $roundCount"),
                 )
             }
+
             timer.addStep("Generated all classes")
+
             // deferred errors, util for debug and accumulative errors
             if (fatalError) {
-                logger.error(timer.buildErrorsAndWarningsMessage(), null)
+                logger.fatalError(timer.buildErrorsAndWarningsMessage(), null)
             } else if (timer.hasWarnings()) {
                 logger.error(timer.buildWarningsMessage(), null)
             }
         } catch (e: Exception) {
-            logger.error("${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e")
+            logger.fatalError("${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e")
         } catch (e: Throwable) {
             if (e.message == null) {
                 logger.exception(e)
@@ -97,19 +102,40 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 logger.error(e.message!!, null)
             }
         }
-        return deferredSymbols
+
+        if (deferredSymbols.isNotEmpty()) {
+            timer.addStep(
+                "Unresolved ${deferredSymbols.size} symbols found on round $roundCount of interfaces: [" +
+                    deferredSymbols.joinToString { it.first.simpleName.asString() } + "]. Symbols: " +
+                    deferredSymbols.joinToString(prefix = "[", postfix = "]") {
+                        it.second.joinToString(prefix = "[", postfix = "]") { s -> s.toString() }
+                    },
+            )
+        }
+
+        return deferredSymbols.flatMap { it.second }
     }
 
     override fun finish() {
-        super.finish()
         var message: String? = null
+
         try {
+            if (deferredSymbols.isNotEmpty()) {
+                logger.fatalError(
+                    "${KtorGenLogger.KTOR_GEN} Unresolved ${deferredSymbols.size} symbols found after all " +
+                        "rounds of interfaces: " + deferredSymbols.joinToString { it.first.simpleName.asString() },
+                    deferredSymbols.first().first,
+                )
+            }
+
             if (!timer.isFinish()) timer.finish()
             message = timer.buildReport()
         } catch (e: Throwable) {
-            logger.info("Failed in diagnostic report with exception: $e", null)
+            logger.warn("Failed in diagnostic report with exception.", null)
+            logger.exception(e)
         } finally {
             if (message != null) logger.info(message, null)
+            super.finish()
         }
     }
 
@@ -167,10 +193,25 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         timer.addStep("Retrieve KSTypes")
     }
 
+    private fun cleanDeferredSymbolsWith(fullClassList: Set<ClassData>) {
+        val interfaceNames = fullClassList.map { it.interfaceName }.toSet()
+        val allRelatedNames = fullClassList.flatMap { classData ->
+            classData.superClasses.mapNotNull {
+                val type = it.resolve()
+                if (type.isError) return@mapNotNull null
+                type.declaration.simpleName.getShortName()
+            }
+        } + interfaceNames
+
+        deferredSymbols.removeAll { (decl, _) ->
+            allRelatedNames.contains(decl.simpleName.getShortName())
+        }
+    }
+
     private fun extractAndMapDeclaration(
         resolver: Resolver,
-        deferredSymbols: MutableList<KSAnnotated>,
-    ): List<ClassData> {
+        onDeferredSymbols: (KSClassDeclaration, List<KSAnnotated>) -> Unit,
+    ): Set<ClassData> {
         // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
         val annotatedFunctionsGroupedByClass = getAnnotatedFunctions(resolver)
             .groupBy { it.closestClassDeclaration() }
@@ -186,7 +227,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         val classDataWithMethods = annotatedFunctionsGroupedByClass.mapNotNull { (classDec) ->
             if (classDec == null) return@mapNotNull null
             val (classData, symbols) = DeclarationMapper.DEFAULT.mapToModel(classDec) { mapperPhase.createTask(it) }
-            deferredSymbols += symbols
+            onDeferredSymbols(classDec, symbols)
             classData
         }
 
@@ -210,7 +251,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 val (classData, symbols) = DeclarationMapper.DEFAULT.mapToModel(classDeclaration) {
                     mapperPhase.createTask(it)
                 }
-                deferredSymbols += symbols
+                onDeferredSymbols(classDeclaration, symbols)
                 classData
             }
 
@@ -224,5 +265,6 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             .distinctBy { it.interfaceName }
             .also { timer.addStep("After filter declarations, have ${it.size}") }
             .filter { it.goingToGenerate }
+            .toSet()
     }
 }
