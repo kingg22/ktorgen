@@ -41,7 +41,7 @@ class ClassMapper : DeclarationMapper {
 
             val packageName = declaration.packageName.asString()
 
-            val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols)
+            val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, timer)
             timer.addStep("Retrieved all supertypes")
 
             val companionObject = declaration.declarations
@@ -54,7 +54,10 @@ class ClassMapper : DeclarationMapper {
 
             properties.forEach {
                 val type = it.type.resolve()
-                if (type.isError) deferredSymbols += type.declaration
+                if (type.isError) {
+                    timer.addStep("Found error type reference of property: $type")
+                    deferredSymbols += type.declaration
+                }
             }
 
             timer.addStep("Retrieved all properties")
@@ -81,6 +84,8 @@ class ClassMapper : DeclarationMapper {
                 val (functionAnnotations, functionOptIn, symbols) = extractFunctionAnnotationsFiltered(declaration)
 
                 timer.addStep("Retrieved the rest of annotations and optIns")
+                timer.addStep("${symbols.size} unresolved symbols of function annotations")
+                timer.addStep("${unresolvedSymbols.size} unresolved symbols of interface annotations")
                 deferredSymbols += symbols
                 deferredSymbols += unresolvedSymbols
 
@@ -121,6 +126,7 @@ class ClassMapper : DeclarationMapper {
                     timer.addStep("Processed function: ${it.name}")
                     return@mapNotNull it
                 }
+                timer.addStep("${symbols.size} unresolved symbols of function: ${func.simpleName.getShortName()}")
                 deferredSymbols += symbols
                 return@mapNotNull null
             }.toList()
@@ -168,28 +174,33 @@ class ClassMapper : DeclarationMapper {
         }
     }
 
-    private fun filterSupertypes(supertypes: Sequence<KSTypeReference>, deferredSymbols: MutableList<KSAnnotated>) =
-        supertypes.filterNot {
-            val type = it.resolve()
-            if (type.isError) {
-                // Verificar si la superinterfaz tiene @KtorGen con generate=false
-                val superDeclaration = type.declaration as? KSClassDeclaration
-                if (superDeclaration != null) {
-                    val superOptions = extractKtorGen(superDeclaration)
-                    if (superOptions?.generate == false) {
-                        true // Ignorar completamente
-                    } else {
-                        deferredSymbols += type.declaration
-                        true
-                    }
+    private fun filterSupertypes(
+        supertypes: Sequence<KSTypeReference>,
+        deferredSymbols: MutableList<KSAnnotated>,
+        timer: DiagnosticSender,
+    ) = supertypes.filterNot {
+        val type = it.resolve()
+        if (type.isError) {
+            // Verificar si la superinterfaz tiene @KtorGen con generate=false
+            val superDeclaration = type.declaration as? KSClassDeclaration
+            if (superDeclaration != null) {
+                val superOptions = extractKtorGen(superDeclaration)
+                if (superOptions?.generate == false) {
+                    true // Ignorar completamente
                 } else {
+                    timer.addStep("Found error type reference of superinterface: $type")
                     deferredSymbols += type.declaration
                     true
                 }
             } else {
-                it.toTypeName() == ANY
+                timer.addStep("Found error type reference of super interface: $type")
+                deferredSymbols += type.declaration
+                true
             }
+        } else {
+            it.toTypeName() == ANY
         }
+    }
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun extractFunctionAnnotationsFiltered(declaration: KSClassDeclaration) =
