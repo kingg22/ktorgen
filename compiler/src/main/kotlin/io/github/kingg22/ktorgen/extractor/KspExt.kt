@@ -11,6 +11,7 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import io.github.kingg22.ktorgen.model.Options
 import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotations
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -107,3 +108,12 @@ inline fun mergeOptIns(existing: Set<AnnotationSpec>, extra: Set<AnnotationSpec>
             .build()
     }
 }
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun Options.mergeAnnotations(extra: Set<AnnotationSpec>, extraOptIns: Set<AnnotationSpec>) =
+    (annotations + extra)
+        .filterNot { ann ->
+            ann.typeName == ClassName("kotlin", "OptIn") ||
+                extraOptIns.any { it.typeName == ann.typeName } || (optIns.any { it.typeName == ann.typeName })
+        }
+        .toSet()

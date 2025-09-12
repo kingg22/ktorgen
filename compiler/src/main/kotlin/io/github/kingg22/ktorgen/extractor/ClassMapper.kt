@@ -28,6 +28,10 @@ import io.github.kingg22.ktorgen.model.KTOR_REQUEST_TAKE_FROM
 import io.github.kingg22.ktorgen.model.KTOR_URL_TAKE_FROM
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
+import kotlin.collections.filterNot
+import kotlin.collections.plus
+import kotlin.collections.plusAssign
+import kotlin.collections.toSet
 
 class ClassMapper : DeclarationMapper {
     override fun mapToModel(
@@ -36,17 +40,43 @@ class ClassMapper : DeclarationMapper {
     ): Pair<ClassData?, List<KSAnnotated>> {
         val interfaceName = declaration.simpleName.getShortName()
         val deferredSymbols = mutableListOf<KSAnnotated>()
+        val imports = mutableSetOf<String>()
         return timer("Class Mapper for [$interfaceName]").work { timer ->
-            val imports = mutableSetOf<String>()
+            val companionObject = declaration.declarations
+                .filterIsInstance<KSClassDeclaration>()
+                .any { it.isCompanionObject }
+
+            var options = extractKtorGen(declaration)
+                ?: run {
+                    if (companionObject) {
+                        extractKtorGen(
+                            declaration.declarations.filterIsInstance<KSClassDeclaration>()
+                                .first { it.isCompanionObject },
+                        )?.let { return@run it }
+                    }
+                    ClassGenerationOptions.default(
+                        generatedName = "_${interfaceName}Impl",
+                        visibilityModifier = declaration.getVisibility().name,
+                    )
+                }
+
+            timer.addStep(
+                "Retrieved @KtorGen options, going to propagate annotations? ${options.propagateAnnotations}. Options: $options",
+            )
+
+            if (options.propagateAnnotations) {
+                options = updateClassGenerationOptions(declaration, timer, deferredSymbols, options)
+            }
+
+            if (!options.goingToGenerate) {
+                timer.addStep("Early finish processing, not going to generate this interface.")
+                return@work null to emptyList()
+            }
 
             val packageName = declaration.packageName.asString()
 
             val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, timer)
             timer.addStep("Retrieved all supertypes")
-
-            val companionObject = declaration.declarations
-                .filterIsInstance<KSClassDeclaration>()
-                .any { it.isCompanionObject }
 
             timer.addStep("Have companion object: $companionObject")
 
@@ -62,66 +92,13 @@ class ClassMapper : DeclarationMapper {
 
             timer.addStep("Retrieved all properties")
 
-            var options = extractKtorGen(declaration)
-                ?: run {
-                    if (companionObject) {
-                        extractKtorGen(
-                            declaration.declarations.filterIsInstance<KSClassDeclaration>()
-                                .first { it.isCompanionObject },
-                        )?.let { return@run it }
-                    }
-                    ClassGenerationOptions.default(
-                        generatedName = "_${interfaceName}Impl",
-                        visibilityModifier = declaration.getVisibility().name,
-                    )
-                }
-            timer.addStep(
-                "Retrieved @KtorGen options, going to propagate annotations? ${options.propagateAnnotations}. Options: $options",
-            )
-
-            if (options.propagateAnnotations) {
-                val (annotations, optIns, unresolvedSymbols) = extractAnnotationsFiltered(declaration)
-                val (functionAnnotations, functionOptIn, symbols) = extractFunctionAnnotationsFiltered(declaration)
-
-                timer.addStep("Retrieved the rest of annotations and optIns")
-                timer.addStep("${symbols.size} unresolved symbols of function annotations")
-                timer.addStep("${unresolvedSymbols.size} unresolved symbols of interface annotations")
-                deferredSymbols += symbols
-                deferredSymbols += unresolvedSymbols
-
-                val mergedOptIn = mergeOptIns(optIns, options.optIns)
-
-                val mergedAnnotations = (options.annotations + annotations)
-                    .filterNot { ann ->
-                        ann.typeName == ClassName("kotlin", "OptIn") ||
-                            options.optIns.any { it.typeName == ann.typeName } ||
-                            (optIns.any { it.typeName == ann.typeName })
-                    }
-                    .toSet()
-
-                options = options.copy(
-                    annotationsToPropagate = mergedAnnotations,
-                    extensionFunctionAnnotation =
-                    (options.extensionFunctionAnnotation + functionAnnotations + functionOptIn)
-                        .filterNot { ann ->
-                            options.optIns.any { it.typeName == ann.typeName } ||
-                                (optIns.any { it.typeName == ann.typeName })
-                        }.toSet(),
-                    optInAnnotation = mergedOptIn,
-                    optIns = if (mergedOptIn != null) emptySet() else options.optIns,
-                )
-
-                timer.addStep("Updated options with annotations and optIns propagated: $options")
-            }
-
             val functions = declaration.getDeclaredFunctions().mapNotNull { func ->
                 val (functionData, symbols) = DeclarationFunctionMapper.DEFAULT.mapToModel(
                     func,
                     imports::add,
                     options.basePath,
-                ) {
-                    timer.createTask(it)
-                }
+                    timer::createTask,
+                )
                 functionData?.let {
                     timer.addStep("Processed function: ${it.name}")
                     return@mapNotNull it
@@ -146,7 +123,7 @@ class ClassMapper : DeclarationMapper {
 
             timer.addStep("Processed all functions")
 
-            if (deferredSymbols.isNotEmpty() && options.goingToGenerate) {
+            if (deferredSymbols.isNotEmpty()) {
                 timer.addStep("Found deferred symbols, skipping to next round of processing")
                 return@work null to deferredSymbols
             }
@@ -171,6 +148,40 @@ class ClassMapper : DeclarationMapper {
             ).also {
                 timer.addStep("Mapper complete of ${it.interfaceName} to ${it.generatedName}")
             } to emptyList()
+        }
+    }
+
+    private fun updateClassGenerationOptions(
+        declaration: KSClassDeclaration,
+        timer: DiagnosticSender,
+        deferredSymbols: MutableList<KSAnnotated>,
+        options: ClassGenerationOptions,
+    ): ClassGenerationOptions {
+        val (annotations, optIns, unresolvedSymbols) = extractAnnotationsFiltered(declaration)
+        val (functionAnnotations, functionOptIn, symbols) = extractFunctionAnnotationsFiltered(declaration)
+
+        timer.addStep("Retrieved the rest of annotations and optIns")
+        timer.addStep("${symbols.size} unresolved symbols of function annotations")
+        timer.addStep("${unresolvedSymbols.size} unresolved symbols of interface annotations")
+        deferredSymbols += symbols
+        deferredSymbols += unresolvedSymbols
+
+        val mergedOptIn = mergeOptIns(optIns, options.optIns)
+
+        val mergedAnnotations = options.mergeAnnotations(annotations, optIns)
+
+        return options.copy(
+            annotationsToPropagate = mergedAnnotations,
+            extensionFunctionAnnotation =
+            (options.extensionFunctionAnnotation + functionAnnotations + functionOptIn)
+                .filterNot { ann ->
+                    options.optIns.any { it.typeName == ann.typeName } ||
+                        (optIns.any { it.typeName == ann.typeName })
+                }.toSet(),
+            optInAnnotation = mergedOptIn,
+            optIns = if (mergedOptIn != null) emptySet() else options.optIns,
+        ).also {
+            timer.addStep("Updated options with annotations and optIns propagated: $it")
         }
     }
 

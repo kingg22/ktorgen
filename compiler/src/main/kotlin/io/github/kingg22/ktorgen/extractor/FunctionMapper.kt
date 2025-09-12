@@ -38,19 +38,33 @@ class FunctionMapper : DeclarationFunctionMapper {
         val deferredSymbols = mutableListOf<KSAnnotated>()
         val timer = timer("Function Mapper for [$name]")
         return timer.work { _ ->
-            val parameters = declaration.parameters.mapNotNull { param ->
-                val (parameterData, symbols) = DeclarationParameterMapper.DEFAULT.mapToModel(param) {
-                    timer.createTask(it)
-                }
-                parameterData?.let {
-                    timer.addStep("Processed param: ${it.nameString}")
-                    return@mapNotNull parameterData
-                }
+            timer.addStep("Extracting the KtorGenFunction annotation")
+            var options = extractKtorGenFunction(declaration) ?: FunctionGenerationOptions.DEFAULT
+            timer.addStep("Extracting the rest of annotations for function")
+
+            if (options.propagateAnnotations) {
+                val (annotations, optIns, symbols) = extractAnnotationsFiltered(declaration)
+                timer.addStep(
+                    "Found ${symbols.size} unresolved symbols of function annotations, adding to deferred symbols list",
+                )
                 deferredSymbols += symbols
-                return@mapNotNull null
+
+                val mergedOptIn = mergeOptIns(optIns, options.optIns)
+
+                val mergedAnnotations = options.mergeAnnotations(annotations, optIns)
+
+                options = options.copy(
+                    annotations = mergedAnnotations,
+                    optInAnnotation = mergedOptIn,
+                    optIns = if (mergedOptIn != null) emptySet() else options.optIns,
+                )
+                timer.addStep("Updated options with annotations and optIns propagated: $options")
             }
-            timer.addStep("Adding imports of parameters")
-            addImportsForParametersAnnotations(parameters.flatMap { p -> p.ktorgenAnnotations }, onAddImport)
+
+            if (!options.goingToGenerate) {
+                timer.addStep("Early finish processing, not going to generate this function.")
+                return@work null to emptyList()
+            }
 
             val type = declaration.returnType?.resolve()
             if (type != null && type.isError) deferredSymbols += type.declaration
@@ -71,29 +85,19 @@ class FunctionMapper : DeclarationFunctionMapper {
             addImportsForFunctionAnnotations(functionAnnotations, onAddImport)
             timer.addStep("Extracting options of @KtorGenFunction")
 
-            var options = extractKtorGenFunction(declaration) ?: FunctionGenerationOptions.DEFAULT
-            timer.addStep("Extracting the rest of annotations for function")
-
-            if (options.propagateAnnotations) {
-                val (annotations, optIns, symbols) = extractAnnotationsFiltered(declaration)
+            val parameters = declaration.parameters.mapNotNull { param ->
+                val (parameterData, symbols) = DeclarationParameterMapper.DEFAULT.mapToModel(param) {
+                    timer.createTask(it)
+                }
+                parameterData?.let {
+                    timer.addStep("Processed param: ${it.nameString}")
+                    return@mapNotNull parameterData
+                }
                 deferredSymbols += symbols
-
-                val mergedOptIn = mergeOptIns(optIns, options.optIns)
-
-                val mergedAnnotations = (options.annotationsToPropagate + annotations)
-                    .filterNot { ann ->
-                        ann.typeName == ClassName("kotlin", "OptIn") ||
-                            options.optIns.any { it.typeName == ann.typeName } ||
-                            (optIns.any { it.typeName == ann.typeName })
-                    }
-                    .toSet()
-
-                options = options.copy(
-                    annotations = mergedAnnotations,
-                    optInAnnotation = mergedOptIn,
-                    optIns = if (mergedOptIn != null) emptySet() else options.optIns,
-                )
+                return@mapNotNull null
             }
+            timer.addStep("Adding imports of parameters")
+            addImportsForParametersAnnotations(parameters.flatMap { p -> p.ktorgenAnnotations }, onAddImport)
 
             val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)
             val modifiers = buildSet {

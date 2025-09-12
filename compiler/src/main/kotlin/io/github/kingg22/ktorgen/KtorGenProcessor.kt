@@ -60,6 +60,11 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             timer.addStep("After filter ignored interfaces, have ${fullClassList.size} to validate")
 
+            if (fullClassList.isEmpty()) {
+                timer.addStep("Skipping round $roundCount, no valid class data extracted")
+                return deferredSymbols.flatMap { it.second }
+            }
+
             val validationPhase = timer.createPhase("Validation for round $roundCount")
             validationPhase.start()
 
@@ -70,6 +75,12 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             }
 
             validationPhase.finish()
+
+            if (validClassData.isEmpty()) {
+                timer.addStep("Skipping round $roundCount, no valid class data found")
+                return deferredSymbols.flatMap { it.second }
+            }
+
             timer.addStep(
                 "Valid class data ${validClassData.size}, going to generate all. Have fatal error: $fatalError",
             )
@@ -84,14 +95,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 )
             }
 
-            timer.addStep("Generated all classes")
-
-            // deferred errors, util for debug and accumulative errors
-            if (fatalError) {
-                logger.fatalError(timer.buildErrorsAndWarningsMessage(), null)
-            } else if (timer.hasWarnings()) {
-                logger.error(timer.buildWarningsMessage(), null)
-            }
+            if (validClassData.isNotEmpty()) timer.addStep("Generated ${validClassData.size} classes")
         } catch (e: Exception) {
             logger.fatalError("${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e")
         } catch (e: Throwable) {
@@ -120,6 +124,13 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         var message: String? = null
 
         try {
+            // deferred errors, util for debug and accumulative errors
+            if (fatalError) {
+                logger.fatalError(timer.buildErrorsAndWarningsMessage(), null)
+            } else if (timer.hasWarnings()) {
+                logger.error(timer.buildWarningsMessage(), null)
+            }
+
             if (deferredSymbols.isNotEmpty()) {
                 logger.fatalError(
                     "${KtorGenLogger.KTOR_GEN} Unresolved ${deferredSymbols.size} symbols found after all " +
