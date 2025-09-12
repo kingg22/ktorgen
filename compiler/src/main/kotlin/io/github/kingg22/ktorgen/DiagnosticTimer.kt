@@ -230,7 +230,12 @@ class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : 
             return@lazy ""
         }
 
-        override fun toString(): String = "$type ${type.icon}: $message $generateSymbolInfo".trim()
+        init {
+            // invoke to cache the info of location during initialization
+            generateSymbolInfo
+        }
+
+        override fun toString() = "$type ${type.icon}: $message $generateSymbolInfo".trim()
     }
 
     private enum class MessageType(val icon: String) {
