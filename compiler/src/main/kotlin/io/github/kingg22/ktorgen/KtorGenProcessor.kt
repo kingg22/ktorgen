@@ -205,17 +205,17 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
     }
 
     private fun cleanDeferredSymbolsWith(fullClassList: Set<ClassData>) {
-        val interfaceNames = fullClassList.map { it.interfaceName }.toSet()
+        val interfaceNames = fullClassList.mapNotNull { it.ksClassDeclaration.qualifiedName?.asString() }.toSet()
         val allRelatedNames = fullClassList.flatMap { classData ->
             classData.superClasses.mapNotNull {
                 val type = it.resolve()
                 if (type.isError) return@mapNotNull null
-                type.declaration.simpleName.getShortName()
+                type.declaration.qualifiedName?.asString()
             }
         } + interfaceNames
 
         deferredSymbols.removeAll { (decl, _) ->
-            allRelatedNames.contains(decl.simpleName.getShortName())
+            allRelatedNames.contains(decl.qualifiedName?.asString())
         }
     }
 
