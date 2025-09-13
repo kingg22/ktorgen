@@ -9,6 +9,7 @@
 ![GitHub License](https://img.shields.io/github/license/kingg22/ktorgen)
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/kingg22/ktorgen/main)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=kingg22_ktorgen&metric=alert_status&token=958b0f9aa5f280c62c52a9f18026711a6df10759)](https://sonarcloud.io/summary/new_code?id=kingg22_ktorgen)
+![Coverage](https://img.shields.io/badge/Coverage-80%25-green?style=flat)
 
 Ktorgen is a 100% compile-time code generator for creating HTTP clients using Ktor Client and interface annotations, inspired by [Retrofit](https://github.com/square/retrofit) and [Ktorfit](https://github.com/Foso/Ktorfit).
 
@@ -45,14 +46,6 @@ Install [KSP plugin](https://github.com/google/ksp)
 
 Install [Ktor Client Core and an Engine](https://ktor.io/docs/client-create-new-application.html#add-dependencies)
 
-* Gradle
-```kotlin
-dependencies {
-  implementation("io.github.kingg22:ktorgen-annotations:<current-version>")
-  ksp("io.github.kingg22:ktorgen-compiler:<current-version>")
-}
-```
-
 * Version Catalog
 ```toml
 [versions]
@@ -61,6 +54,14 @@ ktorgen = "<current-version>"
 [libraries]
 ktorgen-annotations = { group = "io.github.kingg22", name = "ktorgen-annotations", version.ref = "ktorgen" }
 ktorgen-compiler = { group = "io.github.kingg22", name = "ktorgen-compiler", version.ref = "ktorgen" }
+```
+
+* Gradle for Kotlin JVM (KMP projects see below)
+```kotlin
+dependencies {
+  implementation("io.github.kingg22:ktorgen-annotations:<current-version>")
+  ksp("io.github.kingg22:ktorgen-compiler:<current-version>")
+}
 ```
 
 ## 🔄 Comparison
@@ -181,6 +182,25 @@ suspend fun request(@HeaderParam("Authentication") token: String): String
 Passing your own Ktor HttpClient to the implementations, like this: `fun UserRoute(client)` for `interface UserRoute` and generated `class _UserRouteImpl`.
 
 Real-life migration example: [deezer-client-kt](https://github.com/kingg22/deezer-client-kt/commit/98e7ccc360dc62861c6e9030650f681a99cddceb)
+
+## Advanced use ⚒️
+* Global options (_see above in KMP configuration how to pass this options with KSP_)
+  - `ktorgen_check_type`: The compiler validate code before generate (default: 2)
+
+    0: Turn off all error related to checking
+
+    1: Check for errors
+
+    2: Turn errors into warnings
+  - `ktorgen_print_stacktrace_on_exception`: Print stacktrace on exception using [Throwable#printStacktrace](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Throwable.html#printStackTrace()) (default: false)
+  - _More option soon..._
+
+### Roadmap 🚀
+- [ ] Add matrix compatibility test on CI (_Kotlin versions, KSP versions, Ktor Client versions_) to know the range of compatibility.
+- [ ] Add test for Fragment annotation
+- [ ] Add test for Cookie annotation
+- [ ] Resolve knowable issues described in https://github.com/kingg22/ktorgen/pull/27
+- [ ] Resolve issues related to unresolved references, multi round processing, unexpected errors.
 
 ## 📜 Disclaimer
 This repository is a fork of Ktorfit and Retrofit annotations, with my own changes and additions.
