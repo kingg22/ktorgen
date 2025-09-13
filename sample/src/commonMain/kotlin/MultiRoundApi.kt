@@ -8,7 +8,9 @@ import kotlin.jvm.JvmSynthetic
 @KtorGen(
     classVisibilityModifier = "private",
     functionAnnotations = [JvmSynthetic::class],
+    optInAnnotations = [ExperimentalApi::class],
 )
+@ExperimentalApi
 internal interface MultiRoundApi {
     @POST
     @Header("Content-Type", "application/json")
