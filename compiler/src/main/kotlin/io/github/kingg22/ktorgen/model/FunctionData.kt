@@ -12,7 +12,7 @@ class FunctionData(
     val parameterDataList: List<ParameterData>,
     val ktorGenAnnotations: List<FunctionAnnotation>,
     val ksFunctionDeclaration: KSFunctionDeclaration,
-    val isSuspend: Boolean = false,
+    val isSuspend: Boolean,
     val modifierSet: Set<KModifier>,
     val isImplemented: Boolean,
     options: FunctionGenerationOptions,

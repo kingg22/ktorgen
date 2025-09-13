@@ -40,62 +40,55 @@ class FunctionMapper : DeclarationFunctionMapper {
         return timer.work { _ ->
             timer.addStep("Extracting the KtorGenFunction annotation")
             var options = extractKtorGenFunction(declaration) ?: FunctionGenerationOptions.DEFAULT
-            timer.addStep("Extracting the rest of annotations for function")
 
             if (options.propagateAnnotations) {
-                val (annotations, optIns, symbols) = extractAnnotationsFiltered(declaration)
-                timer.addStep(
-                    "Found ${symbols.size} unresolved symbols of function annotations, adding to deferred symbols list",
-                )
-                deferredSymbols += symbols
-
-                val mergedOptIn = mergeOptIns(optIns, options.optIns)
-
-                val mergedAnnotations = options.mergeAnnotations(annotations, optIns)
-
-                options = options.copy(
-                    annotations = mergedAnnotations,
-                    optInAnnotation = mergedOptIn,
-                    optIns = if (mergedOptIn != null) emptySet() else options.optIns,
-                )
-                timer.addStep("Updated options with annotations and optIns propagated: $options")
+                options = updateFunctionOptionsWith(declaration, options, timer, deferredSymbols)
             }
 
-            if (!options.goingToGenerate) {
-                timer.addStep("Early finish processing, not going to generate this function.")
-                return@work null to emptyList()
-            }
+            if (!options.goingToGenerate) timer.addStep("Early finish processing, not going to generate this function.")
 
-            val type = declaration.returnType?.resolve()
-            if (type != null && type.isError) deferredSymbols += type.declaration
-
-            val returnType = TypeData(
-                timer.requireNotNull(type, KtorGenLogger.FUNCTION_NOT_RETURN_TYPE + name, declaration),
+            val type = timer.requireNotNull(
+                declaration.returnType?.resolve(),
+                KtorGenLogger.FUNCTION_NOT_RETURN_TYPE + name,
+                declaration,
             )
+            if (type.isError) deferredSymbols += type.declaration
+
+            val returnType = TypeData(type)
             timer.addStep(
                 "Processed return type: ${returnType.parameterType.declaration.simpleName.asString()}",
             )
 
-            val functionAnnotations = getFunctionAnnotations(
-                declaration,
-                timer.createTask("Extract annotations"),
-                basePath,
-            )
+            val functionAnnotations = if (options.goingToGenerate) {
+                getFunctionAnnotations(
+                    declaration,
+                    timer.createTask("Extract annotations"),
+                    basePath,
+                )
+            } else {
+                listOf(FunctionAnnotation.HttpMethodAnnotation(basePath, HttpMethod.Absent))
+            }
+
             timer.addStep("Processed function annotations, adding imports")
             addImportsForFunctionAnnotations(functionAnnotations, onAddImport)
-            timer.addStep("Extracting options of @KtorGenFunction")
 
-            val parameters = declaration.parameters.mapNotNull { param ->
-                val (parameterData, symbols) = DeclarationParameterMapper.DEFAULT.mapToModel(param) {
-                    timer.createTask(it)
+            val parameters = if (options.goingToGenerate) {
+                declaration.parameters.mapNotNull { param ->
+                    val (parameterData, symbols) = DeclarationParameterMapper.DEFAULT.mapToModel(
+                        param,
+                        timer::createTask,
+                    )
+                    parameterData?.let {
+                        timer.addStep("Processed param: ${it.nameString}")
+                        return@mapNotNull parameterData
+                    }
+                    deferredSymbols += symbols
+                    return@mapNotNull null
                 }
-                parameterData?.let {
-                    timer.addStep("Processed param: ${it.nameString}")
-                    return@mapNotNull parameterData
-                }
-                deferredSymbols += symbols
-                return@mapNotNull null
+            } else {
+                emptyList()
             }
+
             timer.addStep("Adding imports of parameters")
             addImportsForParametersAnnotations(parameters.flatMap { p -> p.ktorgenAnnotations }, onAddImport)
 
@@ -125,6 +118,34 @@ class FunctionMapper : DeclarationFunctionMapper {
                 ksFunctionDeclaration = declaration,
                 options = options,
             ) to emptyList()
+        }
+    }
+
+    private fun updateFunctionOptionsWith(
+        declaration: KSFunctionDeclaration,
+        options: FunctionGenerationOptions,
+        timer: DiagnosticSender,
+        deferredSymbols: MutableList<KSAnnotated>,
+    ): FunctionGenerationOptions {
+        timer.addStep("Extracting the rest of annotations propagated for function")
+
+        val (annotations, optIns, symbols) = extractAnnotationsFiltered(declaration)
+
+        timer.addStep(
+            "Found ${symbols.size} unresolved symbols of function annotations, adding to deferred symbols list",
+        )
+        deferredSymbols += symbols
+
+        val mergedOptIn = mergeOptIns(optIns, options.optIns)
+
+        val mergedAnnotations = options.mergeAnnotations(annotations, optIns)
+
+        return options.copy(
+            annotations = mergedAnnotations,
+            optInAnnotation = mergedOptIn,
+            optIns = if (mergedOptIn != null) emptySet() else options.optIns,
+        ).also {
+            timer.addStep("Updated options with annotations and optIns propagated: $it")
         }
     }
 
