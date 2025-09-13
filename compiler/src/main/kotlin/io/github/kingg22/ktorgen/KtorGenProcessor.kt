@@ -98,13 +98,14 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             if (validClassData.isNotEmpty()) timer.addStep("Generated ${validClassData.size} classes")
         } catch (e: Exception) {
             logger.fatalError("${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e")
+            logger.exception(e)
         } catch (e: Throwable) {
             if (e.message == null) {
-                logger.exception(e)
                 logger.error("${KtorGenLogger.KTOR_GEN} Unknown exception caught as Throwable. \n $e")
             } else {
                 logger.error(e.message!!, null)
             }
+            logger.exception(e)
         }
 
         if (deferredSymbols.isNotEmpty()) {
