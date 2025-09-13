@@ -61,7 +61,8 @@ class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : 
     override fun addStep(message: String, symbol: KSNode?) = root.addStep(message, symbol)
     override fun addWarning(message: String, symbol: KSNode?) = root.addWarning(message, symbol)
     override fun addError(message: String, symbol: KSNode?) = root.addError(message, symbol)
-    override fun die(message: String, symbol: KSNode?): Nothing = root.die(message, symbol)
+    override fun die(message: String, symbol: KSNode?, exception: Exception?): Nothing =
+        root.die(message, symbol, exception)
 
     private fun StringBuilder.printStep(step: Step, indent: String) {
         val icon = iconFor(step)
@@ -165,7 +166,7 @@ class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : 
             messages.add(DiagnosticMessage(MessageType.ERROR, message.trim(), symbol))
         }
 
-        override fun die(message: String, symbol: KSNode?): Nothing {
+        override fun die(message: String, symbol: KSNode?, exception: Exception?): Nothing {
             messages.add(DiagnosticMessage(MessageType.ERROR, message.trim(), symbol))
             var suppressException: Throwable? = null
 
@@ -178,7 +179,7 @@ class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : 
             } catch (e: Throwable) {
                 suppressException = e
             }
-            val exception = Throwable("Fatal error occurred. \n${buildErrorsAndWarningsMessage()}")
+            val exception = Throwable("Fatal error occurred. \n${buildErrorsAndWarningsMessage()}", exception)
             suppressException?.let { exception.addSuppressed(suppressException) }
             throw exception
         }

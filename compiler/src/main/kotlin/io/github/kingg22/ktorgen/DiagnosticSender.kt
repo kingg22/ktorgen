@@ -30,7 +30,7 @@ interface DiagnosticSender {
     fun addError(message: String, symbol: KSNode? = null)
 
     /** Fatal error, can be related to a symbol. This is a controlled exception. */
-    fun die(message: String, symbol: KSNode? = null): Nothing
+    fun die(message: String, symbol: KSNode? = null, exception: Exception?): Nothing
 }
 
 /** Run all the work in try-catch-finally, this handle start finish and die when throw exceptions */
@@ -40,18 +40,18 @@ inline fun <R> DiagnosticSender.work(block: (DiagnosticSender) -> R): R = try {
     finish()
     result
 } catch (e: Exception) {
-    die(e.message ?: "", null)
+    die(e.message ?: "", null, e)
 }
 
 /** If the condition is false, die */
 @Suppress("NOTHING_TO_INLINE")
 inline fun DiagnosticSender.require(condition: Boolean, message: String, symbol: KSNode? = null) {
-    if (!condition) die(message, symbol)
+    if (!condition) die(message, symbol, null)
 }
 
 /** If the value is null, die */
 @Suppress("NOTHING_TO_INLINE")
 inline fun <T> DiagnosticSender.requireNotNull(value: T?, message: String, symbol: KSNode? = null): T {
-    if (value == null) die(message, symbol)
+    if (value == null) die(message, symbol, null)
     return value
 }
