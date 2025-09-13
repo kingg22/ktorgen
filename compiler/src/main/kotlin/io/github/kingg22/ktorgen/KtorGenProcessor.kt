@@ -62,7 +62,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             if (fullClassList.isEmpty()) {
                 timer.addStep("Skipping round $roundCount, no valid class data extracted")
-                return deferredSymbols.flatMap { it.second }
+                return finishProcessWithDeferredSymbols()
             }
 
             val validationPhase = timer.createPhase("Validation for round $roundCount")
@@ -78,7 +78,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             if (validClassData.isEmpty()) {
                 timer.addStep("Skipping round $roundCount, no valid class data found")
-                return deferredSymbols.flatMap { it.second }
+                return finishProcessWithDeferredSymbols()
             }
 
             timer.addStep(
@@ -108,17 +108,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             logger.exception(e)
         }
 
-        if (deferredSymbols.isNotEmpty()) {
-            timer.addStep(
-                "Unresolved ${deferredSymbols.size} symbols found on round $roundCount of interfaces: [" +
-                    deferredSymbols.joinToString { it.first.simpleName.asString() } + "]. Symbols: " +
-                    deferredSymbols.joinToString(prefix = "[", postfix = "]") {
-                        it.second.joinToString(prefix = "[", postfix = "]") { s -> s.toString() }
-                    },
-            )
-        }
-
-        return deferredSymbols.flatMap { it.second }
+        return finishProcessWithDeferredSymbols()
     }
 
     override fun finish() {
@@ -134,8 +124,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             if (deferredSymbols.isNotEmpty()) {
                 logger.fatalError(
-                    "${KtorGenLogger.KTOR_GEN} Unresolved ${deferredSymbols.size} symbols found after all " +
-                        "rounds of interfaces: " + deferredSymbols.joinToString { it.first.simpleName.asString() },
+                    "${KtorGenLogger.KTOR_GEN} " + deferredSymbolsMessage("finish round"),
                     deferredSymbols.first().first,
                 )
             }
@@ -150,6 +139,21 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             super.finish()
         }
     }
+
+    /** Print a step message if deferred symbols is not empty in the current round, and return symbols */
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun finishProcessWithDeferredSymbols(): List<KSAnnotated> {
+        if (deferredSymbols.isNotEmpty()) timer.addStep(deferredSymbolsMessage("round $roundCount"))
+        return deferredSymbols.flatMap { it.second }
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun deferredSymbolsMessage(round: String) =
+        "Found ${deferredSymbols.size} unresolved symbols on $round: " +
+            deferredSymbols.joinToString(prefix = "[", postfix = "]") {
+                it.first.simpleName.asString() + " => " +
+                    it.second.joinToString(prefix = "[", postfix = "]") { s -> s.toString() }
+            }
 
     private fun getAnnotatedInterfaceTypes(resolver: Resolver) =
         resolver.getSymbolsWithAnnotation(KtorGen::class.qualifiedName!!)
