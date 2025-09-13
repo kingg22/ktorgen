@@ -62,4 +62,25 @@ class IntegrationTest {
             compilationResultSubject.hasErrorCount(0)
         }
     }
+
+    @Test
+    fun privateInterfaceCantGeneratedThrowsError() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+                package com.example.api
+
+                import io.github.kingg22.ktorgen.core.KtorGen
+
+                @KtorGen
+                private interface TestService
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) {
+            it.hasNoWarnings()
+            it.hasErrorCount(1)
+            it.hasErrorContaining(KtorGenLogger.PRIVATE_INTERFACE_CANT_GENERATE.trim())
+        }
+    }
 }
