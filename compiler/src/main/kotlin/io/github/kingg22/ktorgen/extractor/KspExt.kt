@@ -4,6 +4,8 @@
 
 package io.github.kingg22.ktorgen.extractor
 
+import com.google.devtools.ksp.KSTypeNotPresentException
+import com.google.devtools.ksp.KSTypesNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSAnnotated
@@ -38,6 +40,10 @@ inline fun <reified A : Annotation, R : Any> KSAnnotated.getAnnotation(
         this.getAnnotationsByType(A::class).singleOrNull()?.let(mapFromAnnotation)
     } catch (_: NoSuchElementException) {
         this.annotations.singleOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
+    } catch (_: KSTypeNotPresentException) {
+        this.annotations.singleOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
+    } catch (_: KSTypesNotPresentException) {
+        this.annotations.singleOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
     }
 }
 
@@ -48,6 +54,10 @@ inline fun <reified A : Annotation, R : Any> KSAnnotated.getAllAnnotation(
 ): Sequence<R> = try {
     this.getAnnotationsByType(A::class).map(mapFromAnnotation)
 } catch (_: NoSuchElementException) {
+    this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
+} catch (_: KSTypeNotPresentException) {
+    this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
+} catch (_: KSTypesNotPresentException) {
     this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
 }
 
