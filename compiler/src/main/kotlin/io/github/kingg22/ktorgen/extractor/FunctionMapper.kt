@@ -24,6 +24,7 @@ import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
+import io.github.kingg22.ktorgen.require
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
 
@@ -233,13 +234,14 @@ class FunctionMapper : DeclarationFunctionMapper {
                     add(FunctionAnnotation.HttpMethodAnnotation(basePath, HttpMethod.Absent))
                     timer.addStep("Http method not found, adding absent value, need validation!", function)
                 } else {
-                    require(method.size == 1) {
+                    timer.require(
+                        method.size == 1,
                         "${KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED} Found: ${
                             method.joinToString {
                                 it.httpMethod.value
                             }
-                        } at ${function.simpleName.asString()}"
-                    }
+                        } at ${function.simpleName.asString()}",
+                    )
                     val http = method.first()
                     add(http)
                     timer.addStep("Processed http annotation $http")
