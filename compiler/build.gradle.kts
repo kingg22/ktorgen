@@ -28,6 +28,7 @@ kotlin {
 
 dependencies {
     implementation(projects.annotations)
+    implementation(kotlin("reflect"))
     implementation(libs.ksp.api)
     implementation(libs.kotlin.poet)
     implementation(libs.kotlin.poet.ksp)
