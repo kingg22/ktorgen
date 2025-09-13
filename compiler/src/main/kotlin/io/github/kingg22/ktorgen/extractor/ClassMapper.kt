@@ -46,12 +46,13 @@ class ClassMapper : DeclarationMapper {
                 .filterIsInstance<KSClassDeclaration>()
                 .any { it.isCompanionObject }
 
-            var options = extractKtorGen(declaration)
+            var options = extractKtorGen(declaration, interfaceName)
                 ?: run {
                     if (companionObject) {
                         extractKtorGen(
                             declaration.declarations.filterIsInstance<KSClassDeclaration>()
                                 .first { it.isCompanionObject },
+                            interfaceName,
                         )?.let { return@run it }
                     }
                     ClassGenerationOptions.default(
@@ -75,7 +76,7 @@ class ClassMapper : DeclarationMapper {
 
             val packageName = declaration.packageName.asString()
 
-            val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, timer)
+            val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, timer, interfaceName)
             timer.addStep("Retrieved all supertypes")
 
             timer.addStep("Have companion object: $companionObject")
@@ -189,13 +190,14 @@ class ClassMapper : DeclarationMapper {
         supertypes: Sequence<KSTypeReference>,
         deferredSymbols: MutableList<KSAnnotated>,
         timer: DiagnosticSender,
+        interfaceName: String,
     ) = supertypes.filterNot {
         val type = it.resolve()
         if (type.isError) {
             // Verificar si la superinterfaz tiene @KtorGen con generate=false
             val superDeclaration = type.declaration as? KSClassDeclaration
             if (superDeclaration != null) {
-                val superOptions = extractKtorGen(superDeclaration)
+                val superOptions = extractKtorGen(superDeclaration, interfaceName)
                 if (superOptions?.generate == false) {
                     true // Ignorar completamente
                 } else {
@@ -231,17 +233,17 @@ class ClassMapper : DeclarationMapper {
     }
 
     @OptIn(KtorGenExperimental::class)
-    private fun extractKtorGen(interfaceDeclaration: KSClassDeclaration) =
-        interfaceDeclaration.getAnnotation<KtorGen, ClassGenerationOptions>(manualExtraction = {
+    private fun extractKtorGen(kSClassDeclaration: KSClassDeclaration, interfaceName: String) =
+        kSClassDeclaration.getAnnotation<KtorGen, ClassGenerationOptions>(manualExtraction = {
             val visibilityModifier = it.getArgumentValueByName<String>("visibilityModifier")?.replace(
                 KTORGEN_DEFAULT_VALUE,
-                interfaceDeclaration.getVisibility().name,
-            )?.uppercase() ?: interfaceDeclaration.getVisibility().name
+                kSClassDeclaration.getVisibility().name,
+            )?.uppercase() ?: kSClassDeclaration.getVisibility().name
 
             ClassGenerationOptions(
                 generatedName =
                 it.getArgumentValueByName<String>("name")?.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE }
-                    ?: "_${interfaceDeclaration.simpleName.getShortName()}Impl",
+                    ?: "_${interfaceName}Impl",
 
                 goingToGenerate = it.getArgumentValueByName("generate") ?: true,
                 basePath = it.getArgumentValueByName("basePath") ?: "",
@@ -282,19 +284,18 @@ class ClassMapper : DeclarationMapper {
 
                 customFileHeader = it.getArgumentValueByName<String>("customFileHeader")?.replace(
                     KTORGEN_DEFAULT_VALUE,
-                    interfaceDeclaration.getVisibility().name,
+                    kSClassDeclaration.getVisibility().name,
                 ) ?: KTORG_GENERATED_FILE_COMMENT,
                 customClassHeader = it.getArgumentValueByName("customClassHeader") ?: "",
             )
         }) {
             val visibilityModifier = it.visibilityModifier.replace(
                 KTORGEN_DEFAULT_VALUE,
-                interfaceDeclaration.getVisibility().name,
+                kSClassDeclaration.getVisibility().name,
             ).uppercase()
 
             ClassGenerationOptions(
-                generatedName = it.name.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE }
-                    ?: "_${interfaceDeclaration.simpleName.getShortName()}Impl",
+                generatedName = it.name.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE } ?: "_${interfaceName}Impl",
                 goingToGenerate = it.generate,
                 basePath = it.basePath,
                 generateTopLevelFunction = it.generateTopLevelFunction,
