@@ -42,15 +42,6 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
         timer.addStep("Generated primary constructor and properties, going to generate ${functions.size} functions")
 
-        // optimize generation if not going to generate util code
-        // no have functions to overrides
-        // one property is HttpClient, no have properties to override
-        val goingToGenerate = functions.isNotEmpty() || properties.size > 1
-
-        if (!goingToGenerate) {
-            return@work KtorGenGenerator.NO_OP.generate(classData, timer.createTask("Dummy code"))
-        }
-
         // add super interfaces, constructor and properties
         classBuilder
             .addSuperInterfaces(classData, constructor)
