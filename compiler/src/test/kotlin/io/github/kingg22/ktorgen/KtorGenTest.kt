@@ -623,7 +623,7 @@ class KtorGenTest {
                 // empty target means all targets, annotation option respect it
                 annotation class MyAnnotation
 
-                @KtorGen(functionAnnotations = [TestAnnotation::class, MyAnnotation::class])
+                @KtorGen(functionAnnotations = [TestAnnotation::class, MyAnnotation::class, kotlin.jvm.JvmSynthetic::class])
                 interface TestService
             """.trimIndent(),
         )
@@ -631,7 +631,7 @@ class KtorGenTest {
         val expectedText = listOf(
             "\n@Generated\npublic class _TestServiceImpl",
             ": TestService",
-            "\n@Generated\n@TestAnnotation\n@MyAnnotation\npublic fun TestService(",
+            "\n@Generated\n@TestAnnotation\n@MyAnnotation\n@JvmSynthetic\npublic fun TestService(",
         )
 
         runKtorGenProcessor(source) { compilationResultSubject ->
