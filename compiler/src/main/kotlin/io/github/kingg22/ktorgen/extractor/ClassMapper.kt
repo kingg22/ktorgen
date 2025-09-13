@@ -28,10 +28,7 @@ import io.github.kingg22.ktorgen.model.KTOR_REQUEST_TAKE_FROM
 import io.github.kingg22.ktorgen.model.KTOR_URL_TAKE_FROM
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
-import kotlin.collections.filterNot
-import kotlin.collections.plus
-import kotlin.collections.plusAssign
-import kotlin.collections.toSet
+import kotlin.reflect.KClass
 
 class ClassMapper : DeclarationMapper {
     override fun mapToModel(
@@ -219,9 +216,8 @@ class ClassMapper : DeclarationMapper {
     private inline fun extractFunctionAnnotationsFiltered(declaration: KSClassDeclaration) =
         extractAnnotationsFiltered(declaration) { it.isAllowedForFunction() }
 
-    private fun KSAnnotation.isAllowedForFunction(): Boolean {
-        val type = annotationType.resolve().declaration as? KSClassDeclaration ?: return false
-        val targetAnnotation = type.annotations.firstOrNull {
+    private fun KSAnnotated.isAllowedForFunction(): Boolean {
+        val targetAnnotation = annotations.firstOrNull {
             it.shortName.getShortName() == Target::class.simpleName!!
         } ?: return true // si no declara @Target, asumimos que es usable en cualquier sitio
 
@@ -232,18 +228,36 @@ class ClassMapper : DeclarationMapper {
         return allowedTargets.any { it.equals(AnnotationTarget.FUNCTION.name, true) }
     }
 
+    private fun KSAnnotation.isAllowedForFunction() =
+        (annotationType.resolve().declaration as? KSClassDeclaration)?.isAllowedForFunction() ?: false
+
+    private fun KSType.isAllowedForFunction() =
+        (this.declaration as? KSClassDeclaration)?.isAllowedForFunction() ?: false
+
+    private fun KClass<out Annotation>.isAllowedForFunction(): Boolean {
+        // Obtenemos el @Target si existe
+        val target = this.annotations.filterIsInstance<Target>().firstOrNull()
+            ?: return true // si no declara @Target, asumimos que es usable en cualquier sitio
+
+        // Revisamos si incluye FUNCTION en los targets
+        return AnnotationTarget.FUNCTION in target.allowedTargets
+    }
+
     @OptIn(KtorGenExperimental::class)
-    private fun extractKtorGen(kSClassDeclaration: KSClassDeclaration, interfaceName: String) =
-        kSClassDeclaration.getAnnotation<KtorGen, ClassGenerationOptions>(manualExtraction = {
-            val visibilityModifier = it.getArgumentValueByName<String>("visibilityModifier")?.replace(
-                KTORGEN_DEFAULT_VALUE,
-                kSClassDeclaration.getVisibility().name,
-            )?.uppercase() ?: kSClassDeclaration.getVisibility().name
+    private fun extractKtorGen(kSClassDeclaration: KSClassDeclaration, interfaceName: String): ClassGenerationOptions? {
+        val defaultVisibility = kSClassDeclaration.getVisibility().name
+        val defaultGeneratedName = "_${interfaceName}Impl"
+
+        return kSClassDeclaration.getAnnotation<KtorGen, ClassGenerationOptions>(manualExtraction = {
+            val visibilityModifier = it.getArgumentValueByName<String>("visibilityModifier")
+                ?.replace(KTORGEN_DEFAULT_VALUE, defaultVisibility)?.uppercase() ?: defaultVisibility
+
+            val annotationList = it.getArgumentValueByName<List<KSType>>("annotations")
 
             ClassGenerationOptions(
                 generatedName =
                 it.getArgumentValueByName<String>("name")?.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE }
-                    ?: "_${interfaceName}Impl",
+                    ?: defaultGeneratedName,
 
                 goingToGenerate = it.getArgumentValueByName("generate") ?: true,
                 basePath = it.getArgumentValueByName("basePath") ?: "",
@@ -252,7 +266,7 @@ class ClassMapper : DeclarationMapper {
                 generateHttpClientExtension = it.getArgumentValueByName("generateHttpClientExtension") ?: false,
 
                 propagateAnnotations = it.getArgumentValueByName("propagateAnnotations") ?: true,
-                annotations = it.getArgumentValueByName<List<KSType>>("annotations")
+                annotations = annotationList
                     ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
                     ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
                     ?.toSet()
@@ -262,11 +276,18 @@ class ClassMapper : DeclarationMapper {
                     ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
                     ?.toSet()
                     ?: emptySet(),
-                extensionFunctionAnnotation = it.getArgumentValueByName<List<KSType>>("functionAnnotations")
-                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
-                    ?.toSet()
-                    ?: emptySet(),
+                extensionFunctionAnnotation = (
+                    annotationList?.filter { a -> a.isAllowedForFunction() }
+                        ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
+                        ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
+                        ?.toSet() ?: emptySet()
+                    ) + (
+                    it.getArgumentValueByName<List<KSType>>("functionAnnotations")
+                        ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
+                        ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
+                        ?.toSet()
+                        ?: emptySet()
+                    ),
 
                 classVisibilityModifier = it.getArgumentValueByName<String>("classVisibilityModifier")?.replace(
                     KTORGEN_DEFAULT_VALUE,
@@ -289,13 +310,13 @@ class ClassMapper : DeclarationMapper {
                 customClassHeader = it.getArgumentValueByName("customClassHeader") ?: "",
             )
         }) {
-            val visibilityModifier = it.visibilityModifier.replace(
-                KTORGEN_DEFAULT_VALUE,
-                kSClassDeclaration.getVisibility().name,
-            ).uppercase()
+            val visibilityModifier = it.visibilityModifier
+                .replace(KTORGEN_DEFAULT_VALUE, defaultVisibility)
+                .uppercase()
+            val annotationList = it.annotations
 
             ClassGenerationOptions(
-                generatedName = it.name.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE } ?: "_${interfaceName}Impl",
+                generatedName = it.name.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE } ?: defaultGeneratedName,
                 goingToGenerate = it.generate,
                 basePath = it.basePath,
                 generateTopLevelFunction = it.generateTopLevelFunction,
@@ -303,11 +324,14 @@ class ClassMapper : DeclarationMapper {
                 generateHttpClientExtension = it.generateHttpClientExtension,
 
                 propagateAnnotations = it.propagateAnnotations,
-                annotations = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
+                annotations = annotationList.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
                 optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
-                extensionFunctionAnnotation = it.functionAnnotations.map { a ->
-                    AnnotationSpec.builder(a).build()
-                }.toSet(),
+                extensionFunctionAnnotation = annotationList
+                    .filter { a -> a.isAllowedForFunction() }
+                    .map { a -> AnnotationSpec.builder(a).build() }
+                    .toSet() + it.functionAnnotations
+                    .map { a -> AnnotationSpec.builder(a).build() }
+                    .toSet(),
 
                 classVisibilityModifier = it.classVisibilityModifier.replace(
                     KTORGEN_DEFAULT_VALUE,
@@ -326,4 +350,5 @@ class ClassMapper : DeclarationMapper {
                 customClassHeader = it.customClassHeader,
             )
         }
+    }
 }
