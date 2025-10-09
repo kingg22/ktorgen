@@ -252,8 +252,8 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         )
 
         // 3. También obtenemos todas las clases anotadas con @KtorGen (aunque no tengan métodos)
-        val annotatedClasses = getAnnotatedInterfaceTypes(resolver)
-        timer.addStep("Retrieve with KtorGen. Count: ${annotatedClasses.count()}")
+        val annotatedClasses = getAnnotatedInterfaceTypes(resolver).toList()
+        timer.addStep("Retrieve with KtorGen. Count: ${annotatedClasses.size}")
 
         // 4. Filtramos aquellas clases que no están en `groupedByClass` → no tienen funciones válidas
         val classWithoutMethods = annotatedClasses
@@ -269,10 +269,10 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 }
                 onDeferredSymbols(classDeclaration, symbols)
                 classData
-            }
+            }.toList()
 
         timer.addStep(
-            "Processed all interfaces and companion with @KtorGen. Count: ${classDataWithMethods.size + classWithoutMethods.count()}",
+            "Processed all interfaces and companion with @KtorGen. Count: ${classDataWithMethods.size + classWithoutMethods.size}",
         )
         mapperPhase.finish()
 
