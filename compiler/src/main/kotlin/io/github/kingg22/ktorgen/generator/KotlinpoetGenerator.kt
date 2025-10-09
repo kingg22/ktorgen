@@ -3,6 +3,7 @@ package io.github.kingg22.ktorgen.generator
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.KModifier.*
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
@@ -23,7 +24,8 @@ class KotlinpoetGenerator : KtorGenGenerator {
     override fun generate(classData: ClassData, timer: DiagnosticSender): FileSpec = timer.work {
         // class
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
-            .addModifiers(KModifier.valueOf(classData.classVisibilityModifier.uppercase()))
+            .addModifiers(valueOf(classData.classVisibilityModifier.uppercase()))
+            .addModifiers(classData.modifierSet.filter { it !in VISIBILITY_KMODIFIER })
             .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
             .addKdoc(classData.customClassHeader)
             .addAnnotations(classData.buildAnnotations())
@@ -34,7 +36,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         val (constructor, properties, httpClient) =
             generatePrimaryConstructorAndProperties(
                 classData,
-                KModifier.valueOf(classData.constructorVisibilityModifier.uppercase()),
+                valueOf(classData.constructorVisibilityModifier.uppercase()),
             )
 
         // override functions
@@ -82,7 +84,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         val functionAnnotation =
             setOfNotNull(GeneratedAnnotation, optInAnnotation) + classData.extensionFunctionAnnotation
 
-        val functionVisibilityModifier = KModifier.valueOf(classData.functionVisibilityModifier.uppercase())
+        val functionVisibilityModifier = valueOf(classData.functionVisibilityModifier.uppercase())
 
         if (classData.generateTopLevelFunction) {
             val function = generateTopLevelFactoryFunction(
@@ -163,13 +165,13 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
             primaryConstructorBuilder.addParameter(httpClientName, HttpClientClassName)
             propertiesToAdd += PropertySpec.builder(httpClientName, HttpClientClassName)
-                .addModifiers(KModifier.OVERRIDE)
+                .addModifiers(OVERRIDE)
                 .initializer("%L", httpClientName)
                 .build()
         } ?: run {
             primaryConstructorBuilder.addParameter(httpClientName, HttpClientClassName)
             propertiesToAdd += PropertySpec.builder(httpClientName, HttpClientClassName)
-                .addModifiers(KModifier.PRIVATE)
+                .addModifiers(PRIVATE)
                 .initializer("%L", httpClientName)
                 .build()
         }
@@ -186,7 +188,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
                 // Creamos la propiedad override enlazada al parámetro
                 propertiesToAdd += PropertySpec.builder(paramName, typeName)
-                    .addModifiers(KModifier.OVERRIDE)
+                    .addModifiers(OVERRIDE)
                     .initializer("%L", paramName)
                     .mutable(property.isMutable)
                     .build()
@@ -237,14 +239,14 @@ class KotlinpoetGenerator : KtorGenGenerator {
             .addAnnotations(func.buildAnnotations())
             .addKdoc(func.customHeader.ifEmpty { KTORG_GENERATED_COMMENT })
 
-        if (func.isSuspend) funBuilder.addModifiers(KModifier.SUSPEND)
+        if (func.isSuspend) funBuilder.addModifiers(SUSPEND)
 
         func.parameterDataList.forEach { param ->
             funBuilder.addParameter(
                 ParameterSpec.builder(
                     name = param.nameString,
                     type = param.typeData.typeName,
-                    modifiers = buildList { if (param.isVararg) add(KModifier.VARARG) },
+                    modifiers = buildList { if (param.isVararg) add(VARARG) },
                 )
                     .addAnnotations(param.nonKtorgenAnnotations)
                     .apply {
@@ -1019,6 +1021,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
     }
 
     companion object {
+        private val VISIBILITY_KMODIFIER = setOf(PUBLIC, INTERNAL, PROTECTED, PRIVATE)
         private const val THIS_HEADERS = "this.headers"
         private const val LITERAL_FOREACH = "%L.forEach"
         private const val APPEND_STRING_LITERAL = "this.append(%S, %L)"

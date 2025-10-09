@@ -9,6 +9,7 @@ import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ksp.toKModifier
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
@@ -94,10 +95,10 @@ class FunctionMapper : DeclarationFunctionMapper {
             addImportsForParametersAnnotations(parameters.flatMap { p -> p.ktorgenAnnotations }, onAddImport)
 
             val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)
-            val modifiers = buildSet {
-                add(KModifier.OVERRIDE)
-                if (isSuspend) add(KModifier.SUSPEND)
-            }
+            val modifiers = declaration.modifiers.mapNotNull {
+                val kmodifier = it.toKModifier() ?: return@mapNotNull null
+                if (kmodifier == KModifier.EXPECT) KModifier.ACTUAL else kmodifier
+            } + KModifier.OVERRIDE
 
             timer.addStep("Finishing mapping")
 
@@ -115,7 +116,7 @@ class FunctionMapper : DeclarationFunctionMapper {
                 ktorGenAnnotations = functionAnnotations,
                 httpMethodAnnotation =
                 functionAnnotations.filterIsInstance<FunctionAnnotation.HttpMethodAnnotation>().first(),
-                modifierSet = modifiers,
+                modifierSet = modifiers.toSet(),
                 ksFunctionDeclaration = declaration,
                 options = options,
             ) to emptyList()

@@ -11,6 +11,7 @@ import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticSender
@@ -135,7 +136,14 @@ class ClassMapper : DeclarationMapper {
                 imports = imports,
                 superClasses = filteredSupertypes.toList(),
                 properties = properties.toList(),
-                modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
+                modifierSet = declaration.modifiers.mapNotNull {
+                    val kmodifier = it.toKModifier()
+                    if (kmodifier == KModifier.EXPECT) {
+                        KModifier.ACTUAL
+                    } else {
+                        kmodifier
+                    }
+                }.toSet(),
                 ksFile = timer.requireNotNull(
                     declaration.containingFile,
                     KtorGenLogger.INTERFACE_NOT_HAVE_FILE + interfaceName,
