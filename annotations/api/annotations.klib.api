@@ -66,6 +66,13 @@ open annotation class io.github.kingg22.ktorgen.core/KtorGenFunction : kotlin/An
         final fun <get-propagateAnnotations>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGenFunction.propagateAnnotations.<get-propagateAnnotations>|<get-propagateAnnotations>(){}[0]
 }
 
+open annotation class io.github.kingg22.ktorgen.core/KtorGenFunctionKmp : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenFunctionKmp|null[0]
+    constructor <init>(kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGenFunctionKmp.<init>|<init>(kotlin.String){}[0]
+
+    final val customHeader // io.github.kingg22.ktorgen.core/KtorGenFunctionKmp.customHeader|{}customHeader[0]
+        final fun <get-customHeader>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGenFunctionKmp.customHeader.<get-customHeader>|<get-customHeader>(){}[0]
+}
+
 open annotation class io.github.kingg22.ktorgen.http/Body : kotlin/Annotation { // io.github.kingg22.ktorgen.http/Body|null[0]
     constructor <init>() // io.github.kingg22.ktorgen.http/Body.<init>|<init>(){}[0]
 }

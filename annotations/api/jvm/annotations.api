@@ -31,6 +31,10 @@ public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGe
 	public abstract fun propagateAnnotations ()Z
 }
 
+public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenFunctionKmp : java/lang/annotation/Annotation {
+	public abstract fun customHeader ()Ljava/lang/String;
+}
+
 public abstract interface annotation class io/github/kingg22/ktorgen/http/Body : java/lang/annotation/Annotation {
 }
 
