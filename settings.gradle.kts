@@ -30,6 +30,9 @@ plugins {
 
 // If there are changes in only one of the projects, Gradle will rebuild only the one that has changed.
 // Learn more about structuring projects with Gradle - https://docs.gradle.org/8.7/userguide/multi_project_builds.html
-include(":compiler")
-include(":annotations")
-include(":sample")
+include(
+    ":compiler",
+    ":annotations",
+    ":sample",
+    ":example",
+)
