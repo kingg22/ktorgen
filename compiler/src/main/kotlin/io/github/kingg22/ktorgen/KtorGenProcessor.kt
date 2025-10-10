@@ -11,8 +11,22 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toKModifier
+import com.squareup.kotlinpoet.ksp.toTypeName
+import com.squareup.kotlinpoet.ksp.writeTo
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenFunction
+import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.extractor.DeclarationMapper
 import io.github.kingg22.ktorgen.generator.KtorGenGenerator
 import io.github.kingg22.ktorgen.http.DELETE
@@ -24,6 +38,7 @@ import io.github.kingg22.ktorgen.http.PATCH
 import io.github.kingg22.ktorgen.http.POST
 import io.github.kingg22.ktorgen.http.PUT
 import io.github.kingg22.ktorgen.model.ClassData
+import io.github.kingg22.ktorgen.model.HttpClientClassName
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_PART_DATA
 import io.github.kingg22.ktorgen.validator.Validator
 
@@ -96,6 +111,14 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             }
 
             if (validClassData.isNotEmpty()) timer.addStep("Generated ${validClassData.size} classes")
+
+            // After classes are generated, handle KMP expect function generation
+            try {
+                generateKmpActualFunctions(validClassData.toSet(), resolver)
+            } catch (e: Exception) {
+                logger.error("${KtorGenLogger.KTOR_GEN} Error generating KMP actual functions.", null)
+                logger.exception(e)
+            }
         } catch (e: Exception) {
             logger.fatalError("${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e")
             logger.exception(e)
@@ -282,5 +305,122 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             .also { timer.addStep("After filter declarations, have ${it.size}") }
             .filter { it.goingToGenerate }
             .toSet()
+    }
+
+    // FIXME, move to processor pipeline and attach to corresponding class data
+    @OptIn(io.github.kingg22.ktorgen.core.KtorGenExperimental::class)
+    private fun generateKmpActualFunctions(classDataSet: Set<ClassData>, resolver: Resolver) {
+        val functions = resolver.getSymbolsWithAnnotation(KtorGenFunctionKmp::class.qualifiedName!!)
+            .filterIsInstance<KSFunctionDeclaration>()
+            .toList()
+
+        if (functions.isEmpty()) return
+
+        timer.addStep("Found ${functions.size} functions annotated with @KtorGenFunctionKmp")
+
+        val classDataByQName = classDataSet.associateBy { it.ksClassDeclaration.qualifiedName?.asString() }
+
+        functions.forEach { func ->
+            val name = func.simpleName.asString()
+            val pkg = func.packageName.asString()
+
+            // must be expect function
+            if (!func.modifiers.contains(Modifier.EXPECT)) {
+                logger.error(
+                    "A function annotated with @KtorGenFunctionKmp must be 'expect' in common source set",
+                    func,
+                )
+                return@forEach
+            }
+
+            val returnType = func.returnType?.resolve()
+            if (returnType == null || returnType.isError) {
+                // unresolved, wait for the next round
+                timer.addStep("Return type for $name is not resolved yet, will try next round")
+                return@forEach
+            }
+            val returnDecl = returnType.declaration as? KSClassDeclaration
+            val returnQName = returnDecl?.qualifiedName?.asString()
+            if (returnDecl == null || returnQName == null) {
+                logger.error("@KtorGenFunctionKmp function must return an interface annotated with @KtorGen", func)
+                return@forEach
+            }
+
+            val classData = classDataByQName[returnQName]
+            if (classData == null) {
+                logger.error(
+                    "A function annotated with @KtorGenFunctionKmp needs to return a generated interface (@KtorGen annotated). Not found for $returnQName",
+                    func,
+                )
+                return@forEach
+            }
+
+            // compute the expected constructor parameter count: always HttpClient + interface properties (excluding HttpClient) + super interfaces
+            val httpClientTypeName = HttpClientClassName
+            val constructorTypes = buildList {
+                add(httpClientTypeName)
+                // properties excluding HttpClient
+                classData.properties
+                    .map { it.type.toTypeName() }
+                    .filter { it != httpClientTypeName }
+                    .forEach { add(it) }
+                // one param per super interface
+                classData.superClasses.forEach { ref ->
+                    add(ref.resolve().toClassName())
+                }
+            }
+
+            val expectParamTypes = func.parameters.map { it.type.resolve().toTypeName() }
+
+            if (constructorTypes.size != expectParamTypes.size) {
+                logger.error(
+                    "Constructor mismatch for ${classData.generatedName}. Expect function '$name' has ${expectParamTypes.size} parameter(s) but generated constructor expects ${constructorTypes.size} parameter(s)",
+                    func,
+                )
+                return@forEach
+            }
+
+            // Generate actual function
+            val implClassName = ClassName(classData.packageNameString, classData.generatedName)
+            val returnClassName = ClassName(classData.packageNameString, classData.interfaceName)
+
+            val funBuilder = FunSpec.builder(name)
+                .returns(returnClassName)
+                .addModifiers(func.modifiers.mapNotNull { it.toKModifier() }.filter { it != KModifier.EXPECT }.toSet())
+                .addModifiers(KModifier.ACTUAL)
+                .addOriginatingKSFile(func.containingFile!!)
+                .addAnnotations(func.annotations.map { it.toAnnotationSpec(true) }.toList())
+
+            // copy parameters
+            func.parameters.forEach { p ->
+                val pName = p.name?.asString() ?: "p"
+                funBuilder.addParameter(
+                    ParameterSpec.builder(pName, p.type.resolve().toTypeName()).build(),
+                )
+            }
+
+            val argsJoin = func.parameters.joinToString { it.name?.asString() ?: "p" }
+            funBuilder.addStatement("return %T(%L)", implClassName, argsJoin)
+
+            // build file and write
+            val file = FileSpec.builder(pkg, "_${name}KmpActual")
+                .addFunction(funBuilder.build())
+                .addAnnotation(
+                    AnnotationSpec.builder(Suppress::class) // suppress annotations
+                        .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
+                        .addMember("%S", "REDUNDANT_VISIBILITY_MODIFIER")
+                        .addMember("%S", "unused")
+                        .addMember("%S", "UNUSED_IMPORT")
+                        .addMember("%S", "warnings")
+                        .addMember("%S", "RemoveSingleExpressionStringTemplate")
+                        .addMember("%S", "ktlint")
+                        .addMember("%S", "detekt:all")
+                        .build(),
+                )
+                .build()
+
+            file.writeTo(env.codeGenerator, aggregating = false)
+            timer.addStep("Generated actual function for $name in package $pkg")
+        }
     }
 }
