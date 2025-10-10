@@ -1,4 +1,5 @@
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -22,6 +23,7 @@ kotlin {
     compilerOptions {
         languageVersion.set(KotlinVersion.KOTLIN_2_2)
         apiVersion.set(KotlinVersion.KOTLIN_2_0)
+        jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
         jvmTarget.set(JvmTarget.JVM_11)
         extraWarnings.set(true)
         allWarningsAsErrors.set(true)
@@ -75,28 +77,28 @@ mavenPublishing {
     coordinates(group.toString(), "ktorgen-compiler", version.toString())
 
     pom {
-        name = "KtorGen – KSP Annotation Processor"
-        description = project.description
-        inceptionYear = "2025"
-        url = "https://github.com/kingg22/ktorgen"
+        name.set("KtorGen – KSP Annotation Processor")
+        description.set(project.description)
+        inceptionYear.set("2025")
+        url.set("https://github.com/kingg22/ktorgen")
         licenses {
             license {
-                name = "The Apache Software License, Version 2.0"
-                url = "https://www.apache.org/licenses/LICENSE-2.0"
-                distribution = "repo"
+                name.set("The Apache Software License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                distribution.set("repo")
             }
         }
         developers {
             developer {
-                id = "kingg22"
-                name = "Rey Acosta (Kingg22)"
-                url = "https://github.com/kingg22"
+                id.set("kingg22")
+                name.set("Rey Acosta (Kingg22)")
+                url.set("https://github.com/kingg22")
             }
         }
         scm {
-            url = "https://github.com/kingg22/ktorgen"
-            connection = "scm:git:git://github.com/kingg22/ktorgen.git"
-            developerConnection = "scm:git:ssh://git@github.com/kingg22/ktorgen.git"
+            url.set("https://github.com/kingg22/ktorgen")
+            connection.set("scm:git:git://github.com/kingg22/ktorgen.git")
+            developerConnection.set("scm:git:ssh://git@github.com/kingg22/ktorgen.git")
         }
     }
 }
