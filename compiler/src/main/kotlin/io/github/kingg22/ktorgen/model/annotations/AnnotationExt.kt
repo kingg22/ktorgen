@@ -1,10 +1,13 @@
 @file:JvmName("AnnotationExt")
 @file:JvmMultifileClass
+@file:OptIn(io.github.kingg22.ktorgen.core.KtorGenExperimental::class)
 
 package io.github.kingg22.ktorgen.model.annotations
 
 import io.github.kingg22.ktorgen.KtorGenLogger.Companion.COOKIE_ON_FUNCTION_WITHOUT_VALUE
-import io.github.kingg22.ktorgen.core.*
+import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenFunction
+import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 
@@ -90,6 +93,7 @@ val ktorGenAnnotationsClass = setOf(KtorGen::class)
 val ktorGenAnnotationsIndication = setOf(
     KtorGen::class,
     KtorGenFunction::class,
+    KtorGenFunctionKmp::class,
 )
 
 val ktorGenAnnotationsFunction = setOf(
