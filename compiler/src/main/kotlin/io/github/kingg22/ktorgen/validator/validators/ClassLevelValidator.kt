@@ -2,6 +2,7 @@ package io.github.kingg22.ktorgen.validator.validators
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.KtorGenLogger
@@ -92,6 +93,14 @@ class ClassLevelValidator : ValidatorStrategy {
             .forEach { addError(KtorGenLogger.ABSTRACT_FUNCTION_IGNORED, it) }
 
         validateFunctions(context)
+
+        val expectedAreNotExpect = context.classData.expectFunctions.filter { !it.modifiers.contains(Modifier.EXPECT) }
+        if (expectedAreNotExpect.isNotEmpty()) {
+            addError(
+                "A function annotated with @KtorGenFunctionKmp must be 'expect' in common source set",
+                expectedAreNotExpect.first(),
+            )
+        }
     }
 
     private fun ValidationResult.validateFunctions(context: ValidationContext) {
