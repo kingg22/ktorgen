@@ -2,6 +2,7 @@ package io.github.kingg22.ktorgen.model
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.KModifier
@@ -23,6 +24,7 @@ class ClassData(
     val properties: List<KSPropertyDeclaration>,
     val modifierSet: Set<KModifier>,
     val haveCompanionObject: Boolean,
+    val expectFunctions: List<KSFunctionDeclaration>,
     options: ClassGenerationOptions,
 ) : ClassGenerationOptions(options) {
     val httpClientProperty by lazy {
