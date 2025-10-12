@@ -15,7 +15,10 @@ import kotlinx.coroutines.flow.Flow
 expect fun ApiServiceValid(httpClient: HttpClient, otraCosa: Boolean, valorCambiante: Boolean): ApiServiceValid
 
 @KtorGen(
-    generateTopLevelFunction = false,
+    generateTopLevelFunction = true,
+    generateCompanionExtFunction = true,
+    generateHttpClientExtension = true,
+    classVisibilityModifier = "private",
 )
 interface ApiServiceValid {
     val httpClient: HttpClient
@@ -79,4 +82,6 @@ interface ApiServiceValid {
 
     @HTTP("TRACE", "media/download")
     fun dynamicQuery(builder: HttpRequestBuilder, @Tag tagValue: String): Flow<IssueData>
+
+    companion object
 }

@@ -125,4 +125,5 @@ ktlint {
 ksp {
     // pass argument to compiler
     arg("ktorgen_check_type", "2")
+    arg("ktorgen_print_stacktrace_on_exception", "true")
 }
