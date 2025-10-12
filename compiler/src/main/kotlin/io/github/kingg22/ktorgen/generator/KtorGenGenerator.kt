@@ -16,16 +16,19 @@ import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
 import io.github.kingg22.ktorgen.work
 
 fun interface KtorGenGenerator {
-    fun generate(classData: ClassData, timer: DiagnosticSender): FileSpec
+    fun generate(classData: ClassData, timer: DiagnosticSender): List<FileSpec>
 
     companion object {
         /** Generate the Impl class using [KotlinpoetGenerator] of ksp */
+        @JvmStatic
         fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator, timer: DiagnosticSender) {
-            DEFAULT.generate(classData, timer).writeTo(codeGenerator, false)
+            DEFAULT.generate(classData, timer).forEach { it.writeTo(codeGenerator, false) }
         }
 
+        @JvmStatic
         val DEFAULT: KtorGenGenerator by lazy { KotlinpoetGenerator() }
 
+        @JvmStatic
         val TODO_GENERATOR by lazy {
             KtorGenGenerator { classData, _ ->
                 val interfaceName = classData.interfaceName
@@ -72,32 +75,35 @@ fun interface KtorGenGenerator {
                     fileBuilder.addImport(it.substringBeforeLast("."), it.substringAfterLast("."))
                 }
 
-                fileBuilder.addType(classBuilder.build()).build()
+                listOf(fileBuilder.addType(classBuilder.build()).build())
             }
         }
 
+        @JvmStatic
         val NO_OP by lazy {
             KtorGenGenerator { data, logger ->
                 logger.work {
-                    FileSpec.builder(data.packageNameString, data.generatedName)
-                        .addFileComment(
-                            KTORG_GENERATED_FILE_COMMENT +
-                                "\nIt does not contain any code.\n" +
-                                "If you have this in your source code, means an interface is detected, is valid, but don't have anything to implement.",
-                        )
-                        .addProperty(
-                            PropertySpec.builder(
-                                "hello",
-                                String::class,
-                                KModifier.PRIVATE,
-                                KModifier.CONST,
+                    listOf(
+                        FileSpec.builder(data.packageNameString, data.generatedName)
+                            .addFileComment(
+                                KTORG_GENERATED_FILE_COMMENT +
+                                    "\nIt does not contain any code.\n" +
+                                    "If you have this in your source code, means an interface is detected, is valid, but don't have anything to implement.",
                             )
-                                .addKdoc("This dummy property avoid empty files\n")
-                                .addKdoc(KTORG_GENERATED_COMMENT)
-                                .initializer("%S", "world")
-                                .build(),
-                        )
-                        .build()
+                            .addProperty(
+                                PropertySpec.builder(
+                                    "hello",
+                                    String::class,
+                                    KModifier.PRIVATE,
+                                    KModifier.CONST,
+                                )
+                                    .addKdoc("This dummy property avoid empty files\n")
+                                    .addKdoc(KTORG_GENERATED_COMMENT)
+                                    .initializer("%S", "world")
+                                    .build(),
+                            )
+                            .build(),
+                    )
                 }
             }
         }

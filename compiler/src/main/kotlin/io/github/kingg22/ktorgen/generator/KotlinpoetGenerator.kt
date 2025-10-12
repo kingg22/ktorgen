@@ -1,11 +1,14 @@
 package io.github.kingg22.ktorgen.generator
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.KModifier.*
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
+import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
@@ -21,7 +24,7 @@ import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
 
 class KotlinpoetGenerator : KtorGenGenerator {
-    override fun generate(classData: ClassData, timer: DiagnosticSender): FileSpec = timer.work {
+    override fun generate(classData: ClassData, timer: DiagnosticSender): List<FileSpec> = timer.work {
         // class
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
             .addModifiers(valueOf(classData.classVisibilityModifier.uppercase()))
@@ -59,20 +62,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         // file
         timer.addStep("Creating file with all")
         val fileBuilder = FileSpec.builder(classData.packageNameString, classData.generatedName)
-            .addAnnotation(
-                AnnotationSpec.builder(Suppress::class) // suppress annotations
-                    .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
-                    .addMember("%S", "REDUNDANT_VISIBILITY_MODIFIER")
-                    .addMember("%S", "unused")
-                    .addMember("%S", "UNUSED_IMPORT")
-                    .addMember("%S", "warnings")
-                    .addMember("%S", "RemoveSingleExpressionStringTemplate")
-                    .addMember("%S", "ktlint")
-                    .addMember("%S", "detekt:all")
-                    .build(),
-            )
-            .addAnnotation(GeneratedAnnotation)
-            .indent("    ") // use 4 spaces https://pinterest.github.io/ktlint/latest/rules/standard/#indentation
+            .addDefaultConfig()
             .addFileComment(classData.customFileHeader) // add a header file
 
         // add imports
@@ -86,18 +76,28 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
         val functionVisibilityModifier = valueOf(classData.functionVisibilityModifier.uppercase())
 
+        // Compute constructor parameter signature for validation
+        val constructorSignature = computeConstructorSignature(classData)
+
+        // Track generated factory functions to avoid duplicates
+        val generatedFactories = mutableSetOf<FactoryFunctionKey>()
+
         if (classData.generateTopLevelFunction) {
             val function = generateTopLevelFactoryFunction(
                 classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
                 interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
                 constructorParams = constructor.build().parameters,
-            )
-            fileBuilder.addFunction(
-                function
-                    .addModifiers(functionVisibilityModifier)
-                    .addAnnotations(functionAnnotation)
-                    .addOriginatingKSFile(classData.ksFile)
-                    .build(),
+            ).addModifiers(functionVisibilityModifier)
+                .addAnnotations(functionAnnotation)
+                .addOriginatingKSFile(classData.ksFile)
+
+            generatedFactories.add(
+                FactoryFunctionKey(
+                    name = classData.interfaceName,
+                    packageName = classData.packageNameString,
+                    paramTypes = constructor.build().parameters.map { it.type },
+                    function,
+                ),
             )
             timer.addStep("Added top level function factory")
         }
@@ -116,15 +116,19 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
                 interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
                 constructorParams = constructor.build().parameters,
+            ).addModifiers(functionVisibilityModifier)
+                .addAnnotations(functionAnnotation)
+                .addOriginatingKSFile(classData.ksFile)
+
+            generatedFactories.add(
+                FactoryFunctionKey(
+                    name = classData.interfaceName,
+                    packageName = classData.packageNameString,
+                    paramTypes = constructor.build().parameters.map { it.type },
+                    function,
+                ),
             )
 
-            fileBuilder.addFunction(
-                function
-                    .addModifiers(functionVisibilityModifier)
-                    .addAnnotations(functionAnnotation)
-                    .addOriginatingKSFile(classData.ksFile)
-                    .build(),
-            )
             timer.addStep("Added interface companion extension function factory")
         }
 
@@ -134,20 +138,40 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
                 interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
                 constructorParams = constructor.build().parameters,
-            )
-            fileBuilder.addFunction(
-                function
-                    .addModifiers(functionVisibilityModifier)
-                    .addAnnotations(functionAnnotation)
-                    .addOriginatingKSFile(classData.ksFile)
-                    .build(),
+            ).addModifiers(functionVisibilityModifier)
+                .addAnnotations(functionAnnotation)
+                .addOriginatingKSFile(classData.ksFile)
+
+            generatedFactories.add(
+                FactoryFunctionKey(
+                    name = classData.interfaceName,
+                    packageName = classData.packageNameString,
+                    paramTypes = constructor.build().parameters.map { it.type },
+                    function,
+                ),
             )
             timer.addStep("Added http client extension function factory")
         }
 
+        // Process expect functions - generate actual functions
+        if (classData.expectFunctions.isNotEmpty()) {
+            timer.addStep("Generating actual functions...")
+            val files = processExpectFunctions(
+                classData = classData,
+                timer = timer,
+                constructorSignature = constructorSignature,
+                generatedFactories = generatedFactories,
+                onAddFunction = { fileBuilder.addFunction(it) },
+            )
+            timer.addStep("Finished code generation with files: " + (files.size + 1))
+            return@work listOf(fileBuilder.addType(classBuilder.build()).build()) + files
+        } else {
+            fileBuilder.addFunctions(generatedFactories.map { it.functionSpecBuilder.build() })
+        }
+
         // add class to file and build all
-        timer.addStep("Finished file generation")
-        fileBuilder.addType(classBuilder.build()).build()
+        timer.addStep("Finished file generation with single file")
+        listOf(fileBuilder.addType(classBuilder.build()).build())
     }
 
     /** @return FunSpec del constructor, propiedades y nombre de la propiedad httpClient */
@@ -199,6 +223,200 @@ class KotlinpoetGenerator : KtorGenGenerator {
             propertiesToAdd,
             MemberName(classData.packageNameString, httpClientName),
         )
+    }
+
+    /** Computes constructor signature for validation */
+    private fun computeConstructorSignature(classData: ClassData): List<TypeName> {
+        val httpClientTypeName = HttpClientClassName
+        val types = buildList {
+            add(httpClientTypeName)
+            // properties excluding HttpClient
+            classData.properties
+                .map { it.type.toTypeName() }
+                .filter { it != httpClientTypeName }
+                .forEach { add(it) }
+            // one param per super interface
+            classData.superClasses.forEach { ref ->
+                add(ref.resolve().toClassName())
+            }
+        }
+        return types
+    }
+
+    /** Process all expect functions and generate actual implementations */
+    private fun processExpectFunctions(
+        classData: ClassData,
+        timer: DiagnosticSender,
+        constructorSignature: List<TypeName>,
+        generatedFactories: Set<FactoryFunctionKey>,
+        onAddFunction: (FunSpec) -> Unit,
+    ): List<FileSpec> {
+        // Group expect functions by package to generate one file per package
+        val functionsByPackage = classData.expectFunctions.groupBy { it.packageName.asString() }
+        val extraFiles = mutableListOf<FileSpec>()
+
+        functionsByPackage.forEach { (pkg, functions) ->
+            functions.forEach { func ->
+                val funcName = func.simpleName.asString()
+                val funcKey = FactoryFunctionKey(
+                    name = funcName,
+                    packageName = pkg,
+                    paramTypes = func.parameters.map { it.type.resolve().toTypeName() },
+                    FunSpec.builder("dummy"),
+                )
+
+                // Check if this function would duplicate an existing factory
+                val existingFactory = generatedFactories.firstOrNull { existing ->
+                    existing.name == funcKey.name &&
+                        existing.packageName == funcKey.packageName &&
+                        existing.paramTypes == funcKey.paramTypes
+                }
+
+                if (existingFactory != null) {
+                    timer.addWarning(
+                        "Expect function '$funcName' in package '$pkg' matches an already generated factory function. Skipping duplicate generation. Can raise error Kotlin compiler if not match the signature of expect code.",
+                        func,
+                    )
+                    onAddFunction(
+                        existingFactory
+                            .functionSpecBuilder
+                            .addModifiers(ACTUAL)
+                            .build(),
+                    )
+                    return@forEach
+                }
+
+                // Validate signature matches constructor
+                val expectParamTypes = func.parameters.map { it.type.resolve().toTypeName() }
+                if (!validateFunctionSignature(expectParamTypes, constructorSignature, func, timer, classData)) {
+                    return@forEach
+                }
+
+                // Generate actual function
+                generateActualFunctionForKmp(
+                    classData = classData,
+                    logger = timer,
+                    func = func,
+                    onAddFunction = onAddFunction,
+                )?.let { extraFiles.add(it) }
+            }
+        }
+        return extraFiles
+    }
+
+    /** Validates that the expect function signature matches the constructor */
+    private fun validateFunctionSignature(
+        expectParamTypes: List<TypeName>,
+        constructorSignature: List<TypeName>,
+        func: KSFunctionDeclaration,
+        logger: DiagnosticSender,
+        classData: ClassData,
+    ): Boolean {
+        if (constructorSignature.size != expectParamTypes.size) {
+            logger.addError(
+                "Constructor mismatch for ${classData.generatedName}. Expect function '${func.simpleName.asString()}' has ${expectParamTypes.size} parameter(s) but generated constructor expects ${constructorSignature.size} parameter(s)",
+                func,
+            )
+            return false
+        }
+
+        // Validate parameter types match
+        constructorSignature.zip(expectParamTypes).forEachIndexed { index, (expected, actual) ->
+            if (expected != actual) {
+                logger.addError(
+                    "Parameter type mismatch at position $index for expect function '${func.simpleName.asString()}'. Expected: $expected, Found: $actual",
+                    func,
+                )
+                return false
+            }
+        }
+
+        return true
+    }
+
+    /** Generates an actual function implementation for KMP expect function */
+    private fun generateActualFunctionForKmp(
+        classData: ClassData,
+        logger: DiagnosticSender,
+        func: KSFunctionDeclaration,
+        onAddFunction: (FunSpec) -> Unit,
+    ): FileSpec? {
+        val name = func.simpleName.asString()
+        val pkg = func.packageName.asString()
+
+        // Generate actual function
+        val implClassName = ClassName(classData.packageNameString, classData.generatedName)
+        val returnClassName = ClassName(classData.packageNameString, classData.interfaceName)
+
+        val funBuilder = FunSpec.builder(name)
+            .returns(returnClassName)
+            .addModifiers(ACTUAL)
+            .addOriginatingKSFile(func.containingFile!!)
+
+        // Add all modifiers except EXPECT, preserving order
+        val modifiers = func.modifiers
+            .mapNotNull { it.toKModifier() }
+            .filter { it != EXPECT }
+        modifiers.forEach { funBuilder.addModifiers(it) }
+
+        // Add all annotations in the exact order they appear
+        func.annotations.forEach { annotation ->
+            funBuilder.addAnnotation(annotation.toAnnotationSpec(true))
+        }
+
+        // Add parameters with exact names, types, and order
+        func.parameters.forEach { param ->
+            val paramName = param.name?.asString() ?: run {
+                logger.addError("Parameter without name in expect function '$name'", param)
+                return null
+            }
+            val paramType = param.type.resolve().toTypeName()
+
+            val paramBuilder = ParameterSpec.builder(paramName, paramType)
+
+            // Copy parameter annotations
+            param.annotations.forEach { annotation ->
+                paramBuilder.addAnnotation(annotation.toAnnotationSpec(true))
+            }
+
+            funBuilder.addParameter(paramBuilder.build())
+        }
+
+        // Generate function body - call implementation constructor
+        val argsJoin = func.parameters.joinToString { it.name?.asString() ?: "p" }
+        funBuilder.addStatement("return %T(%L)", implClassName, argsJoin)
+
+        val function = funBuilder.build()
+        // Determine file name and location
+        val fileName = if (pkg == classData.packageNameString) {
+            onAddFunction(function)
+            return null
+        } else {
+            // Different package - must create separate file
+            "_${name}KmpActual"
+        }
+
+        // Build file
+        return FileSpec.builder(pkg, fileName)
+            .addFunction(function)
+            .addDefaultConfig()
+            .build()
+    }
+
+    private fun FileSpec.Builder.addDefaultConfig() = apply {
+        addAnnotation(
+            AnnotationSpec.builder(Suppress::class)
+                .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
+                .addMember("%S", "REDUNDANT_VISIBILITY_MODIFIER")
+                .addMember("%S", "unused")
+                .addMember("%S", "UNUSED_IMPORT")
+                .addMember("%S", "warnings")
+                .addMember("%S", "RemoveSingleExpressionStringTemplate")
+                .addMember("%S", "ktlint")
+                .addMember("%S", "detekt:all")
+                .build(),
+        ).addAnnotation(GeneratedAnnotation)
+            .indent("    ") // use 4 spaces https://pinterest.github.io/ktlint/latest/rules/standard/#indentation
     }
 
     private fun Options.buildAnnotations(): Set<AnnotationSpec> {
@@ -534,7 +752,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             """.trimMargin(),
             cookieValues.name,
             if (cookieValues.isValueParameter) {
-                if (useVarargItem) "\$it" else "$${cookieValues.value}"
+                if (useVarargItem) $$"$it" else "$${cookieValues.value}"
             } else {
                 cookieValues.value
             },
@@ -622,7 +840,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                         isVararg -> {
                             // Tratamos el vararg como lista
                             beginControlFlow(LITERAL_FOREACH, paramName)
-                                .addStatement(APPEND_STRING_LITERAL, headerName, CodeBlock.of("\"\$it\""))
+                                .addStatement(APPEND_STRING_LITERAL, headerName, CodeBlock.of($$"\"$it\""))
                             endControlFlow()
                         }
 
@@ -669,7 +887,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             .addStatement(
                 APPEND_STRING_LITERAL,
                 headerName,
-                if (isStringListOrArray) CodeBlock.of("it") else CodeBlock.of("\"\$it\""),
+                if (isStringListOrArray) CodeBlock.of("it") else CodeBlock.of($$"\"$it\""),
             )
         endControlFlow()
     }
@@ -735,7 +953,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             if (valueIsString) {
                 if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.value")
             } else {
-                if (valueIsNullable) CodeBlock.of("\"\$value\"") else CodeBlock.of("\"\${it.value}\"")
+                if (valueIsNullable) CodeBlock.of($$"\"$value\"") else CodeBlock.of($$"\"${it.value}\"")
             },
         )
         if (valueIsNullable) endControlFlow()
@@ -763,7 +981,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
             if (valueIsString) {
                 if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.second")
             } else {
-                if (valueIsNullable) CodeBlock.of("\"\$value\"") else CodeBlock.of("\"\${it.second}\"")
+                if (valueIsNullable) CodeBlock.of($$"\"$value\"") else CodeBlock.of($$"\"${it.second}\"")
             },
         )
 
@@ -814,7 +1032,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                         addStatement(
                             "%L.appendAll(%P, emptyList())",
                             if (encoded) "this.encodedParameters" else "this.parameters",
-                            "\$it",
+                            $$"$it",
                         )
                         endControlFlow()
                     } else {
@@ -845,7 +1063,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                             "%L(%S, %P)",
                             if (encoded) "this.encodedParameters.append" else "this.parameters.append",
                             query.value,
-                            "\$it",
+                            $$"$it",
                         )
                         endControlFlow()
                     } else {
@@ -854,7 +1072,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
                             "%L(%S, %P)",
                             if (encoded) "this.encodedParameters.append" else "this.parameters.append",
                             query.value,
-                            "\$it",
+                            $$"$it",
                         )
                         endControlFlow()
                     }
@@ -912,13 +1130,13 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
                     isList || isArray -> {
                         partCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
-                            .addStatement("this.append(%S, %P)", partValue, "\$it")
+                            .addStatement("this.append(%S, %P)", partValue, $$"$it")
                         partCode.endControlFlow()
                     }
 
                     else -> {
                         partCode.beginControlFlow(LITERAL_NN_LET, name)
-                            .addStatement("this.append(%S, %P)", partValue, "\$it")
+                            .addStatement("this.append(%S, %P)", partValue, $$"$it")
                         partCode.endControlFlow()
                     }
                 }
@@ -985,11 +1203,11 @@ class KotlinpoetGenerator : KtorGenGenerator {
 
                 if (isList || isArray) {
                     fieldCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, paramName)
-                    fieldCode.addStatement("this.append(%S, %P%L)", fieldValue, "\$it", decodeSuffix)
+                    fieldCode.addStatement("this.append(%S, %P%L)", fieldValue, $$"$it", decodeSuffix)
                     fieldCode.endControlFlow()
                 } else {
                     fieldCode.beginControlFlow(LITERAL_NN_LET, paramName)
-                    fieldCode.addStatement("this.append(%S, %P%L)", fieldValue, "\$it", decodeSuffix)
+                    fieldCode.addStatement("this.append(%S, %P%L)", fieldValue, $$"$it", decodeSuffix)
                     fieldCode.endControlFlow()
                 }
             }
@@ -1020,6 +1238,14 @@ class KotlinpoetGenerator : KtorGenGenerator {
         return block.build()
     }
 
+    /** Key to identify unique factory functions */
+    private class FactoryFunctionKey(
+        val name: String,
+        val packageName: String,
+        val paramTypes: List<TypeName>,
+        val functionSpecBuilder: FunSpec.Builder,
+    )
+
     companion object {
         private val VISIBILITY_KMODIFIER = setOf(PUBLIC, INTERNAL, PROTECTED, PRIVATE)
         private const val THIS_HEADERS = "this.headers"
@@ -1028,7 +1254,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         private const val LITERAL_NN_LET = "%L?.let"
         private const val ITERABLE_FILTER_NULL_FOREACH = "%L?.filterNotNull()?.forEach"
         private const val ENTRY_VALUE_NN_LET = "entry.value?.let { value ->"
-        private const val VALUE = "\$value"
+        private const val VALUE = $$"$value"
         private const val RETURN_TYPE_LITERAL = "return %T(%L)"
         private const val BODY_LITERAL = ".body<%T>()"
         private val GeneratedAnnotation = AnnotationSpec.builder(
