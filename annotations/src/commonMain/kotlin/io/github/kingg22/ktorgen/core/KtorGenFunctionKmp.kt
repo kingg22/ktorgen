@@ -30,11 +30,4 @@ package io.github.kingg22.ktorgen.core
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
-annotation class KtorGenFunctionKmp(
-    /**
-     * Custom KDoc comment for the generated actual function.
-     *
-     * Useful to indicate that the class is auto-generated and shouldn't be modified.
-     */
-    val customHeader: String = "",
-)
+annotation class KtorGenFunctionKmp
