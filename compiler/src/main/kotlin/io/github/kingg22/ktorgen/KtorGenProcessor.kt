@@ -11,20 +11,8 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
-import com.google.devtools.ksp.symbol.Modifier
-import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
-import com.squareup.kotlinpoet.ksp.toAnnotationSpec
-import com.squareup.kotlinpoet.ksp.toClassName
-import com.squareup.kotlinpoet.ksp.toKModifier
-import com.squareup.kotlinpoet.ksp.toTypeName
-import com.squareup.kotlinpoet.ksp.writeTo
 import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.extractor.DeclarationMapper
@@ -38,7 +26,6 @@ import io.github.kingg22.ktorgen.http.PATCH
 import io.github.kingg22.ktorgen.http.POST
 import io.github.kingg22.ktorgen.http.PUT
 import io.github.kingg22.ktorgen.model.ClassData
-import io.github.kingg22.ktorgen.model.HttpClientClassName
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_PART_DATA
 import io.github.kingg22.ktorgen.validator.Validator
 
@@ -47,8 +34,11 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
     companion object {
         lateinit var listType: KSType
         lateinit var arrayType: KSType
+
+        @JvmStatic
         var partDataKtor: KSType? = null
     }
+
     private val logger = KtorGenLogger(env.logger, ktorGenOptions)
     private val timer = DiagnosticTimer("KtorGen Annotations Processor", logger::logging)
     private var roundCount = 0
@@ -68,9 +58,12 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         }
 
         try {
-            val fullClassList = extractAndMapDeclaration(resolver) { ksClassDeclaration, symbols ->
-                if (symbols.isNotEmpty()) deferredSymbols += ksClassDeclaration to symbols
-            }
+            val (fullClassList, kmpExpectFunctions) = extractAndMapDeclaration(
+                resolver,
+                onDeferredSymbols = { ksClassDeclaration, symbols ->
+                    if (symbols.isNotEmpty()) deferredSymbols += ksClassDeclaration to symbols
+                },
+            )
             if (!firstInvoked) cleanDeferredSymbolsWith(fullClassList)
 
             timer.addStep("After filter ignored interfaces, have ${fullClassList.size} to validate")
@@ -112,15 +105,11 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             if (validClassData.isNotEmpty()) timer.addStep("Generated ${validClassData.size} classes")
 
-            // After classes are generated, handle KMP expect function generation
-            try {
-                generateKmpActualFunctions(validClassData.toSet(), resolver)
-            } catch (e: Exception) {
-                logger.error("${KtorGenLogger.KTOR_GEN} Error generating KMP actual functions.", null)
-                logger.exception(e)
+            if (kmpExpectFunctions.isNotEmpty()) {
+                timer.addStep("Unresolved ${kmpExpectFunctions.size} @KtorGenFunctionKmp", kmpExpectFunctions.first())
             }
         } catch (e: Exception) {
-            logger.fatalError("${KtorGenLogger.KTOR_GEN} Unexcepted exception caught. \n$e")
+            logger.fatalError("${KtorGenLogger.KTOR_GEN} Unexpected exception caught. \n$e")
             logger.exception(e)
         } catch (e: Throwable) {
             if (e.message == null) {
@@ -164,19 +153,19 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
     }
 
     /** Print a step message if deferred symbols is not empty in the current round, and return symbols */
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun finishProcessWithDeferredSymbols(): List<KSAnnotated> {
-        if (deferredSymbols.isNotEmpty()) timer.addStep(deferredSymbolsMessage("round $roundCount"))
-        return deferredSymbols.flatMap { it.second }
+    private fun finishProcessWithDeferredSymbols() = deferredSymbols.flatMap { it.second }.also {
+        if (it.isNotEmpty())timer.addStep(deferredSymbolsMessage("round $roundCount"))
     }
 
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun deferredSymbolsMessage(round: String) =
-        "Found ${deferredSymbols.size} unresolved symbols on $round: " +
-            deferredSymbols.joinToString(prefix = "[", postfix = "]") {
-                it.first.simpleName.asString() + " => " +
-                    it.second.joinToString(prefix = "[", postfix = "]") { s -> s.toString() }
-            }
+    private fun deferredSymbolsMessage(round: String) = "Found ${deferredSymbols.size} unresolved symbols on $round: " +
+        deferredSymbols.joinToString(
+            separator = "\n",
+            prefix = "[",
+            postfix = "]",
+        ) { (declaration, unresolvedSymbols) ->
+            declaration.simpleName.asString() + " => " +
+                unresolvedSymbols.joinToString(prefix = "[", postfix = "]") { s -> s.toString() }
+        }
 
     private fun getAnnotatedInterfaceTypes(resolver: Resolver) =
         resolver.getSymbolsWithAnnotation(KtorGen::class.qualifiedName!!)
@@ -247,180 +236,103 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         }
     }
 
+    @OptIn(KtorGenExperimental::class)
     private fun extractAndMapDeclaration(
         resolver: Resolver,
         onDeferredSymbols: (KSClassDeclaration, List<KSAnnotated>) -> Unit,
-    ): Set<ClassData> {
+    ): Pair<Set<ClassData>, List<KSFunctionDeclaration>> {
         // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
-        val annotatedFunctionsGroupedByClass = getAnnotatedFunctions(resolver)
-            .groupBy { it.closestClassDeclaration() }
-
-        timer.addStep(
-            "Retrieve all functions with annotations. Count: ${annotatedFunctionsGroupedByClass.size}",
-        )
-
-        // 2. Mapeamos las clases con funciones válidas
         val mapperPhase = timer.createPhase("Extraction and Mapper, round $roundCount")
         mapperPhase.start()
 
-        val classDataWithMethods = annotatedFunctionsGroupedByClass.mapNotNull { (classDec) ->
-            if (classDec == null) return@mapNotNull null
-            val (classData, symbols) = DeclarationMapper.DEFAULT.mapToModel(classDec) { mapperPhase.createTask(it) }
+        val annotatedFunctionsGroupedByClass = getAnnotatedFunctions(resolver)
+            .groupBy { it.closestClassDeclaration() }
+
+        mapperPhase.addStep(
+            "Retrieve all functions with annotations. Count: ${annotatedFunctionsGroupedByClass.size}",
+        )
+
+        val kmpExpectFunctions = resolver.getSymbolsWithAnnotation(KtorGenFunctionKmp::class.qualifiedName!!)
+            .filterIsInstance<KSFunctionDeclaration>()
+            .toMutableList()
+
+        mapperPhase.addStep("Retrieve all KtorGenFunctionKmp. Count: ${kmpExpectFunctions.size}")
+
+        fun declarationMap(classDec: KSClassDeclaration): ClassData? {
+            val (matching, remaining) = kmpExpectFunctions.partition { function ->
+                val returnTypeFunction = function.returnType?.resolve() ?: return@partition false
+                if (returnTypeFunction.isError) return@partition false
+
+                val returnDecl = returnTypeFunction.declaration as? KSClassDeclaration
+                val returnQName = returnDecl?.qualifiedName?.asString()
+
+                if (returnDecl == null || returnQName == null) {
+                    mapperPhase.addError(
+                        "@KtorGenFunctionKmp function must return an interface annotated with @KtorGen",
+                        function,
+                    )
+                }
+
+                returnQName == classDec.qualifiedName?.asString()
+            }
+
+            kmpExpectFunctions.clear()
+            kmpExpectFunctions.addAll(remaining)
+
+            val (classData, symbols) = DeclarationMapper.DEFAULT.mapToModel(classDec, matching) {
+                mapperPhase.createTask(it)
+            }
+
             onDeferredSymbols(classDec, symbols)
-            classData
+            return classData
         }
 
-        timer.addStep(
+        // 2. Mapeamos las clases con funciones válidas
+        val classDataWithMethods = annotatedFunctionsGroupedByClass.mapNotNull { (classDec) ->
+            classDec?.let { declarationMap(it) }
+        }
+
+        mapperPhase.addStep(
             "Process all class data obtained by functions. Count: ${annotatedFunctionsGroupedByClass.size}",
         )
 
         // 3. También obtenemos todas las clases anotadas con @KtorGen (aunque no tengan métodos)
         val annotatedClasses = getAnnotatedInterfaceTypes(resolver).toList()
-        timer.addStep("Retrieve with KtorGen. Count: ${annotatedClasses.size}")
+        mapperPhase.addStep("Retrieve with KtorGen. Count: ${annotatedClasses.size}")
 
         // 4. Filtramos aquellas clases que no están en `groupedByClass` → no tienen funciones válidas
         val classWithoutMethods = annotatedClasses
             .filter { it !in annotatedFunctionsGroupedByClass.keys }
             .also {
-                timer.addStep(
+                mapperPhase.addStep(
                     "After sum (functions + ktorGen interfaces (or its companion)) - already extracted, count: ${it.count()}",
                 )
             }
-            .mapNotNull { classDeclaration ->
-                val (classData, symbols) = DeclarationMapper.DEFAULT.mapToModel(classDeclaration) {
-                    mapperPhase.createTask(it)
-                }
-                onDeferredSymbols(classDeclaration, symbols)
-                classData
-            }.toList()
-
-        timer.addStep(
-            "Processed all interfaces and companion with @KtorGen. Count: ${classDataWithMethods.size + classWithoutMethods.size}",
-        )
-        mapperPhase.finish()
-
-        // 5. Unimos todas las clases a validar (las que tienen y no tienen funciones)
-        return (classDataWithMethods + classWithoutMethods)
-            .distinctBy { it.interfaceName }
-            .also { timer.addStep("After filter declarations, have ${it.size}") }
-            .filter { it.goingToGenerate }
-            .toSet()
-    }
-
-    // FIXME, move to processor pipeline and attach to corresponding class data
-    @OptIn(io.github.kingg22.ktorgen.core.KtorGenExperimental::class)
-    private fun generateKmpActualFunctions(classDataSet: Set<ClassData>, resolver: Resolver) {
-        val functions = resolver.getSymbolsWithAnnotation(KtorGenFunctionKmp::class.qualifiedName!!)
-            .filterIsInstance<KSFunctionDeclaration>()
+            .mapNotNull { declarationMap(it) }
             .toList()
 
-        if (functions.isEmpty()) return
+        mapperPhase.addStep(
+            "Processed all interfaces and companion with @KtorGen. Count: ${classDataWithMethods.size + classWithoutMethods.size}",
+        )
 
-        timer.addStep("Found ${functions.size} functions annotated with @KtorGenFunctionKmp")
+        // 5. Unimos todas las clases a validar (las que tienen y no tienen funciones)
+        val classDataSet = (classDataWithMethods + classWithoutMethods)
+            .distinctBy { it.interfaceName }
+            .also { mapperPhase.addStep("After filter declarations, have ${it.size}") }
+            .filter { it.goingToGenerate }
+            .toSet()
+        mapperPhase.addStep("Finally goingToGenerate ${classDataSet.size}")
 
-        val classDataByQName = classDataSet.associateBy { it.ksClassDeclaration.qualifiedName?.asString() }
-
-        functions.forEach { func ->
-            val name = func.simpleName.asString()
-            val pkg = func.packageName.asString()
-
-            // must be expect function
-            if (!func.modifiers.contains(Modifier.EXPECT)) {
-                logger.error(
-                    "A function annotated with @KtorGenFunctionKmp must be 'expect' in common source set",
-                    func,
-                )
-                return@forEach
-            }
-
-            val returnType = func.returnType?.resolve()
-            if (returnType == null || returnType.isError) {
-                // unresolved, wait for the next round
-                timer.addStep("Return type for $name is not resolved yet, will try next round")
-                return@forEach
-            }
-            val returnDecl = returnType.declaration as? KSClassDeclaration
-            val returnQName = returnDecl?.qualifiedName?.asString()
-            if (returnDecl == null || returnQName == null) {
-                logger.error("@KtorGenFunctionKmp function must return an interface annotated with @KtorGen", func)
-                return@forEach
-            }
-
-            val classData = classDataByQName[returnQName]
-            if (classData == null) {
-                logger.error(
-                    "A function annotated with @KtorGenFunctionKmp needs to return a generated interface (@KtorGen annotated). Not found for $returnQName",
-                    func,
-                )
-                return@forEach
-            }
-
-            // compute the expected constructor parameter count: always HttpClient + interface properties (excluding HttpClient) + super interfaces
-            val httpClientTypeName = HttpClientClassName
-            val constructorTypes = buildList {
-                add(httpClientTypeName)
-                // properties excluding HttpClient
-                classData.properties
-                    .map { it.type.toTypeName() }
-                    .filter { it != httpClientTypeName }
-                    .forEach { add(it) }
-                // one param per super interface
-                classData.superClasses.forEach { ref ->
-                    add(ref.resolve().toClassName())
-                }
-            }
-
-            val expectParamTypes = func.parameters.map { it.type.resolve().toTypeName() }
-
-            if (constructorTypes.size != expectParamTypes.size) {
-                logger.error(
-                    "Constructor mismatch for ${classData.generatedName}. Expect function '$name' has ${expectParamTypes.size} parameter(s) but generated constructor expects ${constructorTypes.size} parameter(s)",
-                    func,
-                )
-                return@forEach
-            }
-
-            // Generate actual function
-            val implClassName = ClassName(classData.packageNameString, classData.generatedName)
-            val returnClassName = ClassName(classData.packageNameString, classData.interfaceName)
-
-            val funBuilder = FunSpec.builder(name)
-                .returns(returnClassName)
-                .addModifiers(func.modifiers.mapNotNull { it.toKModifier() }.filter { it != KModifier.EXPECT }.toSet())
-                .addModifiers(KModifier.ACTUAL)
-                .addOriginatingKSFile(func.containingFile!!)
-                .addAnnotations(func.annotations.map { it.toAnnotationSpec(true) }.toList())
-
-            // copy parameters
-            func.parameters.forEach { p ->
-                val pName = p.name?.asString() ?: "p"
-                funBuilder.addParameter(
-                    ParameterSpec.builder(pName, p.type.resolve().toTypeName()).build(),
-                )
-            }
-
-            val argsJoin = func.parameters.joinToString { it.name?.asString() ?: "p" }
-            funBuilder.addStatement("return %T(%L)", implClassName, argsJoin)
-
-            // build file and write
-            val file = FileSpec.builder(pkg, "_${name}KmpActual")
-                .addFunction(funBuilder.build())
-                .addAnnotation(
-                    AnnotationSpec.builder(Suppress::class) // suppress annotations
-                        .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
-                        .addMember("%S", "REDUNDANT_VISIBILITY_MODIFIER")
-                        .addMember("%S", "unused")
-                        .addMember("%S", "UNUSED_IMPORT")
-                        .addMember("%S", "warnings")
-                        .addMember("%S", "RemoveSingleExpressionStringTemplate")
-                        .addMember("%S", "ktlint")
-                        .addMember("%S", "detekt:all")
-                        .build(),
-                )
-                .build()
-
-            file.writeTo(env.codeGenerator, aggregating = false)
-            timer.addStep("Generated actual function for $name in package $pkg")
+        if (classDataSet.isEmpty() && kmpExpectFunctions.isNotEmpty()) {
+            mapperPhase.addWarning(
+                "No valid class data extracted, but found KtorGenFunctionKmp, can be a bug in the processor. " +
+                    "Found ${kmpExpectFunctions.size} annotated functions.",
+                kmpExpectFunctions.first(),
+            )
         }
+
+        mapperPhase.finish()
+
+        return classDataSet to kmpExpectFunctions
     }
 }
