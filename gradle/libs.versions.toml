@@ -13,7 +13,7 @@ android-minSdk = "21"
 # https://mvnrepository.com/artifact/androidx.room/room-compiler-processing-testing
 androidx-room-compiler-testing = "2.8.0"
 # https://github.com/Kotlin/dokka/releases
-dokka = "2.0.0"
+dokka = "2.1.0"
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
 # https://github.com/google/truth/releases
