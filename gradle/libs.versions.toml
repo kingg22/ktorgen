@@ -26,7 +26,7 @@ kotlin-poet = "2.2.0"
 # https://github.com/Kotlin/kotlinx-kover/releases
 kover = "0.9.1"
 # https://github.com/google/ksp/releases
-ksp = "2.2.10-2.0.2"
+ksp = "2.3.0"
 # https://github.com/pinterest/ktlint/releases
 ktlint-pinterest = "1.7.1"
 # https://github.com/jlleitschuh/ktlint-gradle/releases
