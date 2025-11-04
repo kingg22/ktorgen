@@ -8,7 +8,8 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 
 // Inspired on Paris Processor timer https://github.com/airbnb/paris/blob/d8b5edbc56253bcdd0d0c57930d2e91113dd0f37/paris-processor/src/main/java/com/airbnb/paris/processor/Timer.kt
-class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : DiagnosticSender {
+@Suppress("kotlin:S6514") // Can't use delegation because Step is inner class
+internal class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : DiagnosticSender {
     private val root = Step(name, StepType.ROOT)
     private val rootStarted get() = root.isStarted()
 
@@ -18,12 +19,12 @@ class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : 
     }
 
     /** Factory for inner phases */
-    fun createPhase(name: String): DiagnosticSender = Step(name, StepType.PHASE).apply {
+    internal fun createPhase(name: String): DiagnosticSender = Step(name, StepType.PHASE).apply {
         root.addChild(this)
     }
 
     /** Add step on root phase */
-    fun addStep(message: String) {
+    internal fun addStep(message: String) {
         root.addStep(message)
     }
 
@@ -35,22 +36,22 @@ class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : 
     override fun toString(): String = root.toString()
 
     /** Generate all the report in mode verbose */
-    fun buildReport(): String = buildString { printStep(root, "") }
+    internal fun buildReport(): String = buildString { printStep(root, "") }
 
     /** Generate report of all errors, this not mark as finish the root timer */
-    fun buildErrorsMessage() = buildString {
+    internal fun buildErrorsMessage() = buildString {
         appendLine("❌ Errors found during \"${root.name}\" execution:")
         appendFilteredSteps(root, 0) { it.type == MessageType.ERROR }
     }
 
     /** Generate report of all warnings, this not mark as finish the root timer */
-    fun buildWarningsMessage() = buildString {
+    internal fun buildWarningsMessage() = buildString {
         appendLine("⚠️ Warnings found during \"${root.name}\" execution:")
         appendFilteredSteps(root, 0) { it.type == MessageType.WARNING }
     }
 
     /** Generate report of errors and warning, this not mark as finish the root timer */
-    fun buildErrorsAndWarningsMessage() = buildString {
+    internal fun buildErrorsAndWarningsMessage() = buildString {
         appendLine("❌ Errors and ⚠️ Warnings found during \"${root.name}\" execution:")
         appendFilteredSteps(root, 0) { it.type == MessageType.WARNING || it.type == MessageType.ERROR }
     }

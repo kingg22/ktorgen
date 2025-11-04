@@ -15,7 +15,7 @@ import io.github.kingg22.ktorgen.model.HttpClientClassName
 import io.github.kingg22.ktorgen.requireNotNull
 
 /** **NOTE**: This class is NOT stateless! */
-class FactoryFunctionGenerator {
+internal class FactoryFunctionGenerator {
     private val generatedFactories = linkedSetOf<FactoryFunctionKey>()
 
     fun generateFactoryFunctions(
@@ -223,7 +223,7 @@ class FactoryFunctionGenerator {
         val functionSpecBuilder: FunSpec.Builder,
     )
 
-    companion object {
+    internal companion object {
         private const val RETURN_TYPE_LITERAL = "return %T(%L)"
     }
 }

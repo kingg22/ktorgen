@@ -3,7 +3,7 @@ package io.github.kingg22.ktorgen.validator
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
 
-class ValidationContext(val classData: ClassData) {
+class ValidationContext(internal val classData: ClassData) {
     // shortcuts
-    val functions: List<FunctionData> = classData.functions
+    internal val functions: List<FunctionData> = classData.functions
 }

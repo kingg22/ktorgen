@@ -1,6 +1,8 @@
 package io.github.kingg22.ktorgen
 
 import com.google.devtools.ksp.symbol.KSNode
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
 interface DiagnosticSender {
     fun isStarted(): Boolean
@@ -34,7 +36,7 @@ interface DiagnosticSender {
 }
 
 /** Run all the work in try-catch-finally, this handle start finish and die when throw exceptions */
-inline fun <R> DiagnosticSender.work(block: (DiagnosticSender) -> R): R = try {
+internal inline fun <R> DiagnosticSender.work(block: (DiagnosticSender) -> R): R = try {
     start()
     val result = block(this)
     finish()
@@ -44,14 +46,18 @@ inline fun <R> DiagnosticSender.work(block: (DiagnosticSender) -> R): R = try {
 }
 
 /** If the condition is false, die */
+@OptIn(ExperimentalContracts::class)
 @Suppress("NOTHING_TO_INLINE")
-inline fun DiagnosticSender.require(condition: Boolean, message: String, symbol: KSNode? = null) {
+internal inline fun DiagnosticSender.require(condition: Boolean, message: String, symbol: KSNode? = null) {
+    contract { returns() implies condition }
     if (!condition) die(message, symbol, null)
 }
 
 /** If the value is null, die */
+@OptIn(ExperimentalContracts::class)
 @Suppress("NOTHING_TO_INLINE")
-inline fun <T> DiagnosticSender.requireNotNull(value: T?, message: String, symbol: KSNode? = null): T {
+internal inline fun <T> DiagnosticSender.requireNotNull(value: T?, message: String, symbol: KSNode? = null): T {
+    contract { returns() implies (value != null) }
     if (value == null) die(message, symbol, null)
     return value
 }

@@ -6,7 +6,7 @@ import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
-class PathParameterValidator : ValidatorStrategy {
+internal class PathParameterValidator : ValidatorStrategy {
     override val name: String = "URL Path parameters"
 
     override fun validate(context: ValidationContext) = ValidationResult {

@@ -10,7 +10,7 @@ import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 import io.github.kingg22.ktorgen.http.Header.Companion.ContentType as CONTENT_TYPE_HEADER
 
-class HeadersValidator : ValidatorStrategy {
+internal class HeadersValidator : ValidatorStrategy {
     override val name: String = "Headers"
 
     override fun validate(context: ValidationContext) = ValidationResult {

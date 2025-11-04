@@ -88,6 +88,7 @@ open class ClassGenerationOptions(
         "ClassGenerationOptions(generatedName='$generatedName', classVisibilityModifier='$classVisibilityModifier', constructorVisibilityModifier='$constructorVisibilityModifier', functionVisibilityModifier='$functionVisibilityModifier', customFileHeader='$customFileHeader', customClassHeader='$customClassHeader', basePath='$basePath', generateTopLevelFunction=$generateTopLevelFunction, generateCompanionExtFunction=$generateCompanionExtFunction, generateHttpClientExtension=$generateHttpClientExtension, extensionFunctionAnnotation=$extensionFunctionAnnotation, options=${super.toString()})"
 
     companion object {
+        @JvmStatic
         fun default(generatedName: String, visibilityModifier: String) = ClassGenerationOptions(
             generatedName = generatedName,
             classVisibilityModifier = visibilityModifier,

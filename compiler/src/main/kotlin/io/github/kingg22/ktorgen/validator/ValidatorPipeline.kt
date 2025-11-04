@@ -5,7 +5,7 @@ import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.KtorGenOptions
 import io.github.kingg22.ktorgen.model.ClassData
 
-class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Validator {
+internal class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Validator {
     constructor(vararg validators: ValidatorStrategy) : this(validators.toSet())
     init {
         require(validators.isNotEmpty()) {

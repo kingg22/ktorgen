@@ -6,7 +6,7 @@ import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
-class QueryValidator : ValidatorStrategy {
+internal class QueryValidator : ValidatorStrategy {
     override val name: String = "URL Query"
 
     override fun validate(context: ValidationContext) = ValidationResult {

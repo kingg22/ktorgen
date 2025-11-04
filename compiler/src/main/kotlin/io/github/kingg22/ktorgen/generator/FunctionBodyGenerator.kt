@@ -25,8 +25,8 @@ import io.github.kingg22.ktorgen.model.unwrapFlow
 import io.github.kingg22.ktorgen.model.unwrapFlowResult
 import io.github.kingg22.ktorgen.model.unwrapResult
 
-class FunctionBodyGenerator {
-    companion object {
+internal class FunctionBodyGenerator {
+    internal companion object {
         private const val THIS_HEADERS = "this.headers"
         private const val LITERAL_FOREACH = "%L.forEach"
         private const val LITERAL_FOREACH_SAFE_NULL_ENTRY = "%L?.forEach { entry ->"

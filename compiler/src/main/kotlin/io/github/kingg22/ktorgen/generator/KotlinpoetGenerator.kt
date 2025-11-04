@@ -17,7 +17,7 @@ import io.github.kingg22.ktorgen.model.Options
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.work
 
-class KotlinpoetGenerator : KtorGenGenerator {
+internal class KotlinpoetGenerator : KtorGenGenerator {
     private val constructorGenerator = ConstructorGenerator()
     private val factoryFunctionGenerator = FactoryFunctionGenerator()
     private val functionBodyGenerator = FunctionBodyGenerator()
@@ -212,7 +212,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         ).map { it.addDefaultConfig().build() }
     }
 
-    companion object {
+    internal companion object {
         private val VISIBILITY_KMODIFIER = setOf(PUBLIC, INTERNAL, PROTECTED, PRIVATE)
         private val GeneratedAnnotation = AnnotationSpec.builder(
             ClassName("io.github.kingg22.ktorgen.core", "Generated"),

@@ -32,7 +32,7 @@ import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
 import kotlin.reflect.KClass
 
-class ClassMapper : DeclarationMapper {
+internal class ClassMapper : DeclarationMapper {
     override fun mapToModel(
         declaration: KSClassDeclaration,
         expectFunctions: List<KSFunctionDeclaration>,

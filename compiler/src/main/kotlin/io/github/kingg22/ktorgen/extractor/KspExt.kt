@@ -63,10 +63,9 @@ inline fun <reified A : Annotation, R : Any> KSAnnotated.getAllAnnotation(
 
 private val ktorGenParametersNames = ktorGenAnnotations.mapNotNull(KClass<*>::simpleName)
 
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun extractAnnotationsFiltered(
+fun extractAnnotationsFiltered(
     declaration: KSAnnotated,
-    noinline filter: (KSAnnotation) -> Boolean = { true },
+    filter: (KSAnnotation) -> Boolean = { true },
 ): Triple<Set<AnnotationSpec>, Set<AnnotationSpec>, List<KSAnnotated>> {
     val deferredSymbols = mutableListOf<KSAnnotated>()
 
@@ -102,8 +101,7 @@ internal inline fun extractAnnotationsFiltered(
     return Triple(propagateAnnotations.toSet(), optIn.toSet(), deferredSymbols)
 }
 
-@Suppress("NOTHING_TO_INLINE")
-inline fun mergeOptIns(existing: Set<AnnotationSpec>, extra: Set<AnnotationSpec>): AnnotationSpec? {
+fun mergeOptIns(existing: Set<AnnotationSpec>, extra: Set<AnnotationSpec>): AnnotationSpec? {
     val existingClasses = existing.flatMap { it.members }.toSet()
     val extraClasses = extra.flatMap { it.members }.toSet()
 
@@ -119,11 +117,9 @@ inline fun mergeOptIns(existing: Set<AnnotationSpec>, extra: Set<AnnotationSpec>
     }
 }
 
-@Suppress("NOTHING_TO_INLINE")
-inline fun Options.mergeAnnotations(extra: Set<AnnotationSpec>, extraOptIns: Set<AnnotationSpec>) =
-    (annotations + extra)
-        .filterNot { ann ->
-            ann.typeName == ClassName("kotlin", "OptIn") ||
-                extraOptIns.any { it.typeName == ann.typeName } || (optIns.any { it.typeName == ann.typeName })
-        }
-        .toSet()
+fun Options.mergeAnnotations(extra: Set<AnnotationSpec>, extraOptIns: Set<AnnotationSpec>) = (annotations + extra)
+    .filterNot { ann ->
+        ann.typeName == ClassName("kotlin", "OptIn") ||
+            extraOptIns.any { it.typeName == ann.typeName } || (optIns.any { it.typeName == ann.typeName })
+    }
+    .toSet()

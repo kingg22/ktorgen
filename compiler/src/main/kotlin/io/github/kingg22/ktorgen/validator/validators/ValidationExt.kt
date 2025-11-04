@@ -9,7 +9,7 @@ import io.github.kingg22.ktorgen.validator.ValidationResult
 const val KOTLIN_STRING = "kotlin.String"
 
 /** Validate a [Map] or [Pair] types */
-fun ValidationResult.validateMapParameter(
+internal fun ValidationResult.validateMapParameter(
     parameter: ParameterData,
     errorMessage: String,
     /** Condition to raise error */

@@ -5,7 +5,7 @@ import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
-class WildcardParameterValidator : ValidatorStrategy {
+internal class WildcardParameterValidator : ValidatorStrategy {
     override val name: String = "Wildcard Parameter"
 
     override fun validate(context: ValidationContext) = ValidationResult {

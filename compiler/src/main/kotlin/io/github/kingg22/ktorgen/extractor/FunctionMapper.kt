@@ -29,7 +29,7 @@ import io.github.kingg22.ktorgen.require
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
 
-class FunctionMapper : DeclarationFunctionMapper {
+internal class FunctionMapper : DeclarationFunctionMapper {
     override fun mapToModel(
         declaration: KSFunctionDeclaration,
         onAddImport: (String) -> Unit,

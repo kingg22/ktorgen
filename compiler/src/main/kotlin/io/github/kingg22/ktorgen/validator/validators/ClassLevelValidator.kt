@@ -12,7 +12,7 @@ import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
-class ClassLevelValidator : ValidatorStrategy {
+internal class ClassLevelValidator : ValidatorStrategy {
     override val name: String = "Class Level"
 
     override fun validate(context: ValidationContext) = ValidationResult {

@@ -6,7 +6,7 @@ import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
-class SuspendOrFlowValidator : ValidatorStrategy {
+internal class SuspendOrFlowValidator : ValidatorStrategy {
     override val name: String = "Return Type"
 
     override fun validate(context: ValidationContext) = ValidationResult {

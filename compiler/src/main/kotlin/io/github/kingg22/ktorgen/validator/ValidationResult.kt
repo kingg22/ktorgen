@@ -7,13 +7,13 @@ import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.ParameterData
 
 /** This a container of errors and warnings, not couple the validation strategies with diagnostic sender */
-class ValidationResult(block: ValidationResult.() -> Unit) {
+class ValidationResult() {
     private val errors: MutableList<FatalError> = mutableListOf()
     private val warnings: MutableList<Warning> = mutableListOf()
 
     val errorCount get() = errors.size
 
-    init {
+    constructor(block: ValidationResult.() -> Unit) : this() {
         block(this)
     }
 

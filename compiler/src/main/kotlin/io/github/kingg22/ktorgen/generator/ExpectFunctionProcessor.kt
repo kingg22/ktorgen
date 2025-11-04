@@ -14,7 +14,7 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.model.ClassData
 
-class ExpectFunctionProcessor {
+internal class ExpectFunctionProcessor {
     /** Process all expect functions and generate actual implementations */
     fun processExpectFunctions(
         classData: ClassData,

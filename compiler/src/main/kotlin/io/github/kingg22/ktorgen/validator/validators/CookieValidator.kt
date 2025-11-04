@@ -6,7 +6,7 @@ import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
-class CookieValidator : ValidatorStrategy {
+internal class CookieValidator : ValidatorStrategy {
     override val name: String = "Cookies"
 
     override fun validate(context: ValidationContext) = ValidationResult {

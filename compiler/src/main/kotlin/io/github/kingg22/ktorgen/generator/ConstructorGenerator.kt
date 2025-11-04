@@ -12,7 +12,7 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.HttpClientClassName
 
-class ConstructorGenerator {
+internal class ConstructorGenerator {
     /** @return FunSpec del constructor, propiedades y nombre de la propiedad httpClient */
     fun generatePrimaryConstructorAndProperties(
         classData: ClassData,
@@ -72,7 +72,7 @@ class ConstructorGenerator {
         }
     }
 
-    data class ConstructorAndProperties(
+    internal data class ConstructorAndProperties(
         val constructor: FunSpec.Builder,
         val properties: List<PropertySpec>,
         val httpClientName: MemberName,

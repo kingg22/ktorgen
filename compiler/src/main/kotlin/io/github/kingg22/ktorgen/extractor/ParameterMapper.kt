@@ -17,7 +17,7 @@ import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
 import io.github.kingg22.ktorgen.work
 
-class ParameterMapper : DeclarationParameterMapper {
+internal class ParameterMapper : DeclarationParameterMapper {
     override fun mapToModel(
         declaration: KSValueParameter,
         timer: (String) -> DiagnosticSender,

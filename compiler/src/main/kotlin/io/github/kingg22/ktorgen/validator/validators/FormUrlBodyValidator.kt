@@ -8,7 +8,7 @@ import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
-class FormUrlBodyValidator : ValidatorStrategy {
+internal class FormUrlBodyValidator : ValidatorStrategy {
     override val name: String = "Form Url Encoded Body"
 
     override fun validate(context: ValidationContext) = ValidationResult {
