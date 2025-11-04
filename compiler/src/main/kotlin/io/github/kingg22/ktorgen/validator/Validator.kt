@@ -27,6 +27,7 @@ fun interface Validator {
                 BodyUsageValidator(),
                 FormUrlBodyValidator(),
                 MultipartValidator(),
+                CookieValidator(),
             )
         }
 
