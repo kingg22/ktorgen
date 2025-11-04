@@ -35,7 +35,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
     override fun generate(classData: ClassData, timer: DiagnosticSender): List<FileSpec> = timer.work {
         // class
         val classBuilder = TypeSpec.classBuilder(classData.generatedName)
-            .addModifiers(valueOf(classData.classVisibilityModifier.uppercase()))
+            .addModifiers(KModifier.valueOf(classData.classVisibilityModifier.uppercase()))
             .addModifiers(classData.modifierSet.filter { it !in VISIBILITY_KMODIFIER })
             .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
             .addKdoc(classData.customClassHeader)
@@ -47,7 +47,7 @@ class KotlinpoetGenerator : KtorGenGenerator {
         val (constructor, properties, httpClient) =
             generatePrimaryConstructorAndProperties(
                 classData,
-                valueOf(classData.constructorVisibilityModifier.uppercase()),
+                KModifier.valueOf(classData.constructorVisibilityModifier.uppercase()),
             )
 
         // override functions
@@ -82,13 +82,13 @@ class KotlinpoetGenerator : KtorGenGenerator {
         val functionAnnotation =
             setOfNotNull(GeneratedAnnotation, optInAnnotation) + classData.extensionFunctionAnnotation
 
-        val functionVisibilityModifier = valueOf(classData.functionVisibilityModifier.uppercase())
+        val functionVisibilityModifier = KModifier.valueOf(classData.functionVisibilityModifier.uppercase())
 
         // Compute constructor parameter signature for validation
         val constructorSignature = computeConstructorSignature(classData)
 
         // Track generated factory functions to avoid duplicates
-        val generatedFactories = mutableSetOf<FactoryFunctionKey>()
+        val generatedFactories = hashSetOf<FactoryFunctionKey>()
 
         if (classData.generateTopLevelFunction) {
             val function = generateTopLevelFactoryFunction(
