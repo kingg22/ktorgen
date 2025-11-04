@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
@@ -15,6 +16,8 @@ version = libs.versions.ktorgen.version.get()
 
 kotlin {
     compilerOptions {
+        languageVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.KOTLIN_2_0)
         extraWarnings.set(true)
         allWarningsAsErrors.set(true)
     }

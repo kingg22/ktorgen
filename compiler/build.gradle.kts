@@ -1,6 +1,6 @@
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     alias(libs.plugins.kotlinJvm)
@@ -20,6 +20,8 @@ java {
 
 kotlin {
     compilerOptions {
+        languageVersion.set(KotlinVersion.KOTLIN_2_2)
+        apiVersion.set(KotlinVersion.KOTLIN_2_0)
         jvmTarget.set(JvmTarget.JVM_11)
         extraWarnings.set(true)
         allWarningsAsErrors.set(true)
@@ -33,7 +35,6 @@ dependencies {
     implementation(libs.kotlin.poet)
     implementation(libs.kotlin.poet.ksp)
 
-    // temporal remove until add unit test
     testImplementation(kotlin("test"))
     testImplementation(libs.androidx.room.compiler.testing)
     testImplementation(libs.google.truth)
@@ -62,7 +63,7 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.named<KotlinCompile>("compileTestKotlin") {
+tasks.compileTestKotlin {
     compilerOptions.optIn.add("androidx.room.compiler.processing.ExperimentalProcessingApi")
 }
 
