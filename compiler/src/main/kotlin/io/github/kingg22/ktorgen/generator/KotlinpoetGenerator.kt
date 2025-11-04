@@ -4,7 +4,15 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.KModifier.*
+import com.squareup.kotlinpoet.KModifier.ACTUAL
+import com.squareup.kotlinpoet.KModifier.EXPECT
+import com.squareup.kotlinpoet.KModifier.INTERNAL
+import com.squareup.kotlinpoet.KModifier.OVERRIDE
+import com.squareup.kotlinpoet.KModifier.PRIVATE
+import com.squareup.kotlinpoet.KModifier.PROTECTED
+import com.squareup.kotlinpoet.KModifier.PUBLIC
+import com.squareup.kotlinpoet.KModifier.SUSPEND
+import com.squareup.kotlinpoet.KModifier.VARARG
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -1239,12 +1247,23 @@ class KotlinpoetGenerator : KtorGenGenerator {
     }
 
     /** Key to identify unique factory functions */
-    private class FactoryFunctionKey(
+    @ConsistentCopyVisibility
+    private data class FactoryFunctionKey private constructor(
         val name: String,
         val packageName: String,
         val paramTypes: List<TypeName>,
-        val functionSpecBuilder: FunSpec.Builder,
-    )
+    ) {
+        lateinit var functionSpecBuilder: FunSpec.Builder
+
+        constructor(
+            name: String,
+            packageName: String,
+            paramTypes: List<TypeName>,
+            functionSpecBuilder: FunSpec.Builder,
+        ) : this(name, packageName, paramTypes) {
+            this.functionSpecBuilder = functionSpecBuilder
+        }
+    }
 
     companion object {
         private val VISIBILITY_KMODIFIER = setOf(PUBLIC, INTERNAL, PROTECTED, PRIVATE)
