@@ -28,6 +28,7 @@ import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
+import io.github.kingg22.ktorgen.require
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
 
@@ -99,13 +100,16 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 .addAnnotations(functionAnnotation)
                 .addOriginatingKSFile(classData.ksFile)
 
-            generatedFactories.add(
-                FactoryFunctionKey(
-                    name = classData.interfaceName,
-                    packageName = classData.packageNameString,
-                    paramTypes = constructor.build().parameters.map { it.type },
-                    function,
+            timer.require(
+                generatedFactories.add(
+                    FactoryFunctionKey(
+                        name = classData.interfaceName,
+                        packageName = classData.packageNameString,
+                        paramTypes = constructor.build().parameters.map { it.type },
+                        function,
+                    ),
                 ),
+                "The top level function factory was not added in set of functions",
             )
             timer.addStep("Added top level function factory")
         }
@@ -128,13 +132,16 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 .addAnnotations(functionAnnotation)
                 .addOriginatingKSFile(classData.ksFile)
 
-            generatedFactories.add(
-                FactoryFunctionKey(
-                    name = classData.interfaceName,
-                    packageName = classData.packageNameString,
-                    paramTypes = constructor.build().parameters.map { it.type },
-                    function,
+            timer.require(
+                generatedFactories.add(
+                    FactoryFunctionKey(
+                        name = classData.interfaceName,
+                        packageName = classData.packageNameString,
+                        paramTypes = constructor.build().parameters.map { it.type },
+                        function,
+                    ),
                 ),
+                "The companion extension function factory was not added in set of functions",
             )
 
             timer.addStep("Added interface companion extension function factory")
@@ -150,13 +157,16 @@ class KotlinpoetGenerator : KtorGenGenerator {
                 .addAnnotations(functionAnnotation)
                 .addOriginatingKSFile(classData.ksFile)
 
-            generatedFactories.add(
-                FactoryFunctionKey(
-                    name = classData.interfaceName,
-                    packageName = classData.packageNameString,
-                    paramTypes = constructor.build().parameters.map { it.type },
-                    function,
+            timer.require(
+                generatedFactories.add(
+                    FactoryFunctionKey(
+                        name = classData.interfaceName,
+                        packageName = classData.packageNameString,
+                        paramTypes = constructor.build().parameters.map { it.type },
+                        function,
+                    ),
                 ),
+                "The http client extension function factory was not added in set of functions",
             )
             timer.addStep("Added http client extension function factory")
         }
@@ -1247,23 +1257,12 @@ class KotlinpoetGenerator : KtorGenGenerator {
     }
 
     /** Key to identify unique factory functions */
-    @ConsistentCopyVisibility
-    private data class FactoryFunctionKey private constructor(
+    private data class FactoryFunctionKey(
         val name: String,
         val packageName: String,
         val paramTypes: List<TypeName>,
-    ) {
-        lateinit var functionSpecBuilder: FunSpec.Builder
-
-        constructor(
-            name: String,
-            packageName: String,
-            paramTypes: List<TypeName>,
-            functionSpecBuilder: FunSpec.Builder,
-        ) : this(name, packageName, paramTypes) {
-            this.functionSpecBuilder = functionSpecBuilder
-        }
-    }
+        val functionSpecBuilder: FunSpec.Builder,
+    )
 
     companion object {
         private val VISIBILITY_KMODIFIER = setOf(PUBLIC, INTERNAL, PROTECTED, PRIVATE)
