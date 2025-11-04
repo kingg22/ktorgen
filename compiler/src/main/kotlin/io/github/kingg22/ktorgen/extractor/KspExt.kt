@@ -120,6 +120,7 @@ fun mergeOptIns(existing: Set<AnnotationSpec>, extra: Set<AnnotationSpec>): Anno
 fun Options.mergeAnnotations(extra: Set<AnnotationSpec>, extraOptIns: Set<AnnotationSpec>) = (annotations + extra)
     .filterNot { ann ->
         ann.typeName == ClassName("kotlin", "OptIn") ||
-            extraOptIns.any { it.typeName == ann.typeName } || (optIns.any { it.typeName == ann.typeName })
+            extraOptIns.any { it.typeName == ann.typeName } ||
+            optIns.any { it.typeName == ann.typeName }
     }
     .toSet()
