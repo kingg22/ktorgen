@@ -78,6 +78,7 @@
 *.Z        binary
 *.zip      binary
 *.zst      binary
+*.gpg      binary
 # Text files where line endings should be preserved
 *.patch    -text
 #
