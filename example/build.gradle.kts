@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.ktlint)
 }
 
 group = "io.github.kingg22"
@@ -117,10 +116,6 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-}
-
-ktlint {
-    version.set(libs.versions.ktlint.pinterest.get())
 }
 
 ksp {

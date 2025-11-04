@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.ktlint)
     alias(libs.plugins.mavenPublish)
 }
 
@@ -90,10 +89,6 @@ kotlin {
     sourceSets.commonMain.dependencies {
         implementation(libs.jetbrains.annotations)
     }
-}
-
-ktlint {
-    version.set(libs.versions.ktlint.pinterest.get())
 }
 
 dokka.dokkaSourceSets.configureEach {

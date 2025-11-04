@@ -2,11 +2,11 @@ import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.sonarqube.gradle.SonarTask
 
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.kotlinxKover)
-    alias(libs.plugins.ktlint)
     alias(libs.plugins.mavenPublish)
 }
 
@@ -43,10 +43,6 @@ dependencies {
     testRuntimeClasspath(libs.ktor.client.core)
 }
 
-ktlint {
-    version.set(libs.versions.ktlint.pinterest.get())
-}
-
 kover {
     reports.total {
         verify {
@@ -67,6 +63,10 @@ tasks.test {
 
 tasks.compileTestKotlin {
     compilerOptions.optIn.add("androidx.room.compiler.processing.ExperimentalProcessingApi")
+}
+
+rootProject.tasks.named<SonarTask>("sonar") {
+    dependsOn(tasks.koverXmlReport)
 }
 
 mavenPublishing {
