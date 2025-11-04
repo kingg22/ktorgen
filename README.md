@@ -1,15 +1,15 @@
 # ⚡ ktorgen — Kotlin + KSP + Ktor Client Code Generator
 
-![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin_Multiplatform-%237F52FF.svg?style=flat-square&logo=kotlin&logoColor=white)
-![Ktor Client](https://img.shields.io/badge/Ktor_Client-D93FD1.svg?style=flat-square&logo=ktor&logoColor=white&link=https%3A%2F%2Fktor.io%2F)
+[![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin_Multiplatform-%237F52FF.svg?style=flat-square&logo=kotlin&logoColor=white)](https://www.jetbrains.com/kotlin-multiplatform/)
+[![Ktor Client](https://img.shields.io/badge/Ktor_Client-D93FD1.svg?style=flat-square&logo=ktor&logoColor=white&link=https%3A%2F%2Fktor.io%2F)](https://ktor.io/)
 
-![Maven Central Version](https://img.shields.io/maven-central/v/io.github.kingg22/ktorgen-annotations)
-![Maven Central Last Update](https://img.shields.io/maven-central/last-update/io.github.kingg22/ktorgen-annotations)
+[![Maven Central Version](https://img.shields.io/maven-central/v/io.github.kingg22/ktorgen-annotations)](https://mvnrepository.com/artifact/io.github.kingg22/ktorgen-compiler)
+[![Maven Central Last Update](https://img.shields.io/maven-central/last-update/io.github.kingg22/ktorgen-annotations)](https://mvnrepository.com/artifact/io.github.kingg22/ktorgen-compiler)
 
-![GitHub License](https://img.shields.io/github/license/kingg22/ktorgen)
-![GitHub last commit (branch)](https://img.shields.io/github/last-commit/kingg22/ktorgen/main)
+[![GitHub License](https://img.shields.io/github/license/kingg22/ktorgen)](https://github.com/kingg22/ktorgen/blob/main/LICENSE.txt)
+[![GitHub last commit (branch)](https://img.shields.io/github/last-commit/kingg22/ktorgen/main)](https://github.com/kingg22/ktorgen/commits/main/)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=kingg22_ktorgen&metric=alert_status&token=958b0f9aa5f280c62c52a9f18026711a6df10759)](https://sonarcloud.io/summary/new_code?id=kingg22_ktorgen)
-![Coverage](https://img.shields.io/badge/Coverage-80%25-green?style=flat)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=kingg22_ktorgen&metric=coverage)](https://sonarcloud.io/summary/new_code?id=kingg22_ktorgen)
 
 Ktorgen is a 100% compile-time code generator for creating HTTP clients using Ktor Client and interface annotations, inspired by [Retrofit](https://github.com/square/retrofit) and [Ktorfit](https://github.com/Foso/Ktorfit).
 
@@ -40,7 +40,7 @@ Ktorgen is a 100% compile-time code generator for creating HTTP clients using Kt
 📚 [More documentation of annotations](https://kingg22.github.io/ktorgen/).
 
 ## 📦 Instalación
-![Maven Central Version](https://img.shields.io/maven-central/v/io.github.kingg22/ktorgen-annotations)
+[![Maven Central Version](https://img.shields.io/maven-central/v/io.github.kingg22/ktorgen-annotations)](https://mvnrepository.com/artifact/io.github.kingg22/ktorgen-compiler)
 
 Install [KSP plugin](https://github.com/google/ksp)
 
