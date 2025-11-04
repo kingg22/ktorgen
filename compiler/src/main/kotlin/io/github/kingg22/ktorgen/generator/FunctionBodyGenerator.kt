@@ -29,11 +29,15 @@ class FunctionBodyGenerator {
     companion object {
         private const val THIS_HEADERS = "this.headers"
         private const val LITERAL_FOREACH = "%L.forEach"
+        private const val LITERAL_FOREACH_SAFE_NULL_ENTRY = "%L?.forEach { entry ->"
         private const val APPEND_STRING_LITERAL = "this.append(%S, %L)"
         private const val LITERAL_NN_LET = "%L?.let"
         private const val ITERABLE_FILTER_NULL_FOREACH = "%L?.filterNotNull()?.forEach"
         private const val ENTRY_VALUE_NN_LET = "entry.value?.let { value ->"
         private const val VALUE = $$"$value"
+        private const val BODY_TYPE = ".body<%T>()"
+        private const val ENCODED_PARAMETERS_APPEND = "this.encodedParameters.append"
+        private const val PARAMETERS_APPEND = "this.parameters.append"
     }
 
     fun generateFunctionBody(func: FunctionData, httpClient: MemberName): CodeBlock {
@@ -58,7 +62,7 @@ class FunctionBodyGenerator {
                 .beginControlFlow("try")
                 .addRequest(func, httpClient)
             if (!isUnit) {
-                add(".body<%T>()", returnType.unwrapFlowResult())
+                add(BODY_TYPE, returnType.unwrapFlowResult())
                 beginControlFlow(".let")
                 addStatement("emit(Result.success(it))")
                 endControlFlow()
@@ -77,7 +81,7 @@ class FunctionBodyGenerator {
             beginControlFlow("return %M", MemberName("kotlinx.coroutines.flow", "flow"))
             addRequest(func, httpClient)
             if (!isUnit) {
-                add(".body<%T>()", returnType.unwrapFlow())
+                add(BODY_TYPE, returnType.unwrapFlow())
                 beginControlFlow(".let")
                     .addStatement("emit(it)")
                 endControlFlow()
@@ -93,7 +97,7 @@ class FunctionBodyGenerator {
             beginControlFlow("return try")
             addRequest(func, httpClient)
             if (!isUnit) {
-                addStatement(".body<%T>()", returnType.unwrapResult())
+                addStatement(BODY_TYPE, returnType.unwrapResult())
                 beginControlFlow(".let")
                     .addStatement("Result.success(it)")
                 endControlFlow()
@@ -504,11 +508,11 @@ class FunctionBodyGenerator {
                 val encoded = queryMap.encoded
                 val data = parameterData.nameString
 
-                block.beginControlFlow("%L?.forEach { entry ->", data)
+                block.beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, data)
                 block.beginControlFlow(ENTRY_VALUE_NN_LET)
                 block.addStatement(
                     "%L(entry.key, %P)",
-                    if (encoded) "this.encodedParameters.append" else "this.parameters.append",
+                    if (encoded) ENCODED_PARAMETERS_APPEND else PARAMETERS_APPEND,
                     VALUE,
                 )
                 block.endControlFlow()
@@ -565,7 +569,7 @@ class FunctionBodyGenerator {
                         beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, parameterData.nameString)
                         addStatement(
                             "%L(%S, %P)",
-                            if (encoded) "this.encodedParameters.append" else "this.parameters.append",
+                            if (encoded) ENCODED_PARAMETERS_APPEND else PARAMETERS_APPEND,
                             query.value,
                             $$"$it",
                         )
@@ -574,7 +578,7 @@ class FunctionBodyGenerator {
                         beginControlFlow(LITERAL_NN_LET, parameterData.nameString)
                         addStatement(
                             "%L(%S, %P)",
-                            if (encoded) "this.encodedParameters.append" else "this.parameters.append",
+                            if (encoded) ENCODED_PARAMETERS_APPEND else PARAMETERS_APPEND,
                             query.value,
                             $$"$it",
                         )
@@ -663,7 +667,7 @@ class FunctionBodyGenerator {
                     }
 
                     else -> {
-                        partCode.beginControlFlow("%L?.forEach { entry ->", parameterData.nameString)
+                        partCode.beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, parameterData.nameString)
                         partCode.beginControlFlow(ENTRY_VALUE_NN_LET)
                             .addStatement("this.append(entry.key, %P)", VALUE)
                         partCode.endControlFlow()
@@ -723,7 +727,7 @@ class FunctionBodyGenerator {
                 val encoded = fieldMap.encoded
                 val decodeSuffix = if (encoded) ".decodeURLQueryComponent(plusIsSpace = true)" else ""
 
-                fieldCode.beginControlFlow("%L?.forEach { entry ->", parameterData.nameString)
+                fieldCode.beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, parameterData.nameString)
                 fieldCode.beginControlFlow(ENTRY_VALUE_NN_LET)
                 fieldCode.addStatement("this.append(entry.key, %P%L)", VALUE, decodeSuffix)
                 fieldCode.endControlFlow()

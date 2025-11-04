@@ -171,7 +171,7 @@ class FactoryFunctionGenerator {
         .returns(interfaceClassName)
         .addParameters(constructorParams.map { it.toBuilder(it.name.removePrefix("_")).build() })
         .addStatement(
-            "return %T(%L)",
+            RETURN_TYPE_LITERAL,
             classNameImpl,
             constructorParams.joinToString { it.name.removePrefix("_") },
         )
@@ -186,7 +186,7 @@ class FactoryFunctionGenerator {
         .returns(interfaceClassName)
         .addParameters(constructorParams.map { it.toBuilder(it.name.removePrefix("_")).build() })
         .addStatement(
-            "return %T(%L)",
+            RETURN_TYPE_LITERAL,
             classNameImpl,
             constructorParams.joinToString { it.name.removePrefix("_") },
         )
@@ -203,7 +203,7 @@ class FactoryFunctionGenerator {
             .returns(interfaceClassName)
             .addParameters(paramsExclHttpClient)
             .addStatement(
-                "return %T(%L)",
+                RETURN_TYPE_LITERAL,
                 classNameImpl,
                 buildString {
                     append("this")
@@ -222,4 +222,8 @@ class FactoryFunctionGenerator {
         val paramTypes: List<TypeName>,
         val functionSpecBuilder: FunSpec.Builder,
     )
+
+    companion object {
+        private const val RETURN_TYPE_LITERAL = "return %T(%L)"
+    }
 }
