@@ -1,4 +1,4 @@
-package io.github.kingg22.ktorgen.sample
+package io.github.kingg22.ktorgen.example
 
 @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
 @Target(AnnotationTarget.CLASS)

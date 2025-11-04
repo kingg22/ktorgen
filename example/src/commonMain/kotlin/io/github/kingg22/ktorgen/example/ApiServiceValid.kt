@@ -1,10 +1,10 @@
-package io.github.kingg22.ktorgen.sample
+package io.github.kingg22.ktorgen.example
 
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
+import io.github.kingg22.ktorgen.example.model.IssueData
 import io.github.kingg22.ktorgen.http.*
-import io.github.kingg22.ktorgen.sample.model.IssueData
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.content.*

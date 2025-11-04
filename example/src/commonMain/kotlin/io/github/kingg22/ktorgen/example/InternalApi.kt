@@ -1,4 +1,4 @@
-package io.github.kingg22.ktorgen.sample
+package io.github.kingg22.ktorgen.example
 
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.ktor.client.*

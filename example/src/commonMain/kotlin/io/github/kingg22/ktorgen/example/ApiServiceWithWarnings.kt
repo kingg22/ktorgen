@@ -1,6 +1,7 @@
-package io.github.kingg22.ktorgen.sample
+package io.github.kingg22.ktorgen.example
 
 import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.example.model.IssueData
 import io.github.kingg22.ktorgen.http.Body
 import io.github.kingg22.ktorgen.http.Cookie
 import io.github.kingg22.ktorgen.http.Field
@@ -9,7 +10,6 @@ import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.HeaderParam
 import io.github.kingg22.ktorgen.http.POST
 import io.github.kingg22.ktorgen.http.Part
-import io.github.kingg22.ktorgen.sample.model.IssueData
 import io.ktor.http.content.*
 
 interface ApiServiceWithWarnings {
