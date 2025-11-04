@@ -1,7 +1,3 @@
-@file:Suppress("UnstableApiUsage")
-@file:OptIn(ExperimentalWasmDsl::class)
-
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -17,7 +13,6 @@ version = libs.versions.ktorgen.version.get()
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.add("-Xexpect-actual-classes")
         extraWarnings.set(true)
         allWarningsAsErrors.set(true)
     }
@@ -80,9 +75,9 @@ kotlin {
 
 dependencies {
     // ksp(projects.compiler) // KMP project don't use this, only jvm or android kotlin projects
+
     // don't apply on common main because we going to generate on each platform
     // kspCommonMainMetadata(projects.compiler)
-    // If I have more code with annotations on each target, apply on each target ksp
     add("kspAndroidDebug", projects.compiler)
     add("kspAndroidRelease", projects.compiler)
     add("kspJvm", projects.compiler)
@@ -94,6 +89,12 @@ dependencies {
     add("kspLinuxX64", projects.compiler)
     add("kspLinuxArm64", projects.compiler)
     add("kspMingwX64", projects.compiler)
+    add("kspIosX64", projects.compiler)
+    add("kspIosArm64", projects.compiler)
+    add("kspIosSimulatorArm64", projects.compiler)
+    add("kspTvosArm64", projects.compiler)
+    add("kspMacosArm64", projects.compiler)
+    add("kspMacosX64", projects.compiler)
 }
 
 android {
