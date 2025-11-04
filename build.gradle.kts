@@ -21,25 +21,27 @@ subprojects {
         lockAllConfigurations()
     }
 
-    sonar.properties {
-        // evita incluir coverage de módulos que no tienen tests
-        if (project.name == "annotations") {
-            property("sonar.sources", "src/commonMain")
-            property("sonar.coverage.exclusions", "**/*")
-        }
-
-        if (project.name == "compiler") {
-            property("sonar.sources", "src/main")
-            property("sonar.tests", "src/test")
-            property(
-                "sonar.coverage.jacoco.xmlReportPaths",
-                project.layout.buildDirectory.file("reports/kover/report.xml").get().asFile.absolutePath,
-            )
-        }
-
+    sonar.run {
         // ignora completamente estos módulos
         if (project.name == "example" || project.name == "sample") {
-            property("sonar.skipProject", "true")
+            isSkipProject = true
+        }
+
+        properties {
+            // evita incluir coverage de módulos que no tienen tests
+            if (project.name == "annotations") {
+                property("sonar.sources", "src/commonMain")
+                property("sonar.coverage.exclusions", "**/*")
+            }
+
+            if (project.name == "compiler") {
+                property("sonar.sources", "src/main")
+                property("sonar.tests", "src/test")
+                property(
+                    "sonar.coverage.jacoco.xmlReportPaths",
+                    project.layout.buildDirectory.file("reports/kover/report.xml").get().asFile.absolutePath,
+                )
+            }
         }
     }
 }
