@@ -4,8 +4,6 @@ import com.google.devtools.ksp.symbol.FileLocation
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.symbol.KSValueParameter
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -244,23 +242,6 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
         }
 
         override fun toString() = "$type ${type.icon}: $message $generateSymbolInfo".trim()
-    }
-
-    private fun checkImplementation(value: Boolean, lazyMessage: () -> String) {
-        contract {
-            returns() implies value
-            callsInPlace(lazyMessage, InvocationKind.AT_MOST_ONCE)
-        }
-        if (!value) {
-            var suppressException: Exception? = null
-            val message = try {
-                lazyMessage()
-            } catch (e: Exception) {
-                suppressException = e
-                "Caught exception during implementation error message generation"
-            }
-            throw KtorGenFatalError.KtorGenImplementationError(message, suppressException)
-        }
     }
 
     private enum class MessageType(val icon: String) {
