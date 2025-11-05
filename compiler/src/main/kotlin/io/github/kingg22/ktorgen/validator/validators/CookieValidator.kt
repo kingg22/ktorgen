@@ -10,14 +10,14 @@ internal class CookieValidator : ValidatorStrategy {
     override val name: String = "Cookies"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        for (function in context.functions.filter { it.goingToGenerate }) {
-            for (parameter in function.parameterDataList.filter { it.hasAnnotation<ParameterAnnotation.Cookies>() }) {
-                if (parameter.isVararg &&
-                    parameter.ktorgenAnnotations.count { it is ParameterAnnotation.Cookies } > 1
-                ) {
-                    addWarning(KtorGenLogger.VARARG_PARAMETER_WITH_LOT_ANNOTATIONS, parameter)
-                }
+        context.functions
+            .filter { it.goingToGenerate }
+            .flatMap { func -> func.parameterDataList.filter { it.hasAnnotation<ParameterAnnotation.Cookies>() } }
+            .filter { parameter ->
+                // check if the parameter is vararg and has more than one annotation
+                parameter.isVararg && parameter.ktorgenAnnotations.count { it is ParameterAnnotation.Cookies } > 1
+            }.forEach { parameter ->
+                addWarning(KtorGenLogger.VARARG_PARAMETER_WITH_LOT_ANNOTATIONS, parameter)
             }
-        }
     }
 }
