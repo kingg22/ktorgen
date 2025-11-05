@@ -26,13 +26,25 @@ internal inline fun <R> DiagnosticSender.work(block: () -> R): R {
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun DiagnosticSender.require(condition: Boolean, message: String, symbol: KSNode? = null) {
     contract { returns() implies condition }
-    if (!condition) die(message, symbol, null)
+    if (!condition) die(message, symbol)
 }
 
 /** If the value is null, die */
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <T> DiagnosticSender.requireNotNull(value: T?, message: String, symbol: KSNode? = null): T {
     contract { returns() implies (value != null) }
-    if (value == null) die(message, symbol, null)
+    if (value == null) die(message, symbol)
     return value
+}
+
+inline fun <T> T.applyIf(condition: Boolean, block: T.() -> Unit): T {
+    contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
+    if (condition) block()
+    return this
+}
+
+inline fun <T, R> T.applyIfNotNull(nullable: R?, block: T.(R) -> Unit): T {
+    contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
+    if (nullable != null) block(nullable)
+    return this
 }

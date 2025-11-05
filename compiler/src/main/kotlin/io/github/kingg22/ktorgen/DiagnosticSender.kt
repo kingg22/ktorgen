@@ -30,5 +30,5 @@ interface DiagnosticSender {
     fun addError(message: String, symbol: KSNode? = null)
 
     /** Fatal error, can be related to a symbol. This is a controlled exception. */
-    fun die(message: String, symbol: KSNode? = null, exception: Exception?): Nothing
+    fun die(message: String, symbol: KSNode? = null, exception: Exception? = null): Nothing
 }
