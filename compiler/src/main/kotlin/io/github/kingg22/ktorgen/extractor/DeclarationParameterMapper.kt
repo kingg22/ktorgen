@@ -7,10 +7,11 @@ import io.github.kingg22.ktorgen.model.ParameterData
 
 fun interface DeclarationParameterMapper {
     /** Convert a [KSValueParameter] to [ParameterData] */
-    fun mapToModel(
-        declaration: KSValueParameter,
-        timer: (String) -> DiagnosticSender,
-    ): Pair<ParameterData?, List<KSAnnotated>>
+    context(timer: DiagnosticSender)
+    fun mapToModel(declaration: KSValueParameter): Pair<ParameterData?, List<KSAnnotated>>
+
+    fun getLoggerNameFor(declaration: KSValueParameter): String =
+        "Parameter Mapper for [${declaration.name?.asString().orEmpty()}]"
 
     companion object {
         val DEFAULT: DeclarationParameterMapper by lazy { ParameterMapper() }
