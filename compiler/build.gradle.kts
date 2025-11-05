@@ -21,8 +21,10 @@ java {
 
 kotlin {
     compilerOptions {
+        freeCompilerArgs.addAll("-Xcontext-parameters", "-Xcontext-sensitive-resolution", "-Xnested-type-aliases")
+        optIn.addAll("kotlin.contracts.ExperimentalContracts", "io.github.kingg22.ktorgen.core.KtorGenExperimental")
         languageVersion.set(KotlinVersion.KOTLIN_2_2)
-        apiVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.KOTLIN_2_2)
         jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
         jvmTarget.set(JvmTarget.JVM_11)
         extraWarnings.set(true)
