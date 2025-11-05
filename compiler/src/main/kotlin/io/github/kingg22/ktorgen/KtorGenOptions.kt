@@ -9,7 +9,7 @@ class KtorGenOptions(options: Map<String, String>) {
      * 2: Turn errors into warnings
      */
     val errorsLoggingType = options[CHECKING_TYPE]?.toIntOrNull() ?: 2
-    val printStackTraceOnException = options[PRINT_STACKTRACE_ON_EXCEPTION]?.toBooleanStrictOrNull() ?: false
+    val isPrintStackTraceOnException = options[PRINT_STACKTRACE_ON_EXCEPTION]?.toBoolean() ?: false
 
     companion object {
         private const val CHECKING_TYPE = "ktorgen_check_type"
