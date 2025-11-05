@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import io.github.kingg22.ktorgen.checkImplementation
 import kotlin.contracts.contract
 
 class TypeData(val parameterType: KSType) {
@@ -15,7 +16,7 @@ class TypeData(val parameterType: KSType) {
 }
 
 private val FLOW_CLASS = ClassName("kotlinx.coroutines.flow", "Flow")
-private val RESULT_CLASS = ClassName("kotlin", "Result")
+val RESULT_CLASS = ClassName("kotlin", "Result")
 
 fun TypeName.isFlowType(): Boolean {
     contract { returns(true) implies (this@isFlowType is ParameterizedTypeName) }
@@ -27,20 +28,20 @@ fun TypeName.isResultType(): Boolean {
     return this is ParameterizedTypeName && (rawType == RESULT_CLASS)
 }
 
-fun TypeName.unwrapFlow(): TypeName {
-    require(isFlowType()) { "unwrapFlow() llamado en un tipo que no es Flow" }
+fun ParameterizedTypeName.unwrapFlow(): TypeName {
+    checkImplementation(isFlowType()) { "unwrapFlow() llamado en un tipo que no es Flow" }
     return typeArguments.first()
 }
 
-fun TypeName.unwrapResult(): TypeName {
-    require(isResultType()) { "unwrapResult() llamado en un tipo que no es Result" }
+fun ParameterizedTypeName.unwrapResult(): TypeName {
+    checkImplementation(isResultType()) { "unwrapResult() llamado en un tipo que no es Result" }
     return typeArguments.first()
 }
 
-/** Caso especial para Flow<Result<T>> → devuelve T */
-fun TypeName.unwrapFlowResult(): TypeName {
-    require(isFlowType()) { "unwrapFlowResult() requiere un Flow" }
+/** Caso especial para `Flow<Result<T>>` → devuelve T */
+fun ParameterizedTypeName.unwrapFlowResult(): TypeName {
+    checkImplementation(isFlowType()) { "unwrapFlowResult() requiere un Flow" }
     val inner = unwrapFlow()
-    require(inner.isResultType()) { "unwrapFlowResult() requiere un Flow<Result<...>>" }
+    checkImplementation(inner.isResultType()) { "unwrapFlowResult() requiere un Flow<Result<...>>" }
     return inner.typeArguments.first()
 }
