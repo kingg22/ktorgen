@@ -279,8 +279,10 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             kmpExpectFunctions.clear()
             kmpExpectFunctions.addAll(remaining)
 
-            val (classData, symbols) = DeclarationMapper.DEFAULT.mapToModel(classDec, matching) {
-                mapperPhase.createTask(it)
+            val (classData, symbols) = context(
+                mapperPhase.createTask(DeclarationMapper.DEFAULT.getLoggerNameFor(classDec)),
+            ) {
+                DeclarationMapper.DEFAULT.mapToModel(classDec, matching)
             }
 
             onDeferredSymbols(classDec, symbols)

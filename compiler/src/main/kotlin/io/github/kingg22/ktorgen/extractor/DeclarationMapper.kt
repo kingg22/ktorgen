@@ -8,11 +8,16 @@ import io.github.kingg22.ktorgen.model.ClassData
 
 fun interface DeclarationMapper {
     /** Convert a [KSClassDeclaration] to [ClassData] */
+    context(timer: DiagnosticSender)
     fun mapToModel(
         declaration: KSClassDeclaration,
         expectFunctions: List<KSFunctionDeclaration>,
-        timer: (String) -> DiagnosticSender,
     ): Pair<ClassData?, List<KSAnnotated>>
+
+    fun getLoggerNameFor(declaration: KSClassDeclaration): String =
+        "Class Mapper for [${getInterfaceNameOf(declaration)}]"
+
+    fun getInterfaceNameOf(declaration: KSClassDeclaration): String = declaration.simpleName.asString()
 
     companion object {
         @JvmStatic
