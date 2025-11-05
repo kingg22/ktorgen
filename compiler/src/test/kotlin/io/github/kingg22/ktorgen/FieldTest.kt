@@ -24,7 +24,7 @@ class FieldTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
-            actualSource.contains("""HttpMethod.parse("GET")""")
+            actualSource.contains("HttpMethod.Get")
             actualSource.doesNotContain("FormDataContent")
             actualSource.doesNotContain("Parameters.build")
         }

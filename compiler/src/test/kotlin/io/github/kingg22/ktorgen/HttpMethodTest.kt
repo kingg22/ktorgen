@@ -6,8 +6,6 @@ import kotlin.test.Test
 class HttpMethodTest {
     @Test
     fun testFunctionWithGET() {
-        val expectedSource = """method = HttpMethod.parse("GET")"""
-
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -21,6 +19,7 @@ class HttpMethodTest {
                 }
             """.trimIndent(),
         )
+        val expectedSource = "method = HttpMethod.Get"
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()

@@ -43,7 +43,7 @@ class InheritanceTest {
             compilationResultSubject.hasErrorCount(0)
             compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._SuperTestServiceImpl".toRelativePath(),
-            ).contains("HttpMethod.parse(\"GET\")")
+            ).contains("HttpMethod.Get")
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             for (expectedLine in expectedGeneratedCode) {
                 generatedFile.contains(expectedLine)
@@ -83,7 +83,7 @@ class InheritanceTest {
         )
 
         val expectedHeadersArgumentText = listOf(
-            "this.method = HttpMethod.parse(\"GET\")",
+            "this.method = HttpMethod.Get",
             "public class _TestServiceImpl",
             "superTestService1: SuperTestService1,",
             "superTestService2: SuperTestService2",
