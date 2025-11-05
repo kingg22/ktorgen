@@ -35,7 +35,7 @@ internal class ClassMapper : DeclarationMapper {
         val interfaceName = declaration.simpleName.getShortName()
         val deferredSymbols = mutableListOf<KSAnnotated>()
         val imports = mutableSetOf<String>()
-        return timer.work { _ ->
+        return timer.work {
             if (declaration.modifiers.any { it == Modifier.EXPECT }) {
                 timer.addError(KtorGenLogger.INTERFACE_IS_EXPECTED, declaration)
                 return@work null to emptyList()
@@ -91,12 +91,15 @@ internal class ClassMapper : DeclarationMapper {
             timer.addStep("Retrieved all properties")
 
             val functions = declaration.getDeclaredFunctions().mapNotNull { func ->
-                val (functionData, symbols) = DeclarationFunctionMapper.DEFAULT.mapToModel(
-                    func,
-                    imports::add,
-                    options.basePath,
-                    timer::createTask,
-                )
+                val (functionData, symbols) = context(
+                    timer.createTask(DeclarationFunctionMapper.DEFAULT.getLoggerNameFor(func)),
+                ) {
+                    DeclarationFunctionMapper.DEFAULT.mapToModel(
+                        func,
+                        imports::add,
+                        options.basePath,
+                    )
+                }
                 functionData?.let {
                     timer.addStep("Processed function: ${it.name}")
                     return@mapNotNull it
