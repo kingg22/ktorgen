@@ -9,8 +9,6 @@ import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.runKspProcessorTest
 import java.io.File
 
-val KTORGEN_STRICT_CHECK = mapOf("ktorgen_check_type" to "1", "ktorgen_print_stacktrace_on_exception" to "true")
-
 /**
  * Runs the KtorGen processor on the given sources and returns the compilation result using androidx room compiler processing test
  * @param sources the sources to be compiled and expect some result
@@ -18,7 +16,7 @@ val KTORGEN_STRICT_CHECK = mapOf("ktorgen_check_type" to "1", "ktorgen_print_sta
  */
 inline fun runKtorGenProcessor(
     vararg sources: Source,
-    processorOptions: Map<String, String> = KTORGEN_STRICT_CHECK,
+    processorOptions: Map<String, String> = mapOf("ktorgen_check_type" to "1"),
     kotlincArguments: List<String> = emptyList(),
     noinline onCompilationResult: (CompilationResultSubject) -> Unit,
 ) = runKspProcessorTest(
