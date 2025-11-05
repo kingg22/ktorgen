@@ -2,21 +2,24 @@ package io.github.kingg22.ktorgen
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSNode
+import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Errors
+import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Off
+import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Warnings
 
 internal class KtorGenLogger(private val kspLogger: KSPLogger, private val options: KtorGenOptions) :
     KSPLogger by kspLogger {
     internal fun fatalError(message: String, symbol: KSNode? = null) = kspLogger.error(message, symbol)
     override fun error(message: String, symbol: KSNode?) {
         when (options.errorsLoggingType) {
-            0 -> {
+            Off -> {
                 // Do nothing
             }
 
-            1 -> {
+            Errors -> {
                 kspLogger.error("$KTOR_GEN $message", symbol)
             }
 
-            2 -> {
+            Warnings -> {
                 // Turn errors into compile warnings
                 kspLogger.warn("$KTOR_GEN $message", symbol)
             }
@@ -53,7 +56,7 @@ internal class KtorGenLogger(private val kspLogger: KSPLogger, private val optio
         const val FUNCTION_OR_PARAMETERS_TYPES_MUST_NOT_INCLUDE_TYPE_VARIABLE_OR_WILDCARD =
             "Function or parameters types must not include a type variable or wildcard: "
         const val SUSPEND_FUNCTION_OR_FLOW =
-            "The function should be 'suspend' or return a Flow/StateFlow/SharedFlow, but it returns "
+            "The function should be 'suspend' or return a coroutines Flow<T>, but it returns "
         const val ABSTRACT_FUNCTION_IGNORED = "An abstract function with @KtorGenFunction(generate=false) is invalid. "
         const val FORM_ENCODED_MUST_CONTAIN_AT_LEAST_ONE_FIELD =
             "@FormUrlEncoded must contain at least one @Field or @FieldMap. "

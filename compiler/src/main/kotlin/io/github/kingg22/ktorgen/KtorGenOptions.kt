@@ -1,18 +1,29 @@
 package io.github.kingg22.ktorgen
 
+// TODO add secondary constructor
 class KtorGenOptions(options: Map<String, String>) {
-    /**
-     * 0: Turn off all error related to checking
-     *
-     * 1: Check for errors
-     *
-     * 2: Turn errors into warnings
-     */
-    val errorsLoggingType = options[CHECKING_TYPE]?.toIntOrNull() ?: 2
+    val errorsLoggingType = options[STRICK_CHECK_TYPE]?.toIntOrNull().let { ErrorsLoggingType.fromInt(it) }
     val isPrintStackTraceOnException = options[PRINT_STACKTRACE_ON_EXCEPTION]?.toBoolean() ?: false
 
+    enum class ErrorsLoggingType(val intValue: Int) {
+        /** Turn off all error related to checking */
+        Off(0),
+
+        /** Check for errors */
+        Errors(1),
+
+        /** Turn errors into warnings */
+        Warnings(2),
+        ;
+
+        companion object {
+            @JvmStatic
+            fun fromInt(value: Int?) = value?.let { entries.firstOrNull { it.intValue == value } } ?: Warnings
+        }
+    }
+
     companion object {
-        private const val CHECKING_TYPE = "ktorgen_check_type"
-        private const val PRINT_STACKTRACE_ON_EXCEPTION = "ktorgen_print_stacktrace_on_exception"
+        const val STRICK_CHECK_TYPE = "ktorgen_check_type"
+        const val PRINT_STACKTRACE_ON_EXCEPTION = "ktorgen_print_stacktrace_on_exception"
     }
 }
