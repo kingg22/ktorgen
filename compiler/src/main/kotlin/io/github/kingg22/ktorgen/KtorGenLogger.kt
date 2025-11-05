@@ -24,8 +24,9 @@ internal class KtorGenLogger(private val kspLogger: KSPLogger, private val optio
     }
 
     override fun exception(e: Throwable) {
-        if (options.printStackTraceOnException) {
-            kspLogger.exception(e.apply { printStackTrace() })
+        if (options.isPrintStackTraceOnException) {
+            kspLogger.exception(e)
+            kspLogger.error(e.stackTraceToString())
         } else {
             kspLogger.exception(e)
         }
