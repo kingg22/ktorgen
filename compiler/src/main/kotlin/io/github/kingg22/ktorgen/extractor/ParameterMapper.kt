@@ -1,7 +1,5 @@
 package io.github.kingg22.ktorgen.extractor
 
-import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
@@ -18,12 +16,10 @@ import io.github.kingg22.ktorgen.model.annotations.toCookieValues
 import io.github.kingg22.ktorgen.work
 
 internal class ParameterMapper : DeclarationParameterMapper {
-    override fun mapToModel(
-        declaration: KSValueParameter,
-        timer: (String) -> DiagnosticSender,
-    ): Pair<ParameterData?, List<KSAnnotated>> {
+    context(timer: DiagnosticSender)
+    override fun mapToModel(declaration: KSValueParameter): Pair<ParameterData?, List<KSAnnotated>> {
         val paramName = declaration.name?.asString().orEmpty()
-        return timer("Parameter Mapper for [$paramName]").work { timer ->
+        return timer.work {
             val type = declaration.type.resolve()
             if (type.isError) return@work null to listOf(declaration.type)
 
@@ -56,7 +52,6 @@ internal class ParameterMapper : DeclarationParameterMapper {
         }
     }
 
-    @OptIn(KspExperimental::class)
     private fun collectParameterAnnotations(declaration: KSValueParameter): List<ParameterAnnotation> = buildList {
         declaration.getAnnotation<Path, ParameterAnnotation.Path>(
             manualExtraction = {
@@ -177,10 +172,10 @@ internal class ParameterMapper : DeclarationParameterMapper {
             ParameterAnnotation.Tag(it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()))
         }?.let { add(it) }
 
-        declaration.getAnnotationsByType(Cookie::class)
+        declaration.getAnnotationsByType<Cookie>()
             .map { it.toCookieValues(declaration.name.safeString()) }
             .toList()
-            .takeIf(List<*>::isNotEmpty)
+            .takeIf { it.isNotEmpty() }
             ?.let { cookies -> add(ParameterAnnotation.Cookies(cookies)) }
     }
 
