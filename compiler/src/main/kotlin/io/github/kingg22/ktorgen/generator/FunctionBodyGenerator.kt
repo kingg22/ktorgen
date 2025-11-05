@@ -13,6 +13,8 @@ import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.partDataKtor
 import io.github.kingg22.ktorgen.model.FunctionData
+import io.github.kingg22.ktorgen.model.HttpRequestBuilderTypeName
+import io.github.kingg22.ktorgen.model.KTOR_CLIENT_REQUEST_PACKAGE
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.annotations.CookieValues
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
@@ -26,18 +28,25 @@ import io.github.kingg22.ktorgen.model.unwrapFlowResult
 import io.github.kingg22.ktorgen.model.unwrapResult
 
 internal class FunctionBodyGenerator {
-    internal companion object {
+    private companion object {
         private const val THIS_HEADERS = "this.headers"
         private const val LITERAL_FOREACH = "%L.forEach"
         private const val LITERAL_FOREACH_SAFE_NULL_ENTRY = "%L?.forEach { entry ->"
         private const val APPEND_STRING_LITERAL = "this.append(%S, %L)"
+        private const val APPEND_STRING_STRING = "this.append(%S, %P)"
         private const val LITERAL_NN_LET = "%L?.let"
         private const val ITERABLE_FILTER_NULL_FOREACH = "%L?.filterNotNull()?.forEach"
         private const val ENTRY_VALUE_NN_LET = "entry.value?.let { value ->"
         private const val VALUE = $$"$value"
-        private const val BODY_TYPE = ".body<%T>()"
+        private const val BODY_TYPE = ".%M<%T>()"
+        private val BODY_FUNCTION = MemberName("io.ktor.client.call", "body", true)
         private const val ENCODED_PARAMETERS_APPEND = "this.encodedParameters.append"
         private const val PARAMETERS_APPEND = "this.parameters.append"
+        private val FLOW_MEMBER = MemberName("kotlinx.coroutines.flow", "flow")
+        private val KTOR_CLIENT_REQUEST_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "request", true)
+        private val KTOR_URL_TAKE_FROM_FUNCTION = MemberName("io.ktor.http", "takeFrom", true)
+        private val KTOR_CLIENT_REQUEST_TAKE_FROM_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "takeFrom", true)
+        private val DECODE_URL_COMPONENTS_FUNCTION = MemberName("io.ktor.http", "decodeURLQueryComponent", true)
     }
 
     fun generateFunctionBody(func: FunctionData, httpClient: MemberName): CodeBlock {
@@ -58,11 +67,11 @@ internal class FunctionBodyGenerator {
     private fun generateFlowResultBody(returnType: TypeName, func: FunctionData, httpClient: MemberName): CodeBlock =
         CodeBlock.builder().apply {
             val isUnit = returnType.unwrapFlowResult() == UNIT
-            beginControlFlow("return %M", MemberName("kotlinx.coroutines.flow", "flow"))
+            beginControlFlow("return %M", FLOW_MEMBER)
                 .beginControlFlow("try")
                 .addRequest(func, httpClient)
             if (!isUnit) {
-                add(BODY_TYPE, returnType.unwrapFlowResult())
+                add(BODY_TYPE, BODY_FUNCTION, returnType.unwrapFlowResult())
                 beginControlFlow(".let")
                 addStatement("emit(Result.success(it))")
                 endControlFlow()
@@ -78,10 +87,10 @@ internal class FunctionBodyGenerator {
     private fun generateFlowBody(returnType: TypeName, func: FunctionData, httpClient: MemberName): CodeBlock =
         CodeBlock.builder().apply {
             val isUnit = returnType.unwrapFlow() == UNIT
-            beginControlFlow("return %M", MemberName("kotlinx.coroutines.flow", "flow"))
+            beginControlFlow("return %M", FLOW_MEMBER)
             addRequest(func, httpClient)
             if (!isUnit) {
-                add(BODY_TYPE, returnType.unwrapFlow())
+                add(BODY_TYPE, BODY_FUNCTION, returnType.unwrapFlow())
                 beginControlFlow(".let")
                     .addStatement("emit(it)")
                 endControlFlow()
@@ -95,9 +104,9 @@ internal class FunctionBodyGenerator {
         CodeBlock.builder().apply {
             val isUnit = returnType.unwrapResult() == UNIT
             beginControlFlow("return try")
-            addRequest(func, httpClient)
+                .addRequest(func, httpClient)
             if (!isUnit) {
-                addStatement(BODY_TYPE, returnType.unwrapResult())
+                addStatement(BODY_TYPE, BODY_FUNCTION, returnType.unwrapResult())
                 beginControlFlow(".let")
                     .addStatement("Result.success(it)")
                 endControlFlow()
@@ -105,7 +114,7 @@ internal class FunctionBodyGenerator {
                 addStatement("Result.success(%L)", UNIT)
             }
             nextControlFlow("catch (e: Exception)")
-            addStatement("Result.failure(e)")
+                .addStatement("Result.failure(e)")
             endControlFlow()
         }.build()
 
@@ -114,11 +123,11 @@ internal class FunctionBodyGenerator {
             val isUnit = returnType == UNIT
             if (!isUnit) add("return ")
             addRequest(func, httpClient)
-            if (!isUnit) add(".body()")
+            if (!isUnit) add(".%M()", BODY_FUNCTION)
         }.build()
 
     private fun CodeBlock.Builder.addRequest(func: FunctionData, httpClient: MemberName) = apply {
-        beginControlFlow("%M.request", httpClient)
+        beginControlFlow("%M.%M", httpClient, KTOR_CLIENT_REQUEST_FUNCTION)
             .addBuilderCall(func.parameterDataList)
             .addHttpMethod(func)
             .addUrl(func)
@@ -131,8 +140,17 @@ internal class FunctionBodyGenerator {
 
     // -- core parts --
     private fun CodeBlock.Builder.addBuilderCall(parameterList: List<ParameterData>) = apply {
-        parameterList.firstOrNull { it.isValidTakeFrom }?.let {
-            addStatement("this.takeFrom(%L)", it.nameString)
+        parameterList.firstOrNull { it.isValidTakeFrom }?.let { parameterData ->
+            addStatement(
+                "this.%L",
+                if (parameterData.typeData.typeName == HttpRequestBuilderTypeName) {
+                    // member (this.takeFrom)
+                    CodeBlock.of("takeFrom(%L)", parameterData.nameString)
+                } else {
+                    // Extension function
+                    CodeBlock.of("%M(%L)", KTOR_CLIENT_REQUEST_TAKE_FROM_FUNCTION, parameterData.nameString)
+                },
+            )
         }
         parameterList.firstOrNull { it.isHttpRequestBuilderLambda }?.let { param ->
             addStatement("%L(this)", param.nameString)
@@ -141,7 +159,11 @@ internal class FunctionBodyGenerator {
 
     private fun CodeBlock.Builder.addHttpMethod(func: FunctionData) = apply {
         if (func.httpMethodAnnotation.httpMethod != HttpMethod.Absent) {
-            addStatement("this.method = HttpMethod.parse(%S)", func.httpMethodAnnotation.httpMethod.value)
+            if (func.httpMethodAnnotation.httpMethod in HttpMethod.ktorMethods) {
+                addStatement("this.method = HttpMethod.%L", func.httpMethodAnnotation.httpMethod.ktorMethodName)
+            } else {
+                addStatement("this.method = HttpMethod.parse(%S)", func.httpMethodAnnotation.httpMethod.value)
+            }
         }
     }
 
@@ -149,13 +171,14 @@ internal class FunctionBodyGenerator {
         val content = CodeBlock.builder().apply {
             // Url takeFrom
             func.parameterDataList.firstOrNull { it.hasAnnotation<ParameterAnnotation.Url>() }?.let {
-                addStatement("this.takeFrom(%L)", it.nameString)
+                addStatement("this.%M(%L)", KTOR_URL_TAKE_FROM_FUNCTION, it.nameString)
             }
 
             // Url template of the http method
             if (func.urlTemplate.isNotEmpty) {
                 addStatement(
-                    "this.takeFrom(%P)",
+                    "this.%M(%P)",
+                    KTOR_URL_TAKE_FROM_FUNCTION,
                     func.urlTemplate.let { (template, keys) ->
                         val values = keys.map { key ->
                             val param = func.parameterDataList.first { parameter ->
@@ -202,7 +225,7 @@ internal class FunctionBodyGenerator {
 
         func.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.map { (name, value) ->
             name.removeWhitespace() to value.removeWhitespace()
-        }?.takeIf(List<*>::isNotEmpty)?.let {
+        }?.takeIf { it.isNotEmpty() }?.let {
             beginControlFlow(THIS_HEADERS)
             for ((key, value) in it) {
                 addStatement("this.append(%S, %S)", key, value)
@@ -270,7 +293,7 @@ internal class FunctionBodyGenerator {
             cookieValues.path,
             cookieValues.secure,
             cookieValues.httpOnly,
-            cookieValues.extensions.takeIf(Map<*, *>::isNotEmpty)?.let { extensions ->
+            cookieValues.extensions.takeIf { it.isNotEmpty() }?.let { extensions ->
                 CodeBlock.builder().apply {
                     add("%M(\n", MemberName("kotlin.collections", "mapOf"))
                     indent()
@@ -294,8 +317,7 @@ internal class FunctionBodyGenerator {
         if (func.isBody) {
             addStatement(
                 "this.setBody(%L)",
-                func.parameterDataList.firstOrNull { it.hasAnnotation<ParameterAnnotation.Body>() }?.nameString
-                    ?: error("Not found body"), // imposible after isBody and validations
+                func.parameterDataList.first { it.hasAnnotation<ParameterAnnotation.Body>() }.nameString,
             )
         }
         if (func.isMultipart) add(getPartsCodeBlock(func.parameterDataList, listType, arrayType, partDataKtor))
@@ -306,7 +328,7 @@ internal class FunctionBodyGenerator {
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.Tag>() }
             .forEach { param ->
-                val tag = param.findAnnotationOrNull<ParameterAnnotation.Tag>()!!
+                val tag = param.findAnnotation<ParameterAnnotation.Tag>()
 
                 if (param.typeData.parameterType.isMarkedNullable) {
                     addStatement(
@@ -328,7 +350,7 @@ internal class FunctionBodyGenerator {
     private fun CodeBlock.Builder.addHeaderParameter(parameterDataList: List<ParameterData>) = apply {
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.Header>() }
-            .takeIf(List<*>::isNotEmpty)
+            .takeIf { it.isNotEmpty() }
             ?.also { beginControlFlow(THIS_HEADERS) }
             ?.forEach { parameterData ->
                 val paramName = parameterData.nameString
@@ -403,7 +425,7 @@ internal class FunctionBodyGenerator {
     private fun CodeBlock.Builder.addHeaderMap(parameterDataList: List<ParameterData>) = apply {
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
-            .takeIf(List<*>::isNotEmpty)
+            .takeIf { it.isNotEmpty() }
             ?.also { beginControlFlow(THIS_HEADERS) }
             ?.forEach { parameterData ->
                 val typeName = parameterData.typeData.typeName
@@ -503,8 +525,7 @@ internal class FunctionBodyGenerator {
         params
             .filter { it.hasAnnotation<ParameterAnnotation.QueryMap>() }
             .forEach { parameterData ->
-                val queryMap = parameterData.findAnnotationOrNull<ParameterAnnotation.QueryMap>()
-                    ?: error("QueryMap annotation not found")
+                val queryMap = parameterData.findAnnotation<ParameterAnnotation.QueryMap>()
                 val encoded = queryMap.encoded
                 val data = parameterData.nameString
 
@@ -526,8 +547,7 @@ internal class FunctionBodyGenerator {
             params
                 .filter { it.hasAnnotation<ParameterAnnotation.QueryName>() }
                 .forEach { parameterData ->
-                    val queryName = parameterData.findAnnotationOrNull<ParameterAnnotation.QueryName>()
-                        ?: error("QueryName annotation not found")
+                    val queryName = parameterData.findAnnotation<ParameterAnnotation.QueryName>()
                     val encoded = queryName.encoded
                     val name = parameterData.nameString
 
@@ -558,8 +578,7 @@ internal class FunctionBodyGenerator {
             params
                 .filter { it.hasAnnotation<ParameterAnnotation.Query>() }
                 .forEach { parameterData ->
-                    val query = parameterData.findAnnotationOrNull<ParameterAnnotation.Query>()
-                        ?: error("Query annotation not found")
+                    val query = parameterData.findAnnotation<ParameterAnnotation.Query>()
                     val encoded = query.encoded
                     val starProj = parameterData.typeData.parameterType.starProjection()
                     val isList = starProj.isAssignableFrom(listType)
@@ -610,8 +629,7 @@ internal class FunctionBodyGenerator {
 
         params.filter { it.hasAnnotation<ParameterAnnotation.Part>() }
             .forEach { parameterData ->
-                val part = parameterData.findAnnotationOrNull<ParameterAnnotation.Part>()
-                    ?: error("Part annotation not found")
+                val part = parameterData.findAnnotation<ParameterAnnotation.Part>()
                 val name = parameterData.nameString
                 val partValue = part.value
 
@@ -638,13 +656,13 @@ internal class FunctionBodyGenerator {
 
                     isList || isArray -> {
                         partCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
-                            .addStatement("this.append(%S, %P)", partValue, $$"$it")
+                            .addStatement(APPEND_STRING_STRING, partValue, $$"$it")
                         partCode.endControlFlow()
                     }
 
                     else -> {
                         partCode.beginControlFlow(LITERAL_NN_LET, name)
-                            .addStatement("this.append(%S, %P)", partValue, $$"$it")
+                            .addStatement(APPEND_STRING_STRING, partValue, $$"$it")
                         partCode.endControlFlow()
                     }
                 }
@@ -693,56 +711,67 @@ internal class FunctionBodyGenerator {
         arrayType: KSType,
         formParamsVar: String = "_formDataContent",
     ): CodeBlock {
-        val block = CodeBlock.builder()
+        val fieldCode = CodeBlock.builder().apply {
+            params.filter { it.hasAnnotation<ParameterAnnotation.Field>() }
+                .forEach { parameterData ->
+                    val field = parameterData.findAnnotation<ParameterAnnotation.Field>()
+                    val encoded = field.encoded
+                    val paramName = parameterData.nameString
+                    val fieldValue = field.value
 
-        val fieldCode = CodeBlock.builder()
-        params.filter { it.hasAnnotation<ParameterAnnotation.Field>() }
-            .forEach { parameterData ->
-                val field = parameterData.findAnnotationOrNull<ParameterAnnotation.Field>()
-                    ?: error("Field annotation not found")
-                val encoded = field.encoded
-                val paramName = parameterData.nameString
-                val fieldValue = field.value
+                    val starProj = parameterData.typeData.parameterType.starProjection()
+                    val isList = starProj.isAssignableFrom(listType)
+                    val isArray = starProj.isAssignableFrom(arrayType)
 
-                val starProj = parameterData.typeData.parameterType.starProjection()
-                val isList = starProj.isAssignableFrom(listType)
-                val isArray = starProj.isAssignableFrom(arrayType)
-                val decodeSuffix = if (encoded) ".decodeURLQueryComponent(plusIsSpace = true)" else ""
+                    val controlFlow = if (isList || isArray) ITERABLE_FILTER_NULL_FOREACH else LITERAL_NN_LET
 
-                if (isList || isArray) {
-                    fieldCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, paramName)
-                    fieldCode.addStatement("this.append(%S, %P%L)", fieldValue, $$"$it", decodeSuffix)
-                    fieldCode.endControlFlow()
-                } else {
-                    fieldCode.beginControlFlow(LITERAL_NN_LET, paramName)
-                    fieldCode.addStatement("this.append(%S, %P%L)", fieldValue, $$"$it", decodeSuffix)
-                    fieldCode.endControlFlow()
+                    beginControlFlow(controlFlow, paramName)
+                        .addStatement(
+                            "%L",
+                            if (encoded) {
+                                CodeBlock.of(
+                                    "this.append(%S, %P.%M(plusIsSpace = true))",
+                                    fieldValue,
+                                    $$"$it",
+                                    DECODE_URL_COMPONENTS_FUNCTION,
+                                )
+                            } else {
+                                CodeBlock.of(APPEND_STRING_STRING, fieldValue, $$"$it")
+                            },
+                        )
+                    endControlFlow()
                 }
+
+            params.filter { it.hasAnnotation<ParameterAnnotation.FieldMap>() }
+                .forEach { parameterData ->
+                    val encoded = parameterData.findAnnotation<ParameterAnnotation.FieldMap>().encoded
+
+                    beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, parameterData.nameString)
+                        .beginControlFlow(ENTRY_VALUE_NN_LET)
+                        .addStatement(
+                            "%L",
+                            if (encoded) {
+                                CodeBlock.of(
+                                    "this.append(entry.key, %P.%M(plusIsSpace = true))",
+                                    VALUE,
+                                    DECODE_URL_COMPONENTS_FUNCTION,
+                                )
+                            } else {
+                                CodeBlock.of("this.append(entry.key, %P)", VALUE)
+                            },
+                        )
+                        .endControlFlow()
+                    endControlFlow()
+                }
+        }.build()
+
+        return CodeBlock.builder().apply {
+            if (fieldCode.isNotEmpty()) {
+                beginControlFlow("val %L = Parameters.build", formParamsVar)
+                    .add(fieldCode)
+                endControlFlow()
+                addStatement("this.setBody(FormDataContent(%L))", formParamsVar)
             }
-
-        params.filter { it.hasAnnotation<ParameterAnnotation.FieldMap>() }
-            .forEach { parameterData ->
-                val fieldMap = parameterData.findAnnotationOrNull<ParameterAnnotation.FieldMap>()
-                    ?: error("FieldMap annotation not found")
-                val encoded = fieldMap.encoded
-                val decodeSuffix = if (encoded) ".decodeURLQueryComponent(plusIsSpace = true)" else ""
-
-                fieldCode.beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, parameterData.nameString)
-                fieldCode.beginControlFlow(ENTRY_VALUE_NN_LET)
-                fieldCode.addStatement("this.append(entry.key, %P%L)", VALUE, decodeSuffix)
-                fieldCode.endControlFlow()
-                fieldCode.endControlFlow()
-            }
-
-        if (fieldCode.build().isNotEmpty()) {
-            block.add("val %L = Parameters.build·{\n", formParamsVar)
-            block.indent()
-            block.add(fieldCode.build())
-            block.unindent()
-            block.add("}\n")
-            block.addStatement("this.setBody(FormDataContent(%L))", formParamsVar)
-        }
-
-        return block.build()
+        }.build()
     }
 }

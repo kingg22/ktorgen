@@ -54,19 +54,15 @@ class HttpRequestBuilderTest {
                 }
             """.trimIndent(),
         )
-
-        val expectedRequestBuilderArgumentText = listOf(
-            "this.takeFrom(builder)",
-            "this.takeFrom(request)",
-            "this.takeFrom(requestData)",
-        )
+        // Kotlinpoet can import extension functions with alias
+        val expectedRequestBuilderArgumentText = listOf("builder", "request", "requestData")
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
-            expectedRequestBuilderArgumentText.forEach {
-                generatedFile.contains(it)
+            expectedRequestBuilderArgumentText.forEach { arg ->
+                generatedFile.containsMatch("""(?:this\.)?\w*akeFrom\($arg\)""".toPattern())
             }
         }
     }
