@@ -18,10 +18,11 @@ import io.github.kingg22.ktorgen.http.Fragment
 import io.github.kingg22.ktorgen.http.HTTP
 import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.Multipart
-import io.github.kingg22.ktorgen.model.*
+import io.github.kingg22.ktorgen.model.FunctionData
+import io.github.kingg22.ktorgen.model.FunctionGenerationOptions
+import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
-import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
 import io.github.kingg22.ktorgen.require
 import io.github.kingg22.ktorgen.requireNotNull
@@ -31,9 +32,8 @@ internal class FunctionMapper : DeclarationFunctionMapper {
     context(timer: DiagnosticSender)
     override fun mapToModel(
         declaration: KSFunctionDeclaration,
-        onAddImport: (String) -> Unit,
         basePath: String,
-    ): Pair<FunctionData?, List<KSAnnotated>> {
+    ): DeclarationFunctionMapper.FunctionDataOrDeferredSymbols {
         val name = declaration.simpleName.asString()
         val deferredSymbols = mutableListOf<KSAnnotated>()
         return timer.work {
@@ -69,8 +69,7 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 getFunctionAnnotations(declaration, basePath)
             }
 
-            timer.addStep("Processed function annotations, adding imports")
-            addImportsForFunctionAnnotations(functionAnnotations, onAddImport)
+            timer.addStep("Processed function annotations")
 
             val parameters = declaration.parameters.mapNotNull { param ->
                 val (parameterData, symbols) = context(
@@ -86,8 +85,7 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 return@mapNotNull null
             }
 
-            timer.addStep("Adding imports of parameters")
-            addImportsForParametersAnnotations(parameters.flatMap { p -> p.ktorgenAnnotations }, onAddImport)
+            timer.addStep("Processed parameters")
 
             val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)
             val modifiers = declaration.modifiers.mapNotNull { it.toKModifier() } + KModifier.OVERRIDE
@@ -139,79 +137,6 @@ internal class FunctionMapper : DeclarationFunctionMapper {
             optIns = if (mergedOptIn != null) emptySet() else options.optIns,
         ).also {
             timer.addStep("Updated options with annotations and optIns propagated: $it")
-        }
-    }
-
-    private fun addImportsForFunctionAnnotations(annotations: List<FunctionAnnotation>, onAddImport: (String) -> Unit) {
-        for (annotation in annotations) {
-            when (annotation) {
-                is FunctionAnnotation.Headers -> {
-                    onAddImport(KTOR_CLIENT_HEADERS)
-                }
-
-                is FunctionAnnotation.Cookies -> {
-                    onAddImport(KTOR_CLIENT_COOKIE)
-                    onAddImport(KTOR_GMT_DATE)
-                }
-
-                is FunctionAnnotation.FormUrlEncoded,
-                is FunctionAnnotation.Multipart,
-                -> {
-                    onAddImport(KTOR_CONTENT_TYPE_ADD)
-                    onAddImport(KTOR_CLIENT_FORM_DATA_CONTENT)
-                    onAddImport(KTOR_CLIENT_MULTI_PART_FORM_DATA_CONTENT)
-                    onAddImport(KTOR_CLIENT_FORM_DATA)
-                    onAddImport(KTOR_PARAMETERS)
-                }
-
-                is FunctionAnnotation.HttpMethodAnnotation -> onAddImport(KTOR_HTTP_METHOD)
-                is FunctionAnnotation.Fragment -> {
-                    /* No Op */
-                }
-            }
-        }
-    }
-
-    private fun addImportsForParametersAnnotations(
-        parameters: List<ParameterAnnotation>,
-        onAddImport: (String) -> Unit,
-    ) {
-        for (annotation in parameters) {
-            when (annotation) {
-                ParameterAnnotation.Body,
-                is ParameterAnnotation.Part,
-                is ParameterAnnotation.PartMap,
-                is ParameterAnnotation.Field,
-                is ParameterAnnotation.FieldMap,
-                -> {
-                    onAddImport(KTOR_CLIENT_SET_BODY)
-                    onAddImport(KTOR_CONTENT_TYPE)
-                    onAddImport(KTOR_CONTENT_TYPE_ADD)
-                    onAddImport(KTOR_CLIENT_FORM_DATA_CONTENT)
-                    onAddImport(KTOR_CLIENT_MULTI_PART_FORM_DATA_CONTENT)
-                    onAddImport(KTOR_CLIENT_FORM_DATA)
-                    onAddImport(KTOR_PARAMETERS)
-                }
-
-                is ParameterAnnotation.Header, ParameterAnnotation.HeaderMap -> onAddImport(
-                    KTOR_CLIENT_HEADERS,
-                )
-
-                is ParameterAnnotation.Path -> if (!annotation.encoded) onAddImport(KTOR_ENCODE_URL_PATH)
-                is ParameterAnnotation.Tag -> onAddImport(KTOR_CLIENT_ATTRIBUTE_KEY)
-                is ParameterAnnotation.Cookies -> {
-                    onAddImport(KTOR_CLIENT_COOKIE)
-                    onAddImport(KTOR_GMT_DATE)
-                }
-
-                is ParameterAnnotation.Query,
-                is ParameterAnnotation.QueryMap,
-                is ParameterAnnotation.QueryName,
-                ParameterAnnotation.Url,
-                -> {
-                    /* No Op*/
-                }
-            }
         }
     }
 

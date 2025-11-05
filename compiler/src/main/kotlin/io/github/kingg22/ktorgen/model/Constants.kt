@@ -20,20 +20,7 @@ val UrlPathRegex = "\\{([^}]+)}".toRegex()
 const val KTOR_CLIENT_REQUEST_PACKAGE = "io.ktor.client.request"
 
 // required imports
-const val KTOR_CONTENT_TYPE = "io.ktor.http.ContentType"
-const val KTOR_CONTENT_TYPE_ADD = "io.ktor.http.contentType"
-const val KTOR_CLIENT_SET_BODY = "$KTOR_CLIENT_REQUEST_PACKAGE.setBody"
-const val KTOR_CLIENT_HEADERS = "$KTOR_CLIENT_REQUEST_PACKAGE.headers"
-const val KTOR_CLIENT_COOKIE = "$KTOR_CLIENT_REQUEST_PACKAGE.cookie"
-const val KTOR_CLIENT_ATTRIBUTE_KEY = "io.ktor.util.AttributeKey"
-const val KTOR_GMT_DATE = "io.ktor.util.date.GMTDate"
-const val KTOR_HTTP_METHOD = "io.ktor.http.HttpMethod"
-const val KTOR_ENCODE_URL_PATH = "io.ktor.http.encodeURLPath"
-const val KTOR_CLIENT_FORM_DATA_CONTENT = "$KTOR_CLIENT_REQUEST_PACKAGE.forms.FormDataContent"
-const val KTOR_CLIENT_MULTI_PART_FORM_DATA_CONTENT = "$KTOR_CLIENT_REQUEST_PACKAGE.forms.MultiPartFormDataContent"
-const val KTOR_CLIENT_FORM_DATA = "$KTOR_CLIENT_REQUEST_PACKAGE.forms.formData"
 const val KTOR_CLIENT_PART_DATA = "io.ktor.http.content.PartData"
-const val KTOR_PARAMETERS = "io.ktor.http.Parameters"
 
 val HttpClientClassName = ClassName("io.ktor.client", "HttpClient")
 val HttpRequestBuilderTypeName = ClassName(KTOR_CLIENT_REQUEST_PACKAGE, "HttpRequestBuilder")

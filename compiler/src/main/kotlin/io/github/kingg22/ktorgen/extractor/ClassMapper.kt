@@ -32,114 +32,108 @@ internal class ClassMapper : DeclarationMapper {
     override fun mapToModel(
         declaration: KSClassDeclaration,
         expectFunctions: List<KSFunctionDeclaration>,
-    ): Pair<ClassData?, List<KSAnnotated>> {
+    ): DeclarationMapper.ClassDataOrDeferredSymbols = timer.work {
+        timer.require(
+            !declaration.modifiers.contains(Modifier.EXPECT),
+            KtorGenLogger.INTERFACE_IS_EXPECTED,
+            declaration,
+        )
+
+        val companionObject = declaration.declarations
+            .filterIsInstance<KSClassDeclaration>()
+            .any { it.isCompanionObject }
+
         val interfaceName = declaration.simpleName.getShortName()
+
+        var options = extractKtorGen(declaration, interfaceName)
+            ?: run {
+                if (companionObject) {
+                    extractKtorGen(
+                        declaration.declarations.filterIsInstance<KSClassDeclaration>()
+                            .first { it.isCompanionObject },
+                        interfaceName,
+                    )?.let { return@run it }
+                }
+                ClassGenerationOptions.default(
+                    generatedName = "_${interfaceName}Impl",
+                    visibilityModifier = declaration.getVisibility().name,
+                )
+            }
+
+        timer.addStep(
+            "Retrieved @KtorGen options, going to propagate annotations? ${options.propagateAnnotations}. Options: $options",
+        )
+
         val deferredSymbols = mutableListOf<KSAnnotated>()
-        val imports = mutableSetOf<String>()
-        return timer.work {
-            timer.require(
-                !declaration.modifiers.contains(Modifier.EXPECT),
-                KtorGenLogger.INTERFACE_IS_EXPECTED,
-                declaration,
-            )
 
-            val companionObject = declaration.declarations
-                .filterIsInstance<KSClassDeclaration>()
-                .any { it.isCompanionObject }
-
-            var options = extractKtorGen(declaration, interfaceName)
-                ?: run {
-                    if (companionObject) {
-                        extractKtorGen(
-                            declaration.declarations.filterIsInstance<KSClassDeclaration>()
-                                .first { it.isCompanionObject },
-                            interfaceName,
-                        )?.let { return@run it }
-                    }
-                    ClassGenerationOptions.default(
-                        generatedName = "_${interfaceName}Impl",
-                        visibilityModifier = declaration.getVisibility().name,
-                    )
-                }
-
-            timer.addStep(
-                "Retrieved @KtorGen options, going to propagate annotations? ${options.propagateAnnotations}. Options: $options",
-            )
-
-            if (options.propagateAnnotations) {
-                options = updateClassGenerationOptions(declaration, deferredSymbols, options)
-            }
-
-            if (!options.goingToGenerate) {
-                timer.addStep("Skipping, not going to generate this interface.")
-                return@work null to emptyList()
-            }
-
-            val packageName = declaration.packageName.asString()
-
-            val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, interfaceName)
-            timer.addStep("Retrieved all supertypes")
-
-            timer.addStep("Have companion object: $companionObject")
-
-            val properties = declaration.getDeclaredProperties()
-
-            properties.map { it.type.resolve() }.filter { it.isError }.forEach { type ->
-                timer.addStep("Found error type reference of property: $type")
-                // Investigate the correct approach type.resolve.declaration or type or type.declaration
-                deferredSymbols += type.declaration
-            }
-
-            timer.addStep("Retrieved all properties")
-
-            val functions = declaration.getDeclaredFunctions().mapNotNull { func ->
-                val (functionData, symbols) = context(
-                    timer.createTask(DeclarationFunctionMapper.DEFAULT.getLoggerNameFor(func)),
-                ) {
-                    DeclarationFunctionMapper.DEFAULT.mapToModel(
-                        func,
-                        imports::add,
-                        options.basePath,
-                    )
-                }
-                functionData?.let {
-                    timer.addStep("Processed function: ${it.name}")
-                    return@mapNotNull it
-                }
-                timer.addStep("${symbols.size} unresolved symbols of function: ${func.simpleName.getShortName()}")
-                deferredSymbols += symbols
-                return@mapNotNull null
-            }.toList()
-
-            timer.addStep("Processed all functions")
-
-            if (deferredSymbols.isNotEmpty()) {
-                timer.addStep("Found deferred symbols, skipping to next round of processing")
-                return@work null to deferredSymbols
-            }
-
-            // an operation terminal of sequences must be in one site
-            ClassData(
-                ksClassDeclaration = declaration,
-                interfaceName = interfaceName,
-                packageNameString = packageName,
-                functions = functions,
-                imports = imports,
-                superClasses = filteredSupertypes.toList(),
-                properties = properties.toList(),
-                modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
-                ksFile = timer.requireNotNull(
-                    declaration.containingFile,
-                    KtorGenLogger.INTERFACE_NOT_HAVE_FILE + interfaceName,
-                    declaration,
-                ),
-                haveCompanionObject = companionObject,
-                options = options,
-                expectFunctions = expectFunctions,
-            ).also { classData ->
-                timer.addStep("Mapper complete of ${classData.interfaceName} to ${classData.generatedName}")
-            } to emptyList()
+        if (options.propagateAnnotations) {
+            options = updateClassGenerationOptions(declaration, deferredSymbols, options)
         }
+
+        if (!options.goingToGenerate) {
+            timer.addStep("Skipping, not going to generate this interface.")
+            return@work null to emptyList()
+        }
+
+        val packageName = declaration.packageName.asString()
+
+        val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, interfaceName)
+        timer.addStep("Retrieved all supertypes")
+
+        timer.addStep("Have companion object: $companionObject")
+
+        val properties = declaration.getDeclaredProperties()
+
+        properties.map { it.type.resolve() }.filter { it.isError }.forEach { type ->
+            timer.addStep("Found error type reference of property: $type")
+            // Investigate the correct approach type.resolve.declaration or type or type.declaration
+            deferredSymbols += type.declaration
+        }
+
+        timer.addStep("Retrieved all properties")
+
+        val functions = declaration.getDeclaredFunctions().mapNotNull { func ->
+            val (functionData, symbols) = context(
+                timer.createTask(DeclarationFunctionMapper.DEFAULT.getLoggerNameFor(func)),
+            ) {
+                DeclarationFunctionMapper.DEFAULT.mapToModel(func, options.basePath)
+            }
+            functionData?.let {
+                timer.addStep("Processed function: ${it.name}")
+                return@mapNotNull it
+            }
+            timer.addStep("${symbols.size} unresolved symbols of function: ${func.simpleName.getShortName()}")
+            deferredSymbols += symbols
+            return@mapNotNull null
+        }.toList()
+
+        timer.addStep("Processed all functions")
+
+        if (deferredSymbols.isNotEmpty()) {
+            timer.addStep("Found deferred symbols, skipping to next round of processing")
+            return@work null to deferredSymbols
+        }
+
+        // an operation terminal of sequences must be in one site
+        ClassData(
+            ksClassDeclaration = declaration,
+            interfaceName = interfaceName,
+            packageNameString = packageName,
+            functions = functions,
+            superClasses = filteredSupertypes.toList(),
+            properties = properties.toList(),
+            modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
+            ksFile = timer.requireNotNull(
+                declaration.containingFile,
+                KtorGenLogger.INTERFACE_NOT_HAVE_FILE + interfaceName,
+                declaration,
+            ),
+            haveCompanionObject = companionObject,
+            options = options,
+            expectFunctions = expectFunctions,
+        ).also { classData ->
+            timer.addStep("Mapper complete of ${classData.interfaceName} to ${classData.generatedName}")
+        } to emptyList()
     }
 
     context(timer: DiagnosticSender)

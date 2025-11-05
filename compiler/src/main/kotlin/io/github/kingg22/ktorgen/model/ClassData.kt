@@ -17,7 +17,6 @@ class ClassData(
     val packageNameString: String,
     val interfaceName: String,
     val functions: List<FunctionData>,
-    val imports: Set<String>,
     val ksFile: KSFile,
     val ksClassDeclaration: KSClassDeclaration,
     val superClasses: List<KSTypeReference>,
