@@ -37,6 +37,8 @@ internal class KtorGenLogger(private val kspLogger: KSPLogger, private val optio
             "$KTOR_GEN Only interfaces and it companion objects can be annotated with @KtorGen"
         const val ONLY_ONE_HTTP_METHOD_IS_ALLOWED = "$KTOR_GEN Only one HTTP method is allowed."
         const val INTERFACE_NOT_HAVE_FILE = "$KTOR_GEN Interface must be in a file, but was null: "
+        const val INTERFACE_IS_EXPECTED =
+            "$KTOR_GEN Interface is expected, for KMP projects interfaces must not be expect, please remove expect modifier."
         const val FUNCTION_NOT_RETURN_TYPE = "$KTOR_GEN Function don't have return type: "
         const val COOKIE_ON_FUNCTION_WITHOUT_VALUE =
             "$KTOR_GEN @Cookie on function requires value, only on parameter is not needed."

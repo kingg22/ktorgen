@@ -9,39 +9,38 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.core.KtorGen
-import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.ClassGenerationOptions
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_CALL_BODY
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_REQUEST
-import io.github.kingg22.ktorgen.model.KTOR_DECODE_URL_QUERY
-import io.github.kingg22.ktorgen.model.KTOR_REQUEST_TAKE_FROM
-import io.github.kingg22.ktorgen.model.KTOR_URL_TAKE_FROM
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
 import kotlin.reflect.KClass
 
 internal class ClassMapper : DeclarationMapper {
+    context(timer: DiagnosticSender)
     override fun mapToModel(
         declaration: KSClassDeclaration,
         expectFunctions: List<KSFunctionDeclaration>,
-        timer: (String) -> DiagnosticSender,
     ): Pair<ClassData?, List<KSAnnotated>> {
         val interfaceName = declaration.simpleName.getShortName()
         val deferredSymbols = mutableListOf<KSAnnotated>()
         val imports = mutableSetOf<String>()
-        return timer("Class Mapper for [$interfaceName]").work { timer ->
+        return timer.work { _ ->
+            if (declaration.modifiers.any { it == Modifier.EXPECT }) {
+                timer.addError(KtorGenLogger.INTERFACE_IS_EXPECTED, declaration)
+                return@work null to emptyList()
+            }
+
             val companionObject = declaration.declarations
                 .filterIsInstance<KSClassDeclaration>()
                 .any { it.isCompanionObject }
@@ -66,7 +65,7 @@ internal class ClassMapper : DeclarationMapper {
             )
 
             if (options.propagateAnnotations) {
-                options = updateClassGenerationOptions(declaration, timer, deferredSymbols, options)
+                options = updateClassGenerationOptions(declaration, deferredSymbols, options)
             }
 
             if (!options.goingToGenerate) {
@@ -76,19 +75,17 @@ internal class ClassMapper : DeclarationMapper {
 
             val packageName = declaration.packageName.asString()
 
-            val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, timer, interfaceName)
+            val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, interfaceName)
             timer.addStep("Retrieved all supertypes")
 
             timer.addStep("Have companion object: $companionObject")
 
             val properties = declaration.getDeclaredProperties()
 
-            properties.forEach {
-                val type = it.type.resolve()
-                if (type.isError) {
-                    timer.addStep("Found error type reference of property: $type")
-                    deferredSymbols += type.declaration
-                }
+            properties.map { it.type.resolve() }.filter { it.isError }.forEach { type ->
+                timer.addStep("Found error type reference of property: $type")
+                // Investigate the correct approach type.resolve.declaration or type or type.declaration
+                deferredSymbols += type.declaration
             }
 
             timer.addStep("Retrieved all properties")
@@ -109,19 +106,6 @@ internal class ClassMapper : DeclarationMapper {
                 return@mapNotNull null
             }.toList()
 
-            if (functions.isNotEmpty()) {
-                // basic imports
-                imports.addAll(
-                    arrayOf(
-                        KTOR_CLIENT_CALL_BODY,
-                        KTOR_CLIENT_REQUEST,
-                        KTOR_URL_TAKE_FROM,
-                        KTOR_REQUEST_TAKE_FROM,
-                        KTOR_DECODE_URL_QUERY,
-                    ),
-                )
-            }
-
             timer.addStep("Processed all functions")
 
             if (deferredSymbols.isNotEmpty()) {
@@ -138,14 +122,7 @@ internal class ClassMapper : DeclarationMapper {
                 imports = imports,
                 superClasses = filteredSupertypes.toList(),
                 properties = properties.toList(),
-                modifierSet = declaration.modifiers.mapNotNull {
-                    val kmodifier = it.toKModifier()
-                    if (kmodifier == KModifier.EXPECT) {
-                        KModifier.ACTUAL
-                    } else {
-                        kmodifier
-                    }
-                }.toSet(),
+                modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
                 ksFile = timer.requireNotNull(
                     declaration.containingFile,
                     KtorGenLogger.INTERFACE_NOT_HAVE_FILE + interfaceName,
@@ -154,15 +131,15 @@ internal class ClassMapper : DeclarationMapper {
                 haveCompanionObject = companionObject,
                 options = options,
                 expectFunctions = expectFunctions,
-            ).also {
-                timer.addStep("Mapper complete of ${it.interfaceName} to ${it.generatedName}")
+            ).also { classData ->
+                timer.addStep("Mapper complete of ${classData.interfaceName} to ${classData.generatedName}")
             } to emptyList()
         }
     }
 
+    context(timer: DiagnosticSender)
     private fun updateClassGenerationOptions(
         declaration: KSClassDeclaration,
-        timer: DiagnosticSender,
         deferredSymbols: MutableList<KSAnnotated>,
         options: ClassGenerationOptions,
     ): ClassGenerationOptions {
@@ -194,10 +171,10 @@ internal class ClassMapper : DeclarationMapper {
         }
     }
 
+    context(timer: DiagnosticSender)
     private fun filterSupertypes(
         supertypes: Sequence<KSTypeReference>,
         deferredSymbols: MutableList<KSAnnotated>,
-        timer: DiagnosticSender,
         interfaceName: String,
     ) = supertypes.filterNot {
         val type = it.resolve()
@@ -254,7 +231,6 @@ internal class ClassMapper : DeclarationMapper {
         return AnnotationTarget.FUNCTION in target.allowedTargets
     }
 
-    @OptIn(KtorGenExperimental::class)
     private fun extractKtorGen(kSClassDeclaration: KSClassDeclaration, interfaceName: String): ClassGenerationOptions? {
         val defaultVisibility = kSClassDeclaration.getVisibility().name
         val defaultGeneratedName = "_${interfaceName}Impl"
