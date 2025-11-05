@@ -4,6 +4,8 @@ import com.google.devtools.ksp.symbol.FileLocation
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.symbol.KSValueParameter
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -11,10 +13,11 @@ import kotlin.math.roundToInt
 @Suppress("kotlin:S6514") // Can't use delegation because Step is inner class
 internal class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : DiagnosticSender {
     private val root = Step(name, StepType.ROOT)
-    private val rootStarted get() = root.isStarted()
+    private val rootStarted
+        inline get() = root.isStarted()
 
     override fun start() {
-        check(!rootStarted) { "DiagnosticTimer on root already started" }
+        checkImplementation(!rootStarted) { "DiagnosticTimer on root already started" }
         root.start()
     }
 
@@ -95,7 +98,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             appendLine("$indent${iconFor(step)} ${step.name} (${step.formattedDuration()})")
             messages.forEach { msg ->
                 appendLine("$indent  ${msg.type.icon}${msg.type}: ${msg.message}")
-                msg.generateSymbolInfo.takeIf(String::isNotEmpty)?.let { symbolInfo ->
+                msg.generateSymbolInfo.takeIf { it.isNotEmpty() }?.let { symbolInfo ->
                     appendLine("$indent    -> $symbolInfo")
                 }
             }
@@ -129,22 +132,22 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             messages.any { it.type == MessageType.WARNING } || children.any { it.hasWarnings() }
 
         override fun start() {
-            check((this == root || rootStarted) && !isStarted()) { "Step $name already started" }
+            checkImplementation((this == root || rootStarted) && !isStarted()) { "Step $name already started" }
             startNanos = System.nanoTime()
         }
 
         override fun finish() {
-            check(rootStarted && isStarted()) { "Step $name not started yet" }
-            check(!isFinish()) { "Step $name already finish" }
-            if (!children.all(DiagnosticSender::isCompleted)) {
+            checkImplementation(rootStarted && isStarted()) { "Step $name not started yet" }
+            checkImplementation(!isFinish()) { "Step $name already finish" }
+            endNanos = System.nanoTime()
+            if (!children.all { it.isCompleted() }) {
                 onDebugLog(
                     "A children step of $name is not completed. " +
                         "Children status: " +
-                        "${children.count(DiagnosticSender::isCompleted)}/${children.size} completed." +
+                        "${children.count { it.isCompleted() }}/${children.size} completed." +
                         "This is an implementation errors.",
                 )
             }
-            endNanos = System.nanoTime()
         }
 
         fun addChild(step: Step) {
@@ -174,13 +177,16 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             try {
                 // cancel in order of hierarchy
                 (root.retrieveAllChildrenStep() + root)
-                    .filter(DiagnosticSender::isStarted)
-                    .filter(DiagnosticSender::isInProgress)
-                    .forEach(DiagnosticSender::finish)
+                    .filter { it.isStarted() }
+                    .filter { it.isInProgress() }
+                    .forEach { it.finish() }
+            } catch (e: KtorGenFatalError) {
+                // rethrow if is caught here
+                throw e
             } catch (e: Throwable) {
                 suppressException = e
             }
-            val exception = Throwable("Fatal error occurred. \n${buildErrorsAndWarningsMessage()}", exception)
+            val exception = KtorGenFatalError(buildErrorsAndWarningsMessage(), exception)
             suppressException?.let { exception.addSuppressed(suppressException) }
             throw exception
         }
@@ -238,6 +244,23 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
         }
 
         override fun toString() = "$type ${type.icon}: $message $generateSymbolInfo".trim()
+    }
+
+    private fun checkImplementation(value: Boolean, lazyMessage: () -> String) {
+        contract {
+            returns() implies value
+            callsInPlace(lazyMessage, InvocationKind.AT_MOST_ONCE)
+        }
+        if (!value) {
+            var suppressException: Exception? = null
+            val message = try {
+                lazyMessage()
+            } catch (e: Exception) {
+                suppressException = e
+                "Caught exception during implementation error message generation"
+            }
+            throw KtorGenFatalError.KtorGenImplementationError(message, suppressException)
+        }
     }
 
     private enum class MessageType(val icon: String) {
