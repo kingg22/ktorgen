@@ -61,51 +61,40 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 "Processed return type: ${returnType.parameterType.declaration.simpleName.asString()}",
             )
 
-            val functionAnnotations = if (options.goingToGenerate) {
-                getFunctionAnnotations(
-                    declaration,
-                    timer.createTask("Extract annotations"),
-                    basePath,
-                )
-            } else {
-                listOf(FunctionAnnotation.HttpMethodAnnotation(basePath, HttpMethod.Absent))
-            }
+            val functionAnnotations = getFunctionAnnotations(
+                declaration,
+                timer.createTask("Extract annotations"),
+                basePath,
+            )
 
             timer.addStep("Processed function annotations, adding imports")
             addImportsForFunctionAnnotations(functionAnnotations, onAddImport)
 
-            val parameters = if (options.goingToGenerate) {
-                declaration.parameters.mapNotNull { param ->
-                    val (parameterData, symbols) = DeclarationParameterMapper.DEFAULT.mapToModel(
-                        param,
-                        timer::createTask,
-                    )
-                    parameterData?.let {
-                        timer.addStep("Processed param: ${it.nameString}")
-                        return@mapNotNull parameterData
-                    }
-                    deferredSymbols += symbols
-                    return@mapNotNull null
+            val parameters = declaration.parameters.mapNotNull { param ->
+                val (parameterData, symbols) = DeclarationParameterMapper.DEFAULT.mapToModel(
+                    param,
+                    timer::createTask,
+                )
+                parameterData?.let {
+                    timer.addStep("Processed param: ${it.nameString}")
+                    return@mapNotNull parameterData
                 }
-            } else {
-                emptyList()
+                deferredSymbols += symbols
+                return@mapNotNull null
             }
 
             timer.addStep("Adding imports of parameters")
             addImportsForParametersAnnotations(parameters.flatMap { p -> p.ktorgenAnnotations }, onAddImport)
 
             val isSuspend = declaration.modifiers.contains(Modifier.SUSPEND)
-            val modifiers = declaration.modifiers.mapNotNull {
-                val kmodifier = it.toKModifier() ?: return@mapNotNull null
-                if (kmodifier == KModifier.EXPECT) KModifier.ACTUAL else kmodifier
-            } + KModifier.OVERRIDE
-
-            timer.addStep("Finishing mapping")
+            val modifiers = declaration.modifiers.mapNotNull { it.toKModifier() } + KModifier.OVERRIDE
 
             if (deferredSymbols.isNotEmpty()) {
                 timer.addStep("Found deferred symbols, skipping to next round of processing")
                 return@work null to deferredSymbols
             }
+
+            timer.addStep("Finishing mapping")
 
             FunctionData(
                 name = name,
