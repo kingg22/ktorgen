@@ -108,15 +108,12 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
             if (kmpExpectFunctions.isNotEmpty()) {
                 timer.addStep("Unresolved ${kmpExpectFunctions.size} @KtorGenFunctionKmp", kmpExpectFunctions.first())
             }
+        } catch (e: KtorGenFatalError) {
+            logger.fatalError("${KtorGenLogger.KTOR_GEN} ${e.message}", null)
+            logger.exception(e)
+            fatalError = true
         } catch (e: Exception) {
             logger.fatalError("${KtorGenLogger.KTOR_GEN} Unexpected exception caught. \n$e")
-            logger.exception(e)
-        } catch (e: Throwable) {
-            if (e.message == null) {
-                logger.error("${KtorGenLogger.KTOR_GEN} Unknown exception caught as Throwable. \n $e")
-            } else {
-                logger.error(e.message!!, null)
-            }
             logger.exception(e)
         }
 
