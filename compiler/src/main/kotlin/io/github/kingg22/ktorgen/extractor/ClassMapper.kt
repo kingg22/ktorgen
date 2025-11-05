@@ -22,6 +22,7 @@ import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.ClassGenerationOptions
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
+import io.github.kingg22.ktorgen.require
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
 import kotlin.reflect.KClass
@@ -36,10 +37,11 @@ internal class ClassMapper : DeclarationMapper {
         val deferredSymbols = mutableListOf<KSAnnotated>()
         val imports = mutableSetOf<String>()
         return timer.work {
-            if (declaration.modifiers.any { it == Modifier.EXPECT }) {
-                timer.addError(KtorGenLogger.INTERFACE_IS_EXPECTED, declaration)
-                return@work null to emptyList()
-            }
+            timer.require(
+                !declaration.modifiers.contains(Modifier.EXPECT),
+                KtorGenLogger.INTERFACE_IS_EXPECTED,
+                declaration,
+            )
 
             val companionObject = declaration.declarations
                 .filterIsInstance<KSClassDeclaration>()

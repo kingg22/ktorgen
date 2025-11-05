@@ -63,7 +63,7 @@ internal class ClassLevelValidator : ValidatorStrategy {
         }
         validateKModifier(functionVisibility, interfaceDeclaration)
 
-        if (context.classData.modifierSet.any { it == KModifier.PRIVATE }) {
+        if (context.classData.modifierSet.contains(KModifier.PRIVATE)) {
             addError(
                 KtorGenLogger.PRIVATE_INTERFACE_CANT_GENERATE + "Current ${context.classData.modifierSet}",
                 interfaceDeclaration,
