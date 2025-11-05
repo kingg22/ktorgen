@@ -3,6 +3,7 @@ package io.github.kingg22.ktorgen
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.closestClassDeclaration
 import com.google.devtools.ksp.getKotlinClassByName
+import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
@@ -11,11 +12,13 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.squareup.kotlinpoet.ksp.writeTo
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.extractor.DeclarationMapper
+import io.github.kingg22.ktorgen.generator.KotlinpoetGenerator
 import io.github.kingg22.ktorgen.generator.KtorGenGenerator
 import io.github.kingg22.ktorgen.http.DELETE
 import io.github.kingg22.ktorgen.http.GET
@@ -96,11 +99,9 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             // 6. Generamos el código
             for (classData in validClassData) {
-                KtorGenGenerator.generateKsp(
-                    classData,
-                    env.codeGenerator,
-                    timer.createPhase("Code Generation for ${classData.interfaceName} and round $roundCount"),
-                )
+                context(timer.createPhase("Code Generation for ${classData.interfaceName} and round $roundCount")) {
+                    generateKsp(classData, env.codeGenerator)
+                }
             }
 
             if (validClassData.isNotEmpty()) timer.addStep("Generated ${validClassData.size} classes")
@@ -140,13 +141,19 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
             if (!timer.isFinish()) timer.finish()
             message = timer.buildReport()
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             logger.warn("Failed in diagnostic report with exception.", null)
             logger.exception(e)
         } finally {
             if (message != null) logger.info(message, null)
             super.finish()
         }
+    }
+
+    /** Generate the Impl class using [KotlinpoetGenerator] of ksp */
+    context(timer: DiagnosticSender)
+    fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator) {
+        KtorGenGenerator.DEFAULT.generate(classData).forEach { it.writeTo(codeGenerator, false) }
     }
 
     /** Print a step message if deferred symbols is not empty in the current round, and return symbols */
@@ -210,9 +217,10 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
     @OptIn(KspExperimental::class)
     private fun onFirstRound(resolver: Resolver) {
-        listType = resolver.getKotlinClassByName("kotlin.collections.List")
-            ?.asStarProjectedType()
-            ?: error("${KtorGenLogger.KTOR_GEN} List not found")
+        listType = timer.requireNotNull(
+            resolver.getKotlinClassByName("kotlin.collections.List")?.asStarProjectedType(),
+            "${KtorGenLogger.KTOR_GEN} Kotlin List type not found",
+        )
         arrayType = resolver.builtIns.arrayType
         partDataKtor = resolver.getKotlinClassByName(KTOR_CLIENT_PART_DATA)?.asType(emptyList())
         timer.addStep("Retrieve KSTypes")
@@ -297,7 +305,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
         // 3. También obtenemos todas las clases anotadas con @KtorGen (aunque no tengan métodos)
         val annotatedClasses = getAnnotatedInterfaceTypes(resolver).toList()
-        mapperPhase.addStep("Retrieve with KtorGen. Count: ${annotatedClasses.size}")
+        mapperPhase.addStep("Retrieve with @KtorGen count: ${annotatedClasses.size}")
 
         // 4. Filtramos aquellas clases que no están en `groupedByClass` → no tienen funciones válidas
         val classWithoutMethods = annotatedClasses
@@ -324,7 +332,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
         if (classDataSet.isEmpty() && kmpExpectFunctions.isNotEmpty()) {
             mapperPhase.addWarning(
-                "No valid class data extracted, but found KtorGenFunctionKmp, can be a bug in the processor. " +
+                "No valid class data extracted, but found @KtorGenFunctionKmp, can be a bug in the processor. " +
                     "Found ${kmpExpectFunctions.size} annotated functions.",
                 kmpExpectFunctions.first(),
             )
