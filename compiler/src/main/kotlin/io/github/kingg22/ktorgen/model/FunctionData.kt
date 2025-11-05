@@ -52,7 +52,7 @@ class FunctionData(
         val template = UrlPathRegex.replace(url) { match ->
             val key = match.groupValues[1]
             keys.add(key)
-            "%s"
+            "%L"
         }
 
         return UrlTemplateResult(template, keys)
