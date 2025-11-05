@@ -4,18 +4,27 @@
 
 package io.github.kingg22.ktorgen.model.annotations
 
+import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger.Companion.COOKIE_ON_FUNCTION_WITHOUT_VALUE
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
+import io.github.kingg22.ktorgen.requireNotNull
 
 fun String.removeWhitespace(): String = this.trim().replace("\\s+".toRegex(), "")
 
 // a lot of try-catch because default values is not working for KMP builds https://github.com/google/ksp/issues/2356
 
-/** This is a mapper function, handle try-catch of arrays. Throw exception when parameterName is required */
+/**
+ * This is a mapper function, handle try-catch of default values, die when [parameterName] is required, but is null.
+ * @receiver the [Cookie] annotation to convert to [CookieValues]
+ * @param timer the [DiagnosticSender] to use for logging
+ * @param parameterName the name of the parameter, used as a fallback value
+ * @return [CookieValues] cleaned
+ */
+context(timer: DiagnosticSender)
 fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
     // clean here because don't need validation, otherwise don't do it
     var isParameter: Boolean
@@ -24,23 +33,23 @@ fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
         when (val cleanValue = value.removeWhitespace()) {
             KTORGEN_DEFAULT_VALUE -> {
                 isParameter = true
-                requireNotNull(parameterName) { COOKIE_ON_FUNCTION_WITHOUT_VALUE }
+                timer.requireNotNull(parameterName, COOKIE_ON_FUNCTION_WITHOUT_VALUE)
             }
             else -> {
                 isParameter = false
                 cleanValue
             }
         }
-    } catch (_: NoSuchElementException) {
+    } catch (e: NoSuchElementException) {
         isParameter = true
-        requireNotNull(parameterName) { COOKIE_ON_FUNCTION_WITHOUT_VALUE }
+        timer.requireNotNull(parameterName, COOKIE_ON_FUNCTION_WITHOUT_VALUE, cause = e)
     }
 
     return CookieValues(
         name = try {
             name.removeWhitespace()
-        } catch (_: NoSuchElementException) {
-            throw IllegalArgumentException("Cookie name is required")
+        } catch (e: NoSuchElementException) {
+            timer.die("Cookie name is required", exception = e)
         },
         value = finalValue,
         isValueParameter = isParameter,
@@ -55,12 +64,12 @@ fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
             null
         },
         domain = try {
-            domain.removeWhitespace().takeIf(String::isNotBlank)
+            domain.removeWhitespace().takeIf { it.isNotBlank() }
         } catch (_: NoSuchElementException) {
             null
         },
         path = try {
-            path.removeWhitespace().takeIf(String::isNotBlank)
+            path.removeWhitespace().takeIf { it.isNotBlank() }
         } catch (_: NoSuchElementException) {
             null
         },
@@ -76,7 +85,7 @@ fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
         },
         extensions = try {
             extensions.associate { (key, value) ->
-                key.removeWhitespace() to value.removeWhitespace().takeIf(String::isNotBlank)
+                key.removeWhitespace() to value.removeWhitespace().takeIf { it.isNotBlank() }
             }
         } catch (_: NoSuchElementException) {
             emptyMap()
