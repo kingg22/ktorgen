@@ -7,7 +7,6 @@ package io.github.kingg22.ktorgen.extractor
 import com.google.devtools.ksp.KSTypeNotPresentException
 import com.google.devtools.ksp.KSTypesNotPresentException
 import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -19,6 +18,13 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.reflect.KClass
+import com.google.devtools.ksp.getAnnotationsByType as getAnnotationsByKClass
+import com.google.devtools.ksp.isAnnotationPresent as isAnnotationPresentByKClass
+
+// Shortcuts with reified, more elegant
+inline fun <reified R : Annotation> KSAnnotated.getAnnotationsByType() = getAnnotationsByKClass(R::class)
+
+inline fun <reified R : Annotation> KSAnnotated.isAnnotationPresent() = isAnnotationPresentByKClass(R::class)
 
 /** Safe get and cast the properties of annotation */
 inline fun <reified T> KSAnnotation.getArgumentValueByName(name: String): T? = this.arguments.firstOrNull {
@@ -37,7 +43,7 @@ inline fun <reified A : Annotation, R : Any> KSAnnotated.getAnnotation(
         callsInPlace(mapFromAnnotation, InvocationKind.AT_MOST_ONCE)
     }
     return try {
-        this.getAnnotationsByType(A::class).singleOrNull()?.let(mapFromAnnotation)
+        this.getAnnotationsByType<A>().singleOrNull()?.let(mapFromAnnotation)
     } catch (_: NoSuchElementException) {
         this.annotations.singleOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
     } catch (_: KSTypeNotPresentException) {
@@ -52,7 +58,7 @@ inline fun <reified A : Annotation, R : Any> KSAnnotated.getAllAnnotation(
     noinline manualExtraction: (KSAnnotation) -> R,
     noinline mapFromAnnotation: (A) -> R,
 ): Sequence<R> = try {
-    this.getAnnotationsByType(A::class).map(mapFromAnnotation)
+    this.getAnnotationsByType<A>().map(mapFromAnnotation)
 } catch (_: NoSuchElementException) {
     this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
 } catch (_: KSTypeNotPresentException) {
