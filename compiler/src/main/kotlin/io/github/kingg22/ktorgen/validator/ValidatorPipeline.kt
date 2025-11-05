@@ -3,12 +3,14 @@ package io.github.kingg22.ktorgen.validator
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.KtorGenOptions
+import io.github.kingg22.ktorgen.checkImplementation
 import io.github.kingg22.ktorgen.model.ClassData
+import io.github.kingg22.ktorgen.work
 
 internal class ValidatorPipeline(private val validators: Set<ValidatorStrategy>) : Validator {
     constructor(vararg validators: ValidatorStrategy) : this(validators.toSet())
     init {
-        require(validators.isNotEmpty()) {
+        checkImplementation(validators.isNotEmpty()) {
             "${KtorGenLogger.KTOR_GEN} ValidatorPipeline must have at least one validator. This is an implementation errors. "
         }
     }
@@ -20,21 +22,20 @@ internal class ValidatorPipeline(private val validators: Set<ValidatorStrategy>)
         onFatalError: () -> Unit,
     ): ClassData? {
         // if we don't go to generate it, skip
-        if (classData.goingToGenerate.not()) return null
+        if (!classData.goingToGenerate) return null
 
         val context = ValidationContext(classData)
-        var errorCount = 0
 
-        for (validator in validators) {
+        val totalErrors = validators.sumOf { validator ->
             val sender = diagnosticSender(validator.name)
-            sender.start()
-            val result = validator.validate(context)
-            result.dump(sender)
-            sender.finish()
-            errorCount += result.errorCount
+            sender.work {
+                val result = validator.validate(context)
+                result.dump(sender)
+                result.errorCount
+            }
         }
 
-        return if (errorCount == 0) {
+        return if (totalErrors == 0) {
             classData
         } else {
             onFatalError()
