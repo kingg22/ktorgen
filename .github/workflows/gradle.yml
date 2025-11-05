@@ -48,6 +48,8 @@ jobs:
 
     - name: Cache SonarQube packages
       uses: actions/cache@v4
+      if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') ||
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
       with:
         path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
@@ -69,6 +71,8 @@ jobs:
 
     - name: Sonar analyze
       run: ./gradlew sonar --info
+      if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') ||
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
