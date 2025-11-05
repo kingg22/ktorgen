@@ -21,6 +21,11 @@ subprojects {
         lockAllConfigurations()
     }
 
+    ktlint {
+        // Synchronized with libs.versions.ktlint.pinterest.get()
+        version.set("1.7.1")
+    }
+
     sonar.run {
         // ignora completamente estos módulos
         if (project.name == "example" || project.name == "sample") {
