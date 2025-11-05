@@ -18,6 +18,8 @@ import io.github.kingg22.ktorgen.requireNotNull
 internal class FactoryFunctionGenerator {
     private val generatedFactories = linkedSetOf<FactoryFunctionKey>()
 
+    fun clean() = generatedFactories.clear()
+
     fun generateFactoryFunctions(
         classData: ClassData,
         timer: DiagnosticSender,
