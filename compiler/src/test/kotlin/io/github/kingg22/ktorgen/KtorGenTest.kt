@@ -218,7 +218,7 @@ class KtorGenTest {
     }
 
     @Test
-    fun invalidSyntaxOfPathThrowsError() {
+    fun invalidSyntaxOfPathThrowsWarningWithWarningCheckType() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -235,10 +235,17 @@ class KtorGenTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
-            compilationResultSubject.hasNoWarnings()
-            compilationResultSubject.hasErrorCount(1)
-            compilationResultSubject.hasErrorContaining(KtorGenLogger.URL_SYNTAX_ERROR)
+        runKtorGenProcessor(
+            source,
+            processorOptions = mapOf(
+                KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Warnings.intValue.toString(),
+            ),
+        ) { compilationResultSubject ->
+            compilationResultSubject.hasErrorCount(0)
+            compilationResultSubject.hasWarningCount(1)
+            compilationResultSubject.hasWarningContaining(KtorGenLogger.URL_SYNTAX_ERROR)
+            val result = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+            result.contains("this.takeFrom(".stringTemplate("/api//user"))
         }
     }
 
