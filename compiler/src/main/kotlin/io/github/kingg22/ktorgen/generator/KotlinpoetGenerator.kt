@@ -1,15 +1,24 @@
 package io.github.kingg22.ktorgen.generator
 
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.KModifier.INTERNAL
 import com.squareup.kotlinpoet.KModifier.PRIVATE
 import com.squareup.kotlinpoet.KModifier.PROTECTED
 import com.squareup.kotlinpoet.KModifier.PUBLIC
 import com.squareup.kotlinpoet.KModifier.SUSPEND
 import com.squareup.kotlinpoet.KModifier.VARARG
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
 import io.github.kingg22.ktorgen.DiagnosticSender
+import io.github.kingg22.ktorgen.applyIfNotNull
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_COMMENT
@@ -20,10 +29,12 @@ import io.github.kingg22.ktorgen.work
 internal class KotlinpoetGenerator : KtorGenGenerator {
     private val constructorGenerator = ConstructorGenerator()
     private val factoryFunctionGenerator = FactoryFunctionGenerator()
-    private val functionBodyGenerator = FunctionBodyGenerator()
+    private lateinit var functionBodyGenerator: FunctionBodyGenerator
     private val expectFunctionProcessor = ExpectFunctionProcessor()
 
-    override fun generate(classData: ClassData, timer: DiagnosticSender): List<FileSpec> = timer.work {
+    context(timer: DiagnosticSender)
+    override fun generate(classData: ClassData): List<FileSpec> = timer.work {
+        factoryFunctionGenerator.clean()
         // Initialize builders
         val classBuilder = createClassBuilder(classData)
         val fileBuilder = createFileBuilder(classData)
@@ -36,16 +47,18 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
                 classData,
                 KModifier.valueOf(classData.constructorVisibilityModifier.uppercase()),
             )
+        functionBodyGenerator = FunctionBodyGenerator(httpClient)
 
         // Generate functions
         val functions = classData.functions.filter { it.goingToGenerate }
         timer.addStep("Generated primary constructor and properties, going to generate ${functions.size} functions")
 
         // Build class structure
-        classBuilder.buildClassStructure(classData, constructor, properties, functions, httpClient)
+        classBuilder.buildClassStructure(classData, constructor, properties, functions)
 
         // Generate factory functions
         val factoryFunctions = generateFactoryFunctions(classData, timer, constructor.build().parameters)
+        factoryFunctionGenerator.clean()
         fileBuilder.addFunctions(factoryFunctions)
 
         // Process expects functions if any
@@ -122,39 +135,32 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
             }
     }
 
-    private fun createClassBuilder(classData: ClassData): TypeSpec.Builder =
-        TypeSpec.classBuilder(classData.generatedName)
-            .addModifiers(KModifier.valueOf(classData.classVisibilityModifier.uppercase()))
-            .addModifiers(classData.modifierSet.filter { it !in VISIBILITY_KMODIFIER })
-            .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
-            .addKdoc(classData.customClassHeader)
-            .addAnnotations(classData.buildAnnotations())
-            .addOriginatingKSFile(classData.ksFile)
+    private fun createClassBuilder(classData: ClassData) = TypeSpec.classBuilder(classData.generatedName)
+        .addModifiers(KModifier.valueOf(classData.classVisibilityModifier.uppercase()))
+        .addModifiers(classData.modifierSet.filter { it !in VISIBILITY_KMODIFIER })
+        .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
+        .addKdoc(classData.customClassHeader)
+        .addAnnotations(classData.buildAnnotations())
+        .addOriginatingKSFile(classData.ksFile)
 
-    private fun createFileBuilder(classData: ClassData): FileSpec.Builder =
+    private fun createFileBuilder(classData: ClassData) =
         FileSpec.builder(classData.packageNameString, classData.generatedName)
             .addDefaultConfig()
             .addFileComment(classData.customFileHeader)
-            .apply {
-                classData.imports.forEach {
-                    addImport(it.substringBeforeLast("."), it.substringAfterLast("."))
-                }
-            }
 
     private fun TypeSpec.Builder.buildClassStructure(
         classData: ClassData,
         constructor: FunSpec.Builder,
         properties: List<PropertySpec>,
         functions: List<FunctionData>,
-        httpClient: MemberName,
     ) = apply {
         addSuperInterfaces(classData, constructor)
             .primaryConstructor(constructor.build())
             .addProperties(properties)
-            .addFunctions(functions.map { generateFunction(it, httpClient) })
+            .addFunctions(functions.map { generateFunction(it) })
     }
 
-    private fun generateFunction(func: FunctionData, httpClientName: MemberName): FunSpec = FunSpec.builder(func.name)
+    private fun generateFunction(func: FunctionData): FunSpec = FunSpec.builder(func.name)
         .addModifiers(func.modifierSet)
         .returns(func.returnTypeData.typeName)
         .addAnnotations(func.buildAnnotations())
@@ -164,7 +170,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
             func.parameterDataList.forEach { param ->
                 addParameter(createParameterSpec(param))
             }
-            addCode(functionBodyGenerator.generateFunctionBody(func, httpClientName))
+            addCode(functionBodyGenerator.generateFunctionBody(func))
         }
         .build()
 
@@ -173,9 +179,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
         type = param.typeData.typeName,
         modifiers = buildList { if (param.isVararg) add(VARARG) },
     ).addAnnotations(param.nonKtorgenAnnotations)
-        .apply {
-            if (param.optInAnnotation != null) addAnnotation(param.optInAnnotation)
-        }
+        .applyIfNotNull(param.optInAnnotation) { addAnnotation(it) }
         .build()
 
     private fun generateFactoryFunctions(
@@ -212,7 +216,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
         ).map { it.addDefaultConfig().build() }
     }
 
-    internal companion object {
+    private companion object {
         private val VISIBILITY_KMODIFIER = setOf(PUBLIC, INTERNAL, PROTECTED, PRIVATE)
         private val GeneratedAnnotation = AnnotationSpec.builder(
             ClassName("io.github.kingg22.ktorgen.core", "Generated"),
