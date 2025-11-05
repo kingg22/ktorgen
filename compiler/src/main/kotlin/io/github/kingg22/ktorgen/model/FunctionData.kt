@@ -43,7 +43,8 @@ class FunctionData(
         operator fun component2() = keys
 
         val isEmpty = template.isBlank() && keys.isEmpty()
-        val isNotEmpty = !isEmpty
+        val isNotEmpty
+            inline get() = !isEmpty
     }
 
     private fun parseUrlTemplate(url: String): UrlTemplateResult {

@@ -9,8 +9,10 @@ abstract class Options(
     val optIns: Set<AnnotationSpec>,
     val optInAnnotation: AnnotationSpec?,
 ) {
-    val goingToGenerate = generate
-    val annotationsToPropagate = annotations
+    val goingToGenerate
+        inline get() = generate
+    val annotationsToPropagate
+        inline get() = annotations
     override fun toString() =
         "Options(generate=$generate, annotations=$annotations, propagateAnnotations=$propagateAnnotations, optIns=$optIns, optInAnnotation=$optInAnnotation)"
 }

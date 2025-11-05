@@ -13,14 +13,16 @@ class ParameterData(
     val optInAnnotation: AnnotationSpec?,
     val isHttpRequestBuilderLambda: Boolean,
 ) {
-    val isVararg = ksValueParameter.isVararg
+    val isVararg
+        inline get() = ksValueParameter.isVararg
 
-    // see https://api.ktor.io/ktor-client/ktor-client-core/io.ktor.client.request/-http-request-builder/index.html?query=class%20HttpRequestBuilder%20:%20HttpMessageBuilder#-1196439924%2FFunctions%2F-1897681819
-    val isValidTakeFrom =
-        typeData.typeName in setOf(HttpRequestBuilderTypeName, HttpRequestTypeName, HttpRequestDataTypeName)
+    val isValidTakeFrom
+        inline get() = typeData.typeName in VALID_HTTP_REQUEST_TAKE_FROM
 
     inline fun <reified T : ParameterAnnotation> findAnnotationOrNull() =
         ktorgenAnnotations.filterIsInstance<T>().firstOrNull()
+
+    inline fun <reified T : ParameterAnnotation> findAnnotation() = ktorgenAnnotations.filterIsInstance<T>().first()
 
     inline fun <reified T : ParameterAnnotation> findAllAnnotations() = ktorgenAnnotations.filterIsInstance<T>()
 

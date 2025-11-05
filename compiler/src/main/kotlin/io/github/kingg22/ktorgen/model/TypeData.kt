@@ -1,6 +1,5 @@
 @file:JvmName("TypeDataExt")
 @file:JvmMultifileClass
-@file:OptIn(ExperimentalContracts::class)
 
 package io.github.kingg22.ktorgen.model
 
@@ -9,10 +8,11 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.ksp.toTypeName
-import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
-class TypeData(val parameterType: KSType, val typeName: TypeName = parameterType.toTypeName())
+class TypeData(val parameterType: KSType) {
+    val typeName = parameterType.toTypeName()
+}
 
 private val FLOW_CLASS = ClassName("kotlinx.coroutines.flow", "Flow")
 private val RESULT_CLASS = ClassName("kotlin", "Result")

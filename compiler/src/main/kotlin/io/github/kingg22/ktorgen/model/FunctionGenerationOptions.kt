@@ -44,6 +44,7 @@ open class FunctionGenerationOptions(
     override fun toString() = "FunctionGenerationOptions(customHeader='$customHeader', options=${super.toString()})"
 
     companion object {
+        @JvmField
         val DEFAULT = FunctionGenerationOptions(
             generate = true,
             propagateAnnotations = true,
