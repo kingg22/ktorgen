@@ -69,7 +69,7 @@ internal class ClassMapper : DeclarationMapper {
             }
 
             if (!options.goingToGenerate) {
-                timer.addStep("Early finish processing, not going to generate this interface.")
+                timer.addStep("Skipping, not going to generate this interface.")
                 return@work null to emptyList()
             }
 
@@ -183,7 +183,7 @@ internal class ClassMapper : DeclarationMapper {
             val superDeclaration = type.declaration as? KSClassDeclaration
             if (superDeclaration != null) {
                 val superOptions = extractKtorGen(superDeclaration, interfaceName)
-                if (superOptions?.generate == false) {
+                if (superOptions?.goingToGenerate == false) {
                     true // Ignorar completamente
                 } else {
                     timer.addStep("Found error type reference of superinterface: $type")

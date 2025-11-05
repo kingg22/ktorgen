@@ -88,10 +88,6 @@ internal class ClassLevelValidator : ValidatorStrategy {
             }
         }
 
-        context.functions
-            .filter { it.isImplemented.not() && it.goingToGenerate.not() }
-            .forEach { addError(KtorGenLogger.ABSTRACT_FUNCTION_IGNORED, it) }
-
         validateFunctions(context)
 
         val expectedAreNotExpect = context.classData.expectFunctions.filter { !it.modifiers.contains(Modifier.EXPECT) }

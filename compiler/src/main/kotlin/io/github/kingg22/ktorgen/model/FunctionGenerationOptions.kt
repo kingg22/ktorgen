@@ -10,14 +10,14 @@ open class FunctionGenerationOptions(
     val customHeader: String,
     optInAnnotation: AnnotationSpec? = null,
 ) : Options(
-    generate = generate,
+    goingToGenerate = generate,
     propagateAnnotations = propagateAnnotations,
     annotations = annotationsToPropagate,
     optIns = optIns,
     optInAnnotation = optInAnnotation,
 ) {
     constructor(options: FunctionGenerationOptions) : this(
-        generate = options.generate,
+        generate = options.goingToGenerate,
         propagateAnnotations = options.propagateAnnotations,
         annotationsToPropagate = options.annotationsToPropagate,
         optIns = options.optIns,
@@ -26,7 +26,7 @@ open class FunctionGenerationOptions(
     )
 
     fun copy(
-        generate: Boolean = this.generate,
+        generate: Boolean = this.goingToGenerate,
         propagateAnnotations: Boolean = this.propagateAnnotations,
         annotations: Set<AnnotationSpec> = this.annotationsToPropagate,
         optIns: Set<AnnotationSpec> = this.optIns,

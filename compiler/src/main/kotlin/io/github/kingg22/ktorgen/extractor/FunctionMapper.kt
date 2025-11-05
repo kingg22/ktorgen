@@ -47,14 +47,21 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 options = updateFunctionOptionsWith(declaration, options, timer, deferredSymbols)
             }
 
-            if (!options.goingToGenerate) timer.addStep("Early finish processing, not going to generate this function.")
+            if (!options.goingToGenerate) {
+                timer.require(!declaration.isAbstract, KtorGenLogger.ABSTRACT_FUNCTION_IGNORED, declaration)
+                timer.addStep("Skipping, not going to generate this function.")
+                return@work null to emptyList()
+            }
 
             val type = timer.requireNotNull(
                 declaration.returnType?.resolve(),
                 KtorGenLogger.FUNCTION_NOT_RETURN_TYPE + name,
                 declaration,
             )
-            if (type.isError) deferredSymbols += type.declaration
+            if (type.isError) {
+                deferredSymbols += type.declaration
+                return@work null to deferredSymbols
+            }
 
             val returnType = TypeData(type)
             timer.addStep(
@@ -100,7 +107,6 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 name = name,
                 returnTypeData = returnType,
                 isSuspend = isSuspend,
-                isImplemented = declaration.isAbstract.not(),
                 parameterDataList = parameters,
                 ktorGenAnnotations = functionAnnotations,
                 httpMethodAnnotation =

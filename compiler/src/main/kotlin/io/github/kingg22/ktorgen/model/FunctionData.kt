@@ -14,7 +14,6 @@ class FunctionData(
     val ksFunctionDeclaration: KSFunctionDeclaration,
     val isSuspend: Boolean,
     val modifierSet: Set<KModifier>,
-    val isImplemented: Boolean,
     options: FunctionGenerationOptions,
 ) : FunctionGenerationOptions(options) {
     val urlTemplate by lazy { parseUrlTemplate(httpMethodAnnotation.path) }

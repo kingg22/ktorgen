@@ -20,7 +20,7 @@ open class ClassGenerationOptions(
     val extensionFunctionAnnotation: Set<AnnotationSpec>,
     optInAnnotation: AnnotationSpec? = null,
 ) : Options(
-    generate = goingToGenerate,
+    goingToGenerate = goingToGenerate,
     propagateAnnotations = propagateAnnotations,
     annotations = annotations,
     optIns = optIns,

@@ -175,7 +175,7 @@ class KtorGenFunctionTest {
 
         runKtorGenProcessor(source) {
             it.hasNoWarnings()
-            it.hasErrorCount(1)
+            it.hasErrorCount(2) // androidx room compiler count exception as error, total = 2
             it.hasErrorContaining(KtorGenLogger.ABSTRACT_FUNCTION_IGNORED.trim())
         }
     }
