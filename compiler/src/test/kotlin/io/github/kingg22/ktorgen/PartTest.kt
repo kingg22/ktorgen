@@ -104,6 +104,45 @@ class PartTest {
     }
 
     @Test
+    fun testPartAnnotationWithoutMultipartAnnotation() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+                package com.example.api
+
+                import io.github.kingg22.ktorgen.http.POST
+                import io.github.kingg22.ktorgen.http.Multipart
+                import io.github.kingg22.ktorgen.http.Part
+
+                interface TestService {
+                    @POST("posts")
+                    suspend fun test(@Part("name") testPart: List<String>)
+                }
+            """.trimIndent(),
+        )
+
+        val expectedPartsArgumentText = listOf(
+            MULTIPART_FORM_DATA,
+            PART_DATA_LIST,
+            "testPart?.filterNotNull()?.forEach {",
+            """this.append("name", """ stringTemplate $$"$it",
+            SET_BODY_MULTIPART_FORM_DATA,
+        )
+
+        runKtorGenProcessor(
+            source,
+            processorOptions = mapOf(
+                KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Off.intValue.toString(),
+            ),
+        ) { compilationResultSubject ->
+            compilationResultSubject.hasNoWarnings()
+            compilationResultSubject.hasErrorCount(0)
+            val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+            expectedPartsArgumentText.forEach { actualSource.contains(it) }
+        }
+    }
+
+    @Test
     fun testPartMapAnnotationFoundAddItToPartsArgument() {
         val source = Source.kotlin(
             "Source.kt",
