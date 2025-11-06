@@ -52,6 +52,7 @@ internal class ParameterMapper : DeclarationParameterMapper {
         }
     }
 
+    context(_: DiagnosticSender)
     private fun collectParameterAnnotations(declaration: KSValueParameter): List<ParameterAnnotation> = buildList {
         declaration.getAnnotation<Path, ParameterAnnotation.Path>(
             manualExtraction = {

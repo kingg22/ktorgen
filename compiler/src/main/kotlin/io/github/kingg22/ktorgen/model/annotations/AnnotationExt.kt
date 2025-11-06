@@ -42,6 +42,7 @@ fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
         }
     } catch (e: NoSuchElementException) {
         isParameter = true
+        timer.addStep("Caught exception while parsing cookie value, assuming it's a parameter")
         timer.requireNotNull(parameterName, COOKIE_ON_FUNCTION_WITHOUT_VALUE, cause = e)
     }
 
@@ -56,31 +57,37 @@ fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
         maxAge = try {
             maxAge
         } catch (_: NoSuchElementException) {
+            timer.addStep("Cookie maxAge is not set, assuming it's 0")
             0
         },
         expiresTimestamp = try {
             expiresTimestamp.takeIf { it != -1L }
         } catch (_: NoSuchElementException) {
+            timer.addStep("Cookie expiresTimestamp is not set, assuming it's null")
             null
         },
         domain = try {
             domain.removeWhitespace().takeIf { it.isNotBlank() }
         } catch (_: NoSuchElementException) {
+            timer.addStep("Cookie domain is not set, assuming it's null")
             null
         },
         path = try {
             path.removeWhitespace().takeIf { it.isNotBlank() }
         } catch (_: NoSuchElementException) {
+            timer.addStep("Cookie path is not set, assuming it's null")
             null
         },
         secure = try {
             secure
         } catch (_: NoSuchElementException) {
+            timer.addStep("Cookie secure is not set, assuming it's false")
             false
         },
         httpOnly = try {
             httpOnly
         } catch (_: NoSuchElementException) {
+            timer.addStep("Cookie httpOnly is not set, assuming it's false")
             false
         },
         extensions = try {
@@ -88,6 +95,7 @@ fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
                 key.removeWhitespace() to value.removeWhitespace().takeIf { it.isNotBlank() }
             }
         } catch (_: NoSuchElementException) {
+            timer.addStep("Cookie extensions are not set, assuming it's empty")
             emptyMap()
         },
     )
