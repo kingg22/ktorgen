@@ -22,7 +22,8 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         private const val PART_DATA_LIST_VARIABLE = "_partDataList"
         private const val FORM_DATA_CONTENT_VARIABLE = "_formDataContent"
         private const val KTOR_HTTP_PACKAGE = "io.ktor.http"
-        private const val KOTLIN_COLLECTIONS_PACKAGE = "kotlin.collections"
+        private const val KOTLIN_PACKAGE = "kotlin"
+        private const val KOTLIN_COLLECTIONS_PACKAGE = "$KOTLIN_PACKAGE.collections"
         private val KTOR_PART_DATA_CLASS = ClassName("$KTOR_HTTP_PACKAGE.content", "PartData")
         private const val THIS_HEADERS = "this.%M"
         private val KTOR_CLIENT_REQUEST_HEADER_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "headers")
@@ -56,8 +57,10 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
             ClassName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "MultiPartFormDataContent")
         private val KTOR_REQUEST_FORM_DATA_FUNCTION = MemberName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "formData")
         private val KOTLIN_LIST_OF = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "listOf")
+        private val KOTLIN_EMPTY_LIST = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "emptyList")
         private val KOTLIN_MAP_OF = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "mapOf")
-        private val KOTLIN_EMPTY_MAP = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "mapOf")
+        private val KOTLIN_TO_PAIR_FUNCTION = MemberName(KOTLIN_PACKAGE, "to")
+        private val KOTLIN_EMPTY_MAP = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "emptyMap")
         private val KTOR_GMT_DATE_CLASS = ClassName("io.ktor.util.date", "GMTDate")
         private val KTOR_REQUEST_COOKIE_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "cookie", true)
         private val KTOR_CONTENT_TYPE_FUNCTION = MemberName(KTOR_HTTP_PACKAGE, "contentType", true)
@@ -65,8 +68,8 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         private val KTOR_REQUEST_TAKE_FROM_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "takeFrom", true)
         private val COROUTINES_CURRENT_CONTEXT = MemberName("kotlinx.coroutines", "currentCoroutineContext")
         private val COROUTINES_CONTEXT_ENSURE_ACTIVE = MemberName("kotlinx.coroutines", "ensureActive", true)
-        private val KOTLIN_EXCEPTION_CLASS = ClassName("kotlin", "Exception")
-        private val KOTLIN_PAIR_CLASS = ClassName("kotlin", "Pair")
+        private val KOTLIN_EXCEPTION_CLASS = ClassName(KOTLIN_PACKAGE, "Exception")
+        private val KOTLIN_PAIR_CLASS = ClassName(KOTLIN_PACKAGE, "Pair")
     }
 
     fun generateFunctionBody(func: FunctionData): CodeBlock {
@@ -287,45 +290,43 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
     }
 
     private fun CodeBlock.Builder.addCookieStatement(cookieValues: CookieValues, useVarargItem: Boolean = false) {
+        addStatement("this.%M(", KTOR_REQUEST_COOKIE_FUNCTION)
+        indent()
+        addStatement("name = %S,", cookieValues.name)
         addStatement(
-            """
-        |this.%M(
-          |name = %S,
-          |value = %P,
-          |maxAge = %L,
-          |expires = %L,
-          |domain = %L,
-          |path = %L,
-          |secure = %L,
-          |httpOnly = %L,
-          |extensions = %L,
-        |)
-            """.trimMargin(),
-            KTOR_REQUEST_COOKIE_FUNCTION,
-            cookieValues.name,
+            "value = %P,",
             if (cookieValues.isValueParameter) {
                 if (useVarargItem) $$"$it" else "$${cookieValues.value}"
             } else {
                 cookieValues.value
             },
-            cookieValues.maxAge,
-            cookieValues.expiresTimestamp?.let { timestamp -> CodeBlock.of("%T(%L)", KTOR_GMT_DATE_CLASS, timestamp) },
-            cookieValues.domain,
-            cookieValues.path,
-            cookieValues.secure,
-            cookieValues.httpOnly,
-            cookieValues.extensions.takeIf { it.isNotEmpty() }?.let { extensions ->
-                CodeBlock.builder().apply {
-                    add("%M(\n", KOTLIN_MAP_OF)
-                    indent()
-                    extensions.forEach { (key, value) ->
-                        add("%S to %L,\n", key, value?.let { CodeBlock.of("%S", it) })
-                    }
-                    unindent()
-                    add(")")
-                }.build()
-            } ?: CodeBlock.of("%M()", KOTLIN_EMPTY_MAP),
         )
+        addStatement("maxAge = %L,", cookieValues.maxAge)
+        addStatement(
+            "expires = %L,",
+            cookieValues.expiresTimestamp?.let { timestamp ->
+                CodeBlock.of("%T(%L)", KTOR_GMT_DATE_CLASS, timestamp)
+            },
+        )
+        addStatement("domain = %P,", cookieValues.domain)
+        addStatement("path = %P,", cookieValues.path)
+        addStatement("secure = %L,", cookieValues.secure)
+        addStatement("httpOnly = %L,", cookieValues.httpOnly)
+
+        if (cookieValues.extensions.isNotEmpty()) {
+            addStatement("extensions = %M(", KOTLIN_MAP_OF)
+            indent()
+            cookieValues.extensions.forEach { (key, value) ->
+                addStatement("%P %M %P,", key, KOTLIN_TO_PAIR_FUNCTION, value)
+            }
+            unindent()
+            addStatement("),")
+        } else {
+            addStatement("extensions = %M(),", KOTLIN_EMPTY_MAP)
+        }
+
+        unindent()
+        addStatement(")")
     }
 
     private class CookieCandidate(
@@ -588,16 +589,18 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
                 if (isList || isArray) {
                     beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
                         .addStatement(
-                            "%L.appendAll(%P, emptyList())",
+                            "%L.appendAll(%P, %M())",
                             if (encoded) "this.encodedParameters" else "this.parameters",
                             $$"$it",
+                            KOTLIN_EMPTY_LIST,
                         )
                     endControlFlow()
                 } else {
                     addStatement(
-                        "%L.appendAll(%P, emptyList())",
+                        "%L.appendAll(%P, %M())",
                         if (encoded) "this.encodedParameters" else "this.parameters",
                         "$$name",
+                        KOTLIN_EMPTY_LIST,
                     )
                 }
             }
