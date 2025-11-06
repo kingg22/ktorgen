@@ -15,7 +15,7 @@ internal class CookieValidator : ValidatorStrategy {
             .flatMap { func -> func.parameterDataList.filter { it.hasAnnotation<ParameterAnnotation.Cookies>() } }
             .filter { parameter ->
                 // check if the parameter is vararg and has more than one annotation
-                parameter.isVararg && parameter.ktorgenAnnotations.count { it is ParameterAnnotation.Cookies } > 1
+                parameter.isVararg && parameter.findAnnotation<ParameterAnnotation.Cookies>().value.size > 1
             }.forEach { parameter ->
                 addWarning(KtorGenLogger.VARARG_PARAMETER_WITH_LOT_ANNOTATIONS, parameter)
             }
