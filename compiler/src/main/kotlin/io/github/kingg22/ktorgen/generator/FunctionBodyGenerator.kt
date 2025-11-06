@@ -1,38 +1,29 @@
 package io.github.kingg22.ktorgen.generator
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.MAP
-import com.squareup.kotlinpoet.MemberName
-import com.squareup.kotlinpoet.ParameterizedTypeName
-import com.squareup.kotlinpoet.STRING
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.UNIT
+import com.squareup.kotlinpoet.*
 import io.github.kingg22.ktorgen.KtorGenProcessor
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
 import io.github.kingg22.ktorgen.applyIf
-import io.github.kingg22.ktorgen.model.FunctionData
-import io.github.kingg22.ktorgen.model.HttpRequestBuilderTypeName
-import io.github.kingg22.ktorgen.model.KTOR_CLIENT_REQUEST_PACKAGE
-import io.github.kingg22.ktorgen.model.ParameterData
+import io.github.kingg22.ktorgen.checkImplementation
+import io.github.kingg22.ktorgen.model.*
 import io.github.kingg22.ktorgen.model.annotations.CookieValues
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
-import io.github.kingg22.ktorgen.model.isFlowType
-import io.github.kingg22.ktorgen.model.isResultType
-import io.github.kingg22.ktorgen.model.unwrapFlow
-import io.github.kingg22.ktorgen.model.unwrapFlowResult
-import io.github.kingg22.ktorgen.model.unwrapResult
 
 // TODO move functions of parameter to other class
 internal class FunctionBodyGenerator(private val httpClient: MemberName) {
     // Snapshot must be initialized after the first round of processor
     private val partDataKtor = KtorGenProcessor.partDataKtor
     private companion object {
+        private const val FORM_DATA_VARIABLE = "_multiPartDataContent"
+        private const val PART_DATA_LIST_VARIABLE = "_partDataList"
+        private const val FORM_DATA_CONTENT_VARIABLE = "_formDataContent"
         private const val KTOR_HTTP_PACKAGE = "io.ktor.http"
+        private const val KOTLIN_COLLECTIONS_PACKAGE = "kotlin.collections"
+        private val KTOR_PART_DATA_CLASS = ClassName("$KTOR_HTTP_PACKAGE.content", "PartData")
         private const val THIS_HEADERS = "this.%M"
         private val KTOR_CLIENT_REQUEST_HEADER_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "headers")
         private const val LITERAL_FOREACH = "%L.forEach"
@@ -40,6 +31,7 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         private const val APPEND_STRING_LITERAL = "this.append(%S, %L)"
         private const val APPEND_STRING_STRING = "this.append(%S, %P)"
         private const val LITERAL_NN_LET = "%L?.let"
+        private const val LET_RESULT = ".let { _result ->"
         private const val ITERABLE_FILTER_NULL_FOREACH = "%L?.filterNotNull()?.forEach"
         private const val ENTRY_VALUE_NN_LET = "entry.value?.let { value ->"
         private const val VALUE = $$"$value"
@@ -52,24 +44,29 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         private val FLOW_MEMBER = MemberName("kotlinx.coroutines.flow", "flow")
         private val KTOR_URL_TAKE_FROM_FUNCTION = MemberName(KTOR_HTTP_PACKAGE, "takeFrom", true)
         private val DECODE_URL_COMPONENTS_FUNCTION = MemberName(KTOR_HTTP_PACKAGE, "decodeURLQueryComponent", true)
-        private val KTOR_HTTP_METHOD = MemberName(KTOR_HTTP_PACKAGE, "HttpMethod")
-        private val KTOR_ATTRIBUTE_KEY = MemberName("io.ktor.util", "AttributeKey")
+        private val KTOR_HTTP_METHOD = ClassName(KTOR_HTTP_PACKAGE, "HttpMethod")
+        private val KTOR_ATTRIBUTE_KEY = ClassName("io.ktor.util", "AttributeKey")
         private val KTOR_REQUEST_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "request", true)
         private val KTOR_REQUEST_SET_BODY_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "setBody", true)
         private val KTOR_URL_ENCODE_PATH = MemberName(KTOR_HTTP_PACKAGE, "encodeURLPath", true)
-        private val KTOR_PARAMETERS_CLASS = MemberName(KTOR_HTTP_PACKAGE, "Parameters")
+        private val KTOR_PARAMETERS_CLASS = ClassName(KTOR_HTTP_PACKAGE, "Parameters")
         private val KTOR_REQUEST_FORM_DATA_CONTENT_CLASS =
-            MemberName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "FormDataContent")
+            ClassName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "FormDataContent")
         private val KTOR_REQUEST_MULTIPART_CONTENT_CLASS =
-            MemberName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "MultiPartFormDataContent")
+            ClassName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "MultiPartFormDataContent")
         private val KTOR_REQUEST_FORM_DATA_FUNCTION = MemberName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "formData")
-        private val KOTLIN_LIST_OF = MemberName("kotlin.collections", "listOf")
-        private val KOTLIN_MAP_OF = MemberName("kotlin.collections", "mapOf")
-        private val KTOR_GMT_DATE_CLASS = MemberName("io.ktor.util.date", "GMTDate")
+        private val KOTLIN_LIST_OF = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "listOf")
+        private val KOTLIN_MAP_OF = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "mapOf")
+        private val KOTLIN_EMPTY_MAP = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "mapOf")
+        private val KTOR_GMT_DATE_CLASS = ClassName("io.ktor.util.date", "GMTDate")
         private val KTOR_REQUEST_COOKIE_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "cookie", true)
         private val KTOR_CONTENT_TYPE_FUNCTION = MemberName(KTOR_HTTP_PACKAGE, "contentType", true)
-        private val KTOR_CONTENT_TYPE_CLASS = MemberName(KTOR_HTTP_PACKAGE, "ContentType")
+        private val KTOR_CONTENT_TYPE_CLASS = ClassName(KTOR_HTTP_PACKAGE, "ContentType")
         private val KTOR_REQUEST_TAKE_FROM_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "takeFrom", true)
+        private val COROUTINES_CURRENT_CONTEXT = MemberName("kotlinx.coroutines", "currentCoroutineContext")
+        private val COROUTINES_CONTEXT_ENSURE_ACTIVE = MemberName("kotlinx.coroutines", "ensureActive", true)
+        private val KOTLIN_EXCEPTION_CLASS = ClassName("kotlin", "Exception")
+        private val KOTLIN_PAIR_CLASS = ClassName("kotlin", "Pair")
     }
 
     fun generateFunctionBody(func: FunctionData): CodeBlock {
@@ -84,51 +81,53 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         }
     }
 
-    private fun generateFlowResultBody(returnType: TypeName, func: FunctionData) = CodeBlock.builder().apply {
+    private fun generateFlowResultBody(type: ParameterizedTypeName, func: FunctionData) = CodeBlock.builder().apply {
         beginControlFlow("return %M", FLOW_MEMBER)
             .beginControlFlow("try")
             .addRequest(func)
-        if (returnType.unwrapFlowResult() != UNIT) {
-            add(BODY_TYPE, BODY_FUNCTION, returnType.unwrapFlowResult())
-            beginControlFlow(".let")
-            addStatement("emit(Result.success(it))")
+        if (type.unwrapFlowResult() != UNIT) {
+            add(BODY_TYPE, BODY_FUNCTION, type.unwrapFlowResult())
+            beginControlFlow(LET_RESULT)
+                .addStatement("emit(%T.success(_result))", RESULT_CLASS)
             endControlFlow()
         } else {
-            addStatement("emit(Result.success(%L))", UNIT)
+            addStatement("emit(%T.success(%T))", RESULT_CLASS, UNIT)
         }
-        nextControlFlow("catch (e: Exception)")
-            .addStatement("emit(Result.failure(e))")
+        nextControlFlow("catch (_exception: %T)", KOTLIN_EXCEPTION_CLASS)
+            .addStatement("%M().%M()", COROUTINES_CURRENT_CONTEXT, COROUTINES_CONTEXT_ENSURE_ACTIVE)
+            .addStatement("emit(%T.failure(_exception))", RESULT_CLASS)
         endControlFlow()
         endControlFlow()
     }.build()
 
-    private fun generateFlowBody(returnType: TypeName, func: FunctionData): CodeBlock = CodeBlock.builder().apply {
+    private fun generateFlowBody(returnType: ParameterizedTypeName, func: FunctionData) = CodeBlock.builder().apply {
         beginControlFlow("return %M", FLOW_MEMBER)
         addRequest(func)
         if (returnType.unwrapFlow() != UNIT) {
             add(BODY_TYPE, BODY_FUNCTION, returnType.unwrapFlow())
-            beginControlFlow(".let")
-                .addStatement("emit(it)")
+            beginControlFlow(LET_RESULT)
+                .addStatement("emit(_result)")
             endControlFlow()
         } else {
-            addStatement("emit(%L)", UNIT)
+            addStatement("emit(%T)", UNIT)
         }
         endControlFlow()
     }.build()
 
-    private fun generateResultBody(returnType: TypeName, func: FunctionData): CodeBlock = CodeBlock.builder().apply {
+    private fun generateResultBody(returnType: ParameterizedTypeName, func: FunctionData) = CodeBlock.builder().apply {
         beginControlFlow("return try")
             .addRequest(func)
         if (returnType.unwrapResult() != UNIT) {
             addStatement(BODY_TYPE, BODY_FUNCTION, returnType.unwrapResult())
-            beginControlFlow(".let")
-                .addStatement("Result.success(it)")
+            beginControlFlow(LET_RESULT)
+                .addStatement("%T.success(_result)", RESULT_CLASS)
             endControlFlow()
         } else {
-            addStatement("Result.success(%L)", UNIT)
+            addStatement("%T.success(%T)", RESULT_CLASS, UNIT)
         }
-        nextControlFlow("catch (e: Exception)")
-            .addStatement("Result.failure(e)")
+        nextControlFlow("catch (_exception: %T)", KOTLIN_EXCEPTION_CLASS)
+            .addStatement("%M().%M()", COROUTINES_CURRENT_CONTEXT, COROUTINES_CONTEXT_ENSURE_ACTIVE)
+            .addStatement("%T.failure(_exception)", RESULT_CLASS)
         endControlFlow()
     }.build()
 
@@ -178,10 +177,10 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         val httpMethod = func.httpMethodAnnotation.httpMethod
         return applyIf(httpMethod != HttpMethod.Absent) {
             if (httpMethod in HttpMethod.ktorMethods) {
-                addStatement("this.method = %M.%L", KTOR_HTTP_METHOD, httpMethod.ktorMethodName)
+                addStatement("this.method = %T.%L", KTOR_HTTP_METHOD, httpMethod.ktorMethodName)
                 return@applyIf
             }
-            addStatement("this.method = %M.parse(%S)", KTOR_HTTP_METHOD, httpMethod.value)
+            addStatement("this.method = %T.parse(%S)", KTOR_HTTP_METHOD, httpMethod.value)
         }
     }
 
@@ -241,7 +240,7 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
 
         if (func.isFormUrl) {
             addStatement(
-                "this.%M(%M.Application.FormUrlEncoded)", // this.contentType ContentType.Application.FormUrlEncoded
+                "this.%M(%T.Application.FormUrlEncoded)", // this.contentType ContentType.Application.FormUrlEncoded
                 KTOR_CONTENT_TYPE_FUNCTION,
                 KTOR_CONTENT_TYPE_CLASS,
             )
@@ -263,34 +262,27 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
     }
 
     private fun CodeBlock.Builder.addCookies(func: FunctionData) = apply {
-        (
-            // Cookies en función
-            func.ktorGenAnnotations.filterIsInstance<FunctionAnnotation.Cookies>()
-                .flatMap { it.value } + // plus
-                // Cookies en parámetros (no vararg)
+        // Recolectamos todos los candidatos a cookies (de función y parámetros)
+        func.ktorGenAnnotations.filterIsInstance<FunctionAnnotation.Cookies>()
+            .flatMap { it.value }
+            .map { CookieCandidate(it) }
+            .plus(
+                // Cookies en parámetros
                 func.parameterDataList
-                    .filterNot { it.isVararg }
                     .flatMap { p ->
-                        p.ktorgenAnnotations.filterIsInstance<ParameterAnnotation.Cookies>().map { it.value }
-                    }
-                    .flatten()
-            )
-            .forEach { cookieValues ->
-                addCookieStatement(cookieValues)
-            }
-
-        // Cookies en parámetros (vararg) → foreach
-        func.parameterDataList
-            .filter { it.isVararg }
-            .forEach { p ->
-                p.ktorgenAnnotations.filterIsInstance<ParameterAnnotation.Cookies>()
-                    .map { it.value }
-                    .flatten()
-                    .forEach { cookieValues ->
-                        beginControlFlow(LITERAL_FOREACH, p.nameString)
-                        addCookieStatement(cookieValues, useVarargItem = true)
-                        endControlFlow()
-                    }
+                        p.ktorgenAnnotations
+                            .filterIsInstance<ParameterAnnotation.Cookies>()
+                            .flatMap { it.value }
+                            .map { cookie -> CookieCandidate(cookie, p.isVararg, p.nameString) }
+                    },
+            ).forEach { c ->
+                if (c.useVarargItem && c.varargParamName != null) {
+                    beginControlFlow(LITERAL_FOREACH, c.varargParamName)
+                        .addCookieStatement(c.cookieValues, useVarargItem = true)
+                    endControlFlow()
+                } else {
+                    addCookieStatement(c.cookieValues)
+                }
             }
     }
 
@@ -317,9 +309,7 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
                 cookieValues.value
             },
             cookieValues.maxAge,
-            cookieValues.expiresTimestamp?.let { timestamp ->
-                CodeBlock.of(MEMBER_LITERAL, KTOR_GMT_DATE_CLASS, timestamp)
-            },
+            cookieValues.expiresTimestamp?.let { timestamp -> CodeBlock.of("%T(%L)", KTOR_GMT_DATE_CLASS, timestamp) },
             cookieValues.domain,
             cookieValues.path,
             cookieValues.secure,
@@ -334,9 +324,15 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
                     unindent()
                     add(")")
                 }.build()
-            } ?: "emptyMap()",
+            } ?: CodeBlock.of("%M()", KOTLIN_EMPTY_MAP),
         )
     }
+
+    private class CookieCandidate(
+        val cookieValues: CookieValues,
+        val useVarargItem: Boolean = false,
+        val varargParamName: String? = null,
+    )
 
     private fun CodeBlock.Builder.addQuery(params: List<ParameterData>) = apply {
         add(getQueryTextBlock(params))
@@ -364,14 +360,14 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
 
                 if (param.typeData.parameterType.isMarkedNullable) {
                     addStatement(
-                        "%N?.let { this.attributes.put(%M(%S), it) }",
+                        "%N?.let { _value -> this.attributes.put(%T(%S), _value) }",
                         param.nameString,
                         KTOR_ATTRIBUTE_KEY,
                         tag.value,
                     )
                 } else {
                     addStatement(
-                        "this.attributes.put(%M(%S), %N)",
+                        "this.attributes.put(%T(%S), %N)",
                         KTOR_ATTRIBUTE_KEY,
                         tag.value,
                         param.nameString,
@@ -468,7 +464,7 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
                 val isNullable = parameterData.typeData.parameterType.isMarkedNullable
 
                 val isMap = MAP == typeName.rawType()
-                val isPair = ClassName("kotlin", "Pair") == typeName.rawType()
+                val isPair = KOTLIN_PAIR_CLASS == typeName.rawType()
                 val isVarargPair = parameterData.isVararg && isPair
                 val isVarargMap = parameterData.isVararg && isMap
 
@@ -494,7 +490,11 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
     private fun TypeName.rawType(): ClassName = when (this) {
         is ParameterizedTypeName -> this.rawType
         is ClassName -> this
-        else -> error("Unsupported type: Dynamic")
+        Dynamic,
+        is LambdaTypeName,
+        is TypeVariableName,
+        is WildcardTypeName,
+        -> checkImplementation { "Unsupported type: $this" }
     }
 
     private fun CodeBlock.Builder.headerMapOrVarargMap(
@@ -538,14 +538,14 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         }
         beginControlFlow(LITERAL_FOREACH, forEachExpr)
 
-        if (valueIsNullable) beginControlFlow("it.second?.let { value ->")
+        if (valueIsNullable) beginControlFlow("it.second?.let { _value ->")
 
         addStatement(
             "this.append(it.first, %L)",
             if (valueIsString) {
-                if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.second")
+                if (valueIsNullable) CodeBlock.of("_value") else CodeBlock.of("it.second")
             } else {
-                if (valueIsNullable) CodeBlock.of($$"\"$value\"") else CodeBlock.of($$"\"${it.second}\"")
+                if (valueIsNullable) CodeBlock.of($$"\"$_value\"") else CodeBlock.of($$"\"${it.second}\"")
             },
         )
 
@@ -554,27 +554,24 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
     }
 
     // -- query --
-    private fun getQueryMapTextBlock(params: List<ParameterData>): CodeBlock {
-        val block = CodeBlock.builder()
-        params
-            .filter { it.hasAnnotation<ParameterAnnotation.QueryMap>() }
+    private fun getQueryMapTextBlock(params: List<ParameterData>) = CodeBlock.builder().apply {
+        params.filter { it.hasAnnotation<ParameterAnnotation.QueryMap>() }
             .forEach { parameterData ->
                 val queryMap = parameterData.findAnnotation<ParameterAnnotation.QueryMap>()
                 val encoded = queryMap.encoded
                 val data = parameterData.nameString
 
-                block.beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, data)
-                block.beginControlFlow(ENTRY_VALUE_NN_LET)
-                block.addStatement(
-                    "%L(entry.key, %P)",
-                    if (encoded) ENCODED_PARAMETERS_APPEND else PARAMETERS_APPEND,
-                    VALUE,
-                )
-                block.endControlFlow()
-                block.endControlFlow()
+                beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, data)
+                beginControlFlow(ENTRY_VALUE_NN_LET)
+                    .addStatement(
+                        "%L(entry.key, %P)",
+                        if (encoded) ENCODED_PARAMETERS_APPEND else PARAMETERS_APPEND,
+                        VALUE,
+                    )
+                endControlFlow()
+                endControlFlow()
             }
-        return block.build()
-    }
+    }.build()
 
     private fun getQueryNameTextBlock(params: List<ParameterData>) = CodeBlock.builder().apply {
         params
@@ -590,11 +587,11 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
 
                 if (isList || isArray) {
                     beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
-                    addStatement(
-                        "%L.appendAll(%P, emptyList())",
-                        if (encoded) "this.encodedParameters" else "this.parameters",
-                        $$"$it",
-                    )
+                        .addStatement(
+                            "%L.appendAll(%P, emptyList())",
+                            if (encoded) "this.encodedParameters" else "this.parameters",
+                            $$"$it",
+                        )
                     endControlFlow()
                 } else {
                     addStatement(
@@ -645,16 +642,8 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
     }.build()
 
     // -- body --
-    private fun getPartsCodeBlock(
-        params: List<ParameterData>,
-        formDataVar: String = "_multiPartDataContent",
-        partDataVar: String = "_partDataList",
-    ): CodeBlock {
-        val block = CodeBlock.builder()
-
+    private fun getPartsCodeBlock(params: List<ParameterData>): CodeBlock {
         val partCode = CodeBlock.builder()
-
-        block.addStatement("val %L = mutableListOf<%T>()", partDataVar, ClassName("io.ktor.http.content", "PartData"))
 
         params.filter { it.hasAnnotation<ParameterAnnotation.Part>() }
             .forEach { parameterData ->
@@ -674,13 +663,13 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
                 when {
                     isListPartData -> {
                         partCode.beginControlFlow(LITERAL_NN_LET, name)
-                            .addStatement("%L.addAll(it)", partDataVar)
+                            .addStatement("%L.addAll(it)", PART_DATA_LIST_VARIABLE)
                         partCode.endControlFlow()
                     }
 
                     isPartData -> {
                         partCode.beginControlFlow(LITERAL_NN_LET, name)
-                            .addStatement("%L.add(it)", partDataVar)
+                            .addStatement("%L.add(it)", PART_DATA_LIST_VARIABLE)
                         partCode.endControlFlow()
                     }
 
@@ -711,7 +700,7 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
                 when {
                     isListPartData -> {
                         partCode.beginControlFlow(LITERAL_NN_LET, parameterData.nameString)
-                            .addStatement("%L.addAll(it)", partDataVar)
+                            .addStatement("%L.addAll(it)", PART_DATA_LIST_VARIABLE)
                         partCode.endControlFlow()
                     }
 
@@ -725,27 +714,24 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
                 }
             }
 
-        if (partCode.build().isNotEmpty()) {
-            block.beginControlFlow("val %L = %M", formDataVar, KTOR_REQUEST_FORM_DATA_FUNCTION)
+        return CodeBlock.builder().applyIf(partCode.isNotEmpty()) {
+            addStatement("val %L = mutableListOf<%T>()", PART_DATA_LIST_VARIABLE, KTOR_PART_DATA_CLASS)
+            beginControlFlow("val %L = %M", FORM_DATA_VARIABLE, KTOR_REQUEST_FORM_DATA_FUNCTION)
                 .add(partCode.build())
-            block.endControlFlow()
+            endControlFlow()
 
             // Unir contenido de formData y lista de PartData
-            block.addStatement(
-                "this.%M(%M(%L + %L))",
+            addStatement(
+                "this.%M(%T(%L + %L))",
                 KTOR_REQUEST_SET_BODY_FUNCTION,
                 KTOR_REQUEST_MULTIPART_CONTENT_CLASS,
-                partDataVar,
-                formDataVar,
+                PART_DATA_LIST_VARIABLE,
+                FORM_DATA_VARIABLE,
             )
-        }
-        return block.build()
+        }.build()
     }
 
-    private fun getFieldArgumentsCodeBlock(
-        params: List<ParameterData>,
-        formParamsVar: String = "_formDataContent",
-    ): CodeBlock {
+    private fun getFieldArgumentsCodeBlock(params: List<ParameterData>): CodeBlock {
         val fieldCode = CodeBlock.builder().apply {
             params.filter { it.hasAnnotation<ParameterAnnotation.Field>() }
                 .forEach { parameterData ->
@@ -800,19 +786,18 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
                 }
         }
 
-        return CodeBlock.builder().apply {
-            if (fieldCode.isNotEmpty()) {
-                beginControlFlow("val %L = %M.build", formParamsVar, KTOR_PARAMETERS_CLASS)
+        return CodeBlock.builder()
+            .applyIf(fieldCode.isNotEmpty()) {
+                beginControlFlow("val %L = %T.build", FORM_DATA_CONTENT_VARIABLE, KTOR_PARAMETERS_CLASS)
                     .add(fieldCode.build())
                 endControlFlow()
                 // setBody FormDataContent X
                 addStatement(
-                    "this.%M(%M(%L))",
+                    "this.%M(%T(%L))",
                     KTOR_REQUEST_SET_BODY_FUNCTION,
                     KTOR_REQUEST_FORM_DATA_CONTENT_CLASS,
-                    formParamsVar,
+                    FORM_DATA_CONTENT_VARIABLE,
                 )
-            }
-        }.build()
+            }.build()
     }
 }
