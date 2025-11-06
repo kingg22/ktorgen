@@ -16,7 +16,9 @@ import java.io.File
  */
 inline fun runKtorGenProcessor(
     vararg sources: Source,
-    processorOptions: Map<String, String> = mapOf("ktorgen_check_type" to "1"),
+    processorOptions: Map<String, String> = mapOf(
+        KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Errors.intValue.toString(),
+    ),
     kotlincArguments: List<String> = emptyList(),
     noinline onCompilationResult: (CompilationResultSubject) -> Unit,
 ) = runKspProcessorTest(

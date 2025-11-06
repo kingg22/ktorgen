@@ -23,7 +23,7 @@ class TagTest {
 
         val expectedHeadersArgumentText = listOf(
             """attributes.put(AttributeKey("myTag1"), myTag1)""",
-            """attributes.put(AttributeKey("myTag2"), it)""",
+            """attributes.put(AttributeKey("myTag2"), _value)""",
         )
 
         runKtorGenProcessor(source) { compilationResultSubject ->
