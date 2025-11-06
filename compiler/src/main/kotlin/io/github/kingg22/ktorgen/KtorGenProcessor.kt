@@ -223,7 +223,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         )
         arrayType = resolver.builtIns.arrayType
         partDataKtor = resolver.getKotlinClassByName(KTOR_CLIENT_PART_DATA)?.asType(emptyList())
-        timer.addStep("Retrieve KSTypes")
+        timer.addStep("Retrieve KSTypes [Ktor PartData class founded: ${partDataKtor != null}]")
     }
 
     private fun cleanDeferredSymbolsWith(fullClassList: Set<ClassData>) {
