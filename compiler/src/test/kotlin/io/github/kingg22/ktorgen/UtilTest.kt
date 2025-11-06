@@ -30,7 +30,10 @@ inline fun runKtorGenProcessor(
 )
 
 /** @return `this"""str"""` */
-inline infix fun String.stringTemplate(str: String) = "$this\"\"\"$str\"\"\""
+inline infix fun String.stringTemplate(str: String) = this + stringTemplate(string = str)
+
+/** @return `"""str"""` */
+inline fun stringTemplate(string: String) = "\"\"\"$string\"\"\""
 
 inline fun String.toRelativePath() = replace('.', File.separatorChar)
     .removeSuffix("kt")
