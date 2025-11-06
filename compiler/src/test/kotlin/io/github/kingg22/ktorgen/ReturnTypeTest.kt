@@ -97,7 +97,7 @@ class ReturnTypeTest {
             generated.contains("flow {")
             generated.contains("httpClient.request")
             generated.contains(".body<String>()")
-            generated.contains("emit(_result)")
+            generated.contains("this.emit(_result)")
         }
     }
 
@@ -129,9 +129,9 @@ class ReturnTypeTest {
             generated.contains("flow {")
             generated.contains("try {")
             generated.contains(".body<String>()")
-            generated.contains("emit(Result.success(_result))")
+            generated.contains("this.emit(Result.success(_result))")
             generated.contains("catch (_exception: Exception)")
-            generated.contains("emit(Result.failure(_exception))")
+            generated.contains("this.emit(Result.failure(_exception))")
         }
     }
 
@@ -257,7 +257,7 @@ class ReturnTypeTest {
             generated.contains("flow {")
             generated.contains("httpClient.request")
             generated.doesNotContain(".body<")
-            generated.contains("emit(Unit)")
+            generated.contains("this.emit(Unit)")
         }
     }
 
@@ -291,9 +291,9 @@ class ReturnTypeTest {
             generated.contains("try {")
             generated.contains("httpClient.request")
             generated.doesNotContain(".body<")
-            generated.contains("emit(Result.success(Unit))")
+            generated.contains("this.emit(Result.success(Unit))")
             generated.contains("catch (_exception: Exception)")
-            generated.contains("emit(Result.failure(_exception))")
+            generated.contains("this.emit(Result.failure(_exception))")
         }
     }
 }

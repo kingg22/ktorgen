@@ -91,14 +91,14 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         if (type.unwrapFlowResult() != UNIT) {
             add(BODY_TYPE, BODY_FUNCTION, type.unwrapFlowResult())
             beginControlFlow(LET_RESULT)
-                .addStatement("emit(%T.success(_result))", RESULT_CLASS)
+                .addStatement("this.emit(%T.success(_result))", RESULT_CLASS)
             endControlFlow()
         } else {
-            addStatement("emit(%T.success(%T))", RESULT_CLASS, UNIT)
+            addStatement("this.emit(%T.success(%T))", RESULT_CLASS, UNIT)
         }
         nextControlFlow("catch (_exception: %T)", KOTLIN_EXCEPTION_CLASS)
             .addStatement("%M().%M()", COROUTINES_CURRENT_CONTEXT, COROUTINES_CONTEXT_ENSURE_ACTIVE)
-            .addStatement("emit(%T.failure(_exception))", RESULT_CLASS)
+            .addStatement("this.emit(%T.failure(_exception))", RESULT_CLASS)
         endControlFlow()
         endControlFlow()
     }.build()
@@ -109,10 +109,10 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         if (returnType.unwrapFlow() != UNIT) {
             add(BODY_TYPE, BODY_FUNCTION, returnType.unwrapFlow())
             beginControlFlow(LET_RESULT)
-                .addStatement("emit(_result)")
+                .addStatement("this.emit(_result)")
             endControlFlow()
         } else {
-            addStatement("emit(%T)", UNIT)
+            addStatement("this.emit(%T)", UNIT)
         }
         endControlFlow()
     }.build()
