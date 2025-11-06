@@ -196,11 +196,13 @@ Real-life migration example: [deezer-client-kt](https://github.com/kingg22/deeze
   - _More option soon..._
 
 ### Roadmap 🚀
-- [ ] Add matrix compatibility test on CI (_Kotlin versions, KSP versions, Ktor Client versions_) to know the range of compatibility.
+- [ ] Add a matrix compatibility test on CI (_Kotlin versions, KSP versions, Ktor Client versions_) to know the range of compatibility.
 - [ ] Add test for Fragment annotation
-- [ ] Add test for Cookie annotation
+- [X] ~~Add test for Cookie annotation~~
 - [ ] Resolve knowable issues described in https://github.com/kingg22/ktorgen/pull/27
-- [ ] Resolve issues related to unresolved references, multi round processing, unexpected errors.
+- [X] Resolve issues related to unresolved references, ~~multi-round processing, unexpected errors.~~
+**EDIT**: Most unresolved symbols are caused by https://github.com/google/ksp/issues/2668 and
+platform-specific issues caused by [Optional expectation](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-optional-expectation/) of some annotations.
 
 ## 📜 Disclaimer
 This repository is a fork of Ktorfit and Retrofit annotations, with my own changes and additions.
