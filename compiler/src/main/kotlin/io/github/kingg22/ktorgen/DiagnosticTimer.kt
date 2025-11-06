@@ -19,22 +19,31 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
         root.start()
     }
 
-    /** Factory for inner phases */
-    internal fun createPhase(name: String): DiagnosticSender = Step(name, StepType.PHASE).apply {
-        root.addChild(this)
-    }
-
-    /** Add step on root phase */
-    internal fun addStep(message: String) {
-        root.addStep(message)
-    }
-
     override fun isStarted(): Boolean = root.isStarted()
 
+    /** Finish the root timer */
+    override fun finish() = root.finish()
+    override fun createTask(name: String): DiagnosticSender = root.createTask(name)
+    override fun addStep(message: String, symbol: KSNode?) = root.addStep(message, symbol)
+    override fun addWarning(message: String, symbol: KSNode?) = root.addWarning(message, symbol)
+    override fun addError(message: String, symbol: KSNode?) = root.addError(message, symbol)
+    override fun die(message: String, symbol: KSNode?, exception: Exception?) = root.die(message, symbol, exception)
     override fun isFinish() = root.isFinish()
     override fun hasErrors(): Boolean = root.hasErrors()
     override fun hasWarnings(): Boolean = root.hasWarnings()
     override fun toString(): String = root.toString()
+
+    override fun equals(other: Any?): Boolean =
+        other is DiagnosticTimer && other.root == root && other.onDebugLog == onDebugLog
+
+    override fun hashCode(): Int {
+        var result = root.hashCode()
+        result = 31 * result + onDebugLog.hashCode()
+        return result
+    }
+
+    /** Factory for inner phases */
+    internal fun createPhase(name: String): DiagnosticSender = Step(name, StepType.PHASE, root)
 
     /** Generate all the report in mode verbose */
     internal fun buildReport(): String = buildString { printStep(root, "") }
@@ -57,21 +66,14 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
         appendFilteredSteps(root, 0) { it.type == MessageType.WARNING || it.type == MessageType.ERROR }
     }
 
-    /** Finish the root timer */
-    override fun finish() = root.finish()
-    override fun createTask(name: String): DiagnosticSender = root.createTask(name)
-    override fun addStep(message: String, symbol: KSNode?) = root.addStep(message, symbol)
-    override fun addWarning(message: String, symbol: KSNode?) = root.addWarning(message, symbol)
-    override fun addError(message: String, symbol: KSNode?) = root.addError(message, symbol)
-    override fun die(message: String, symbol: KSNode?, exception: Exception?): Nothing =
-        root.die(message, symbol, exception)
-
     private fun StringBuilder.printStep(step: Step, indent: String) {
         val icon = iconFor(step)
         val label = step.type.label
 
         appendLine("$indent$icon $label: ${step.name} completed in (${step.formattedDuration()})")
-        step.printDiagnostic(this, indent)
+        for (msg in step.messages) {
+            this.appendLine("$indent    $msg")
+        }
 
         for (child in step.children) {
             printStep(child, "$indent    ")
@@ -95,7 +97,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
         if (messages.isNotEmpty() || hasRelevantChildren) {
             appendLine("$indent${iconFor(step)} ${step.name} (${step.formattedDuration()})")
             messages.forEach { msg ->
-                appendLine("$indent  ${msg.type.icon}${msg.type}: ${msg.message}")
+                appendLine("$indent  ${msg.type}: ${msg.message}")
                 msg.generateSymbolInfo.takeIf { it.isNotEmpty() }?.let { symbolInfo ->
                     appendLine("$indent    -> $symbolInfo")
                 }
@@ -114,8 +116,12 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
         val messages = mutableListOf<DiagnosticMessage>()
         val children = mutableListOf<Step>()
 
+        constructor(name: String, type: StepType, parent: Step) : this(name, type) {
+            parent.children.add(this)
+        }
+
         override fun toString() = (
-            "${type.label} ${type.icon} $name " +
+            "$type $name " +
                 "(${if (isCompleted()) formattedDuration() else "Start at: $startNanos, not finished yet"}). " +
                 "${messages.size} messages, ${children.size} children.\n" +
                 "Messages: [${messages.joinToString().trim()}]\n" +
@@ -148,13 +154,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             }
         }
 
-        fun addChild(step: Step) {
-            children.add(step)
-        }
-
-        override fun createTask(name: String): DiagnosticSender = Step(name, StepType.TASK).also { task ->
-            addChild(task)
-        }
+        override fun createTask(name: String): DiagnosticSender = Step(name, StepType.TASK, this)
 
         override fun addStep(message: String, symbol: KSNode?) {
             messages.add(DiagnosticMessage(MessageType.STEP, message.trim(), symbol))
@@ -189,14 +189,6 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             throw exception
         }
 
-        fun printDiagnostic(builder: StringBuilder, indent: String) {
-            for (msg in messages) {
-                val emoji = msg.type.icon
-                val prefix = "    "
-                builder.appendLine("$indent$prefix$emoji ${msg.type.name}: ${msg.message}${msg.generateSymbolInfo}")
-            }
-        }
-
         fun formattedDuration(): String {
             if (endNanos == 0L || startNanos == 0L) return "--"
             val ms = (endNanos - startNanos).div(1_000_000.0).roundTo(3)
@@ -210,49 +202,81 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             val factor = 10.0.pow(numFractionDigits.toDouble())
             return (this * factor).roundToInt() / factor
         }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as Step
+
+            if (startNanos != other.startNanos) return false
+            if (endNanos != other.endNanos) return false
+            if (name != other.name) return false
+            if (type != other.type) return false
+            if (messages != other.messages) return false
+            if (children != other.children) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = startNanos.hashCode()
+            result = 31 * result + endNanos.hashCode()
+            result = 31 * result + name.hashCode()
+            result = 31 * result + type.hashCode()
+            result = 31 * result + messages.hashCode()
+            result = 31 * result + children.hashCode()
+            return result
+        }
     }
 
-    private class DiagnosticMessage(val type: MessageType, val message: String, private val symbol: KSNode?) {
-        val generateSymbolInfo: String by lazy {
-            if (symbol == null) return@lazy ""
+    private data class DiagnosticMessage(val type: MessageType, val message: String, private val symbol: KSNode?) {
+        // invoke to get the info of location during initialization
+        val generateSymbolInfo: String = run {
+            if (symbol == null) return@run ""
             if (symbol.location is FileLocation) {
                 val fileLocation = symbol.location as? FileLocation
                 val fileName = fileLocation?.filePath?.substringAfterLast('/')
                 val line = fileLocation?.lineNumber
 
                 if (symbol is KSDeclaration) {
-                    val symbolName = symbol.qualifiedName?.asString() ?: "<unknown>"
-                    return@lazy "at $symbolName($fileName:$line)"
+                    val symbolName = symbol.qualifiedName?.asString() ?: UNKNOWN_SYMBOL
+                    return@run "at $symbolName($fileName:$line)"
                 } else if (symbol is KSValueParameter) {
                     val type = symbol.type.resolve()
                     val vararg = if (symbol.isVararg) "vararg" else ""
                     val function = symbol.parent as? KSDeclaration
-                    val functionName = function?.qualifiedName?.asString() ?: ""
-                    return@lazy "Parameter: $vararg ${symbol.name?.asString() ?: "<unknown>"}: " +
-                        "${type.declaration.simpleName.asString()}${if (type.isMarkedNullable) "?" else ""} " +
+                    val functionName = function?.qualifiedName?.asString() ?: UNKNOWN_SYMBOL
+                    return@run "on parameter '$vararg ${symbol.name?.asString() ?: UNKNOWN_SYMBOL}: " +
+                        "${type.declaration.simpleName.asString()}${if (type.isMarkedNullable) "?" else ""}' " +
                         "at $functionName($fileName:$line)"
                 }
             }
-            return@lazy ""
+            return@run ""
         }
 
-        init {
-            // invoke to cache the info of location during initialization
-            generateSymbolInfo
-        }
+        override fun toString() = "$type: $message $generateSymbolInfo".trim()
 
-        override fun toString() = "$type ${type.icon}: $message $generateSymbolInfo".trim()
+        private companion object {
+            private const val UNKNOWN_SYMBOL = "<unknown>"
+        }
     }
 
-    private enum class MessageType(val icon: String) {
+    private enum class MessageType(private val icon: String) {
         WARNING("⚠️"),
         ERROR("❌"),
         STEP("🟢"),
+        ;
+
+        override fun toString(): String = "$icon $name"
     }
 
     private enum class StepType(val label: String, val icon: String) {
         ROOT("Processor", "⚙️"),
         PHASE("Phase", "ℹ️"),
         TASK("Task", "🛠️"),
+        ;
+
+        override fun toString(): String = "$icon $label"
     }
 }
