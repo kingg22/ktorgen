@@ -1,0 +1,19 @@
+package io.github.kingg22.ktorgen.validator.validators
+
+import com.google.devtools.ksp.symbol.Modifier
+import io.github.kingg22.ktorgen.validator.ValidationContext
+import io.github.kingg22.ktorgen.validator.ValidationResult
+import io.github.kingg22.ktorgen.validator.ValidatorStrategy
+
+internal class ExpectFunctionsValidator : ValidatorStrategy {
+    override val name: String = "Expect Functions"
+
+    override fun validate(context: ValidationContext) = ValidationResult {
+        context.expectFunctions.filter { !it.modifiers.contains(Modifier.EXPECT) }.forEach { function ->
+            addError(
+                "A function annotated with @KtorGenFunctionKmp must be 'expect' in common source set",
+                function,
+            )
+        }
+    }
+}

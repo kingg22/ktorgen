@@ -14,9 +14,11 @@ fun interface Validator {
     ): ClassData?
 
     companion object {
+        @JvmStatic
         val DEFAULT: Validator by lazy {
             ValidatorPipeline(
                 ClassLevelValidator(),
+                ExpectFunctionsValidator(),
                 WildcardParameterValidator(),
                 SuspendOrFlowValidator(),
                 PathParameterValidator(),
@@ -31,8 +33,10 @@ fun interface Validator {
             )
         }
 
+        @JvmStatic
         val NO_OP by lazy { Validator { _, _, _, _ -> null } }
 
+        @JvmStatic
         val NO_VALIDATION by lazy { Validator { classData, _, _, _ -> classData } }
     }
 }

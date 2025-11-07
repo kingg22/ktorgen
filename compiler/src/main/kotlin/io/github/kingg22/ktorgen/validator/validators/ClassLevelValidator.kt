@@ -1,12 +1,9 @@
 package io.github.kingg22.ktorgen.validator.validators
 
-import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSNode
-import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.KtorGenLogger
-import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
@@ -16,7 +13,7 @@ internal class ClassLevelValidator : ValidatorStrategy {
     override val name: String = "Class Level"
 
     override fun validate(context: ValidationContext) = ValidationResult {
-        val interfaceDeclaration = context.classData.ksClassDeclaration
+        val interfaceDeclaration = context.classData
 
         val classVisibility = context.classData.classVisibilityModifier
         if (classVisibility.isBlank() ||
@@ -70,33 +67,17 @@ internal class ClassLevelValidator : ValidatorStrategy {
             )
         }
 
-        if (context.classData.haveCompanionObject.not() && context.classData.generateCompanionExtFunction) {
+        if (context.classData.companionObjectDeclaration == null && context.classData.generateCompanionExtFunction) {
             addError(KtorGenLogger.MISSING_COMPANION_TO_GENERATE, interfaceDeclaration)
         }
 
-        if (context.classData.haveCompanionObject) {
-            val companionDeclaration = interfaceDeclaration.declarations
-                .filterIsInstance<KSClassDeclaration>()
-                .firstOrNull { it.isCompanionObject } ?: error("Unexpected not found companion object declaration")
-
-            if (companionDeclaration.annotations
-                    .any { it.shortName.getShortName() == KtorGen::class.simpleName!! } &&
-                interfaceDeclaration.annotations
-                    .any { it.shortName.getShortName() == KtorGen::class.simpleName!! }
-            ) {
-                addError(KtorGenLogger.TWO_KTORGEN_ANNOTATIONS, companionDeclaration)
-            }
+        if (context.classData.companionObjectDeclaration != null &&
+            (context.classData.isKtorGenOnCompanionObject && context.classData.isKtorGenOnClass)
+        ) {
+            addError(KtorGenLogger.TWO_KTORGEN_ANNOTATIONS, context.classData.companionObjectDeclaration)
         }
 
         validateFunctions(context)
-
-        val expectedAreNotExpect = context.classData.expectFunctions.filter { !it.modifiers.contains(Modifier.EXPECT) }
-        if (expectedAreNotExpect.isNotEmpty()) {
-            addError(
-                "A function annotated with @KtorGenFunctionKmp must be 'expect' in common source set",
-                expectedAreNotExpect.first(),
-            )
-        }
     }
 
     private fun ValidationResult.validateFunctions(context: ValidationContext) {
