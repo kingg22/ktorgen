@@ -16,42 +16,39 @@ import io.github.kingg22.ktorgen.model.ClassData
 
 internal class ExpectFunctionProcessor {
     /** Process all expect functions and generate actual implementations */
+    context(_: DiagnosticSender,)
     fun processExpectFunctions(
         classData: ClassData,
-        timer: DiagnosticSender,
         constructorSignature: List<TypeName>,
         onAddFunction: (FunSpec) -> Unit,
     ): List<FileSpec.Builder> {
-        // Group expect functions by package to generate one file per package
-        val functionsByPackage = classData.expectFunctions.groupBy { it.packageName.asString() }
-        val extraFiles = mutableListOf<FileSpec.Builder>()
-
-        functionsByPackage.forEach { (_, functions) ->
-            functions.forEach { func ->
+        return classData.expectFunctions.groupBy {
+            // Group expect functions by package to generate one file per package
+            it.packageName.asString()
+        }.flatMap { (_, functions) ->
+            functions.mapNotNull { func ->
                 // Validate signature matches constructor
                 val expectParamTypes = func.parameters.map { it.type.resolve().toTypeName() }
-                if (!validateFunctionSignature(expectParamTypes, constructorSignature, func, timer, classData)) {
-                    return@forEach
+                if (!validateFunctionSignature(expectParamTypes, constructorSignature, func, classData)) {
+                    return@mapNotNull null
                 }
 
                 // Generate actual function
                 generateActualFunctionForKmp(
                     classData = classData,
-                    logger = timer,
                     func = func,
                     onAddFunction = onAddFunction,
-                )?.let { extraFiles.add(it) }
+                )
             }
         }
-        return extraFiles
     }
 
     /** Validates that the expect function signature matches the constructor */
+    context(logger: DiagnosticSender)
     private fun validateFunctionSignature(
         expectParamTypes: List<TypeName>,
         constructorSignature: List<TypeName>,
         func: KSFunctionDeclaration,
-        logger: DiagnosticSender,
         classData: ClassData,
     ): Boolean {
         if (constructorSignature.size != expectParamTypes.size) {
@@ -77,9 +74,9 @@ internal class ExpectFunctionProcessor {
     }
 
     /** Generates an actual function implementation for KMP expect function */
+    context(logger: DiagnosticSender)
     private fun generateActualFunctionForKmp(
         classData: ClassData,
-        logger: DiagnosticSender,
         func: KSFunctionDeclaration,
         onAddFunction: (FunSpec) -> Unit,
     ): FileSpec.Builder? {
