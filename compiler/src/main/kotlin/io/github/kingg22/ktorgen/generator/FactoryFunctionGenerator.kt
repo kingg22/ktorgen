@@ -1,6 +1,5 @@
 package io.github.kingg22.ktorgen.generator
 
-import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
@@ -12,7 +11,6 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.HttpClientClassName
-import io.github.kingg22.ktorgen.requireNotNull
 
 /** **NOTE**: This class is NOT stateless! */
 internal class FactoryFunctionGenerator {
@@ -20,9 +18,9 @@ internal class FactoryFunctionGenerator {
 
     fun clean() = generatedFactories.clear()
 
+    context(_: DiagnosticSender)
     fun generateFactoryFunctions(
         classData: ClassData,
-        timer: DiagnosticSender,
         constructorParams: List<ParameterSpec>,
         functionAnnotation: Set<AnnotationSpec>,
         functionVisibilityModifier: KModifier,
@@ -35,17 +33,16 @@ internal class FactoryFunctionGenerator {
                 constructorParams,
                 functionAnnotation,
                 functionVisibilityModifier,
-                timer,
             )?.let { functions.add(it) }
         }
 
-        if (classData.generateCompanionExtFunction && classData.haveCompanionObject) {
+        if (classData.generateCompanionExtFunction && classData.companionObjectDeclaration != null) {
             generateCompanionFunction(
-                classData,
-                constructorParams,
-                functionAnnotation,
-                functionVisibilityModifier,
-                timer,
+                classData = classData,
+                companionObjectClassName = classData.companionObjectDeclaration.toClassName(),
+                constructorParams = constructorParams,
+                functionAnnotation = functionAnnotation,
+                functionVisibilityModifier = functionVisibilityModifier,
             )?.let { functions.add(it) }
         }
 
@@ -55,19 +52,18 @@ internal class FactoryFunctionGenerator {
                 constructorParams,
                 functionAnnotation,
                 functionVisibilityModifier,
-                timer,
             )?.let { functions.add(it) }
         }
 
         return functions
     }
 
+    context(timer: DiagnosticSender)
     private fun generateTopLevelFunction(
         classData: ClassData,
         constructorParams: List<ParameterSpec>,
         functionAnnotation: Set<AnnotationSpec>,
         functionVisibilityModifier: KModifier,
-        timer: DiagnosticSender,
     ): FunSpec? {
         val function = generateTopLevelFactoryFunction(
             classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
@@ -84,53 +80,40 @@ internal class FactoryFunctionGenerator {
                 paramTypes = constructorParams.map { it.type },
                 function,
             ),
-            timer,
             "top level function factory",
         )?.build()
     }
 
+    context(_: DiagnosticSender)
     private fun generateCompanionFunction(
         classData: ClassData,
+        companionObjectClassName: ClassName,
         constructorParams: List<ParameterSpec>,
         functionAnnotation: Set<AnnotationSpec>,
         functionVisibilityModifier: KModifier,
-        timer: DiagnosticSender,
-    ): FunSpec? {
-        val companionName = timer.requireNotNull(
-            classData.ksClassDeclaration.declarations
-                .filterIsInstance<KSClassDeclaration>()
-                .firstOrNull { it.isCompanionObject },
-            "${classData.interfaceName} don't have companion object",
-            classData.ksClassDeclaration,
-        ).toClassName()
+    ): FunSpec? = registerFactoryFunction(
+        FactoryFunctionKey(
+            name = classData.interfaceName,
+            packageName = classData.packageNameString,
+            paramTypes = constructorParams.map { it.type },
+            generateCompanionExtensionFunction(
+                companionClassName = companionObjectClassName,
+                classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
+                interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
+                constructorParams = constructorParams,
+            ).addModifiers(functionVisibilityModifier)
+                .addAnnotations(functionAnnotation)
+                .addOriginatingKSFile(classData.ksFile),
+        ),
+        "companion extension function factory",
+    )?.build()
 
-        val function = generateCompanionExtensionFunction(
-            companionClassName = companionName,
-            classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
-            interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
-            constructorParams = constructorParams,
-        ).addModifiers(functionVisibilityModifier)
-            .addAnnotations(functionAnnotation)
-            .addOriginatingKSFile(classData.ksFile)
-
-        return registerFactoryFunction(
-            FactoryFunctionKey(
-                name = classData.interfaceName,
-                packageName = classData.packageNameString,
-                paramTypes = constructorParams.map { it.type },
-                function,
-            ),
-            timer,
-            "companion extension function factory",
-        )?.build()
-    }
-
+    context(_: DiagnosticSender)
     private fun generateHttpClientFunction(
         classData: ClassData,
         constructorParams: List<ParameterSpec>,
         functionAnnotation: Set<AnnotationSpec>,
         functionVisibilityModifier: KModifier,
-        timer: DiagnosticSender,
     ): FunSpec? {
         val function = generateHttpClientExtensionFunction(
             httpClientClassName = HttpClientClassName,
@@ -148,22 +131,19 @@ internal class FactoryFunctionGenerator {
                 paramTypes = constructorParams.map { it.type },
                 function,
             ),
-            timer,
             "http client extension function factory",
         )?.build()
     }
 
-    private fun registerFactoryFunction(
-        key: FactoryFunctionKey,
-        timer: DiagnosticSender,
-        functionType: String,
-    ): FunSpec.Builder? = if (generatedFactories.add(key)) {
-        timer.addStep("Added $functionType")
-        key.functionSpecBuilder
-    } else {
-        timer.addWarning("Duplicate $functionType detected")
-        null
-    }
+    context(timer: DiagnosticSender)
+    private fun registerFactoryFunction(key: FactoryFunctionKey, functionType: String): FunSpec.Builder? =
+        if (generatedFactories.add(key)) {
+            timer.addStep("Added $functionType")
+            key.functionSpecBuilder
+        } else {
+            timer.addWarning("Duplicate $functionType detected")
+            null
+        }
 
     private fun generateTopLevelFactoryFunction(
         classNameImpl: ClassName,
@@ -225,7 +205,7 @@ internal class FactoryFunctionGenerator {
         val functionSpecBuilder: FunSpec.Builder,
     )
 
-    internal companion object {
+    private companion object {
         private const val RETURN_TYPE_LITERAL = "return %T(%L)"
     }
 }
