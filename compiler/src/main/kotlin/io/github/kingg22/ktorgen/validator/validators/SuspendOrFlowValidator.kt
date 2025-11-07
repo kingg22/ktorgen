@@ -1,6 +1,5 @@
 package io.github.kingg22.ktorgen.validator.validators
 
-import com.google.devtools.ksp.symbol.FileLocation
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
@@ -11,10 +10,9 @@ internal class SuspendOrFlowValidator : ValidatorStrategy {
 
     override fun validate(context: ValidationContext) = ValidationResult {
         for (function in context.functions.filter { it.goingToGenerate }) {
-            val returnTypeName = requireNotNull(function.returnTypeData.parameterType.declaration.qualifiedName) {
-                val funcLine = function.ksFunctionDeclaration.location as? FileLocation
-                val position = if (funcLine != null) "${funcLine.lineNumber}:${funcLine.filePath}" else function.name
-                "${KtorGenLogger.KTOR_GEN} Return type is not defined. $position"
+            val returnTypeName = function.returnTypeData.parameterType.declaration.qualifiedName ?: run {
+                addError("Return type is not defined", function)
+                continue
             }
             val isFlowName = returnTypeName.asString() == "kotlinx.coroutines.flow.Flow"
             if (!function.isSuspend && !isFlowName) {
