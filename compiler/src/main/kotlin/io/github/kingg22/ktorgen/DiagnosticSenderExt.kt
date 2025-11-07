@@ -85,8 +85,9 @@ internal inline fun checkImplementation(value: Boolean, lazyMessage: () -> Strin
  * @param lazyMessage A lambda function to generate the error message
  * @throws KtorGenFatalError.KtorGenImplementationError
  */
+@Suppress("WRONG_INVOCATION_KIND")
 internal inline fun checkImplementation(lazyMessage: () -> String): Nothing {
-    contract { callsInPlace(lazyMessage, InvocationKind.AT_MOST_ONCE) }
+    contract { callsInPlace(lazyMessage, InvocationKind.EXACTLY_ONCE) }
     var suppressException: Exception? = null
     val message = try {
         lazyMessage()
