@@ -21,11 +21,9 @@ internal fun ValidationResult.validateMapParameter(
     val qualifiedName = decl.qualifiedName?.asString()
     if (qualifiedName == "kotlin.collections.Map" || qualifiedName == "kotlin.Pair") {
         val (firstType, secondType) = validateArgsOf(parameter)
-        if (validation(firstType, secondType)) {
-            addError(errorMessage, parameter.ksValueParameter)
-        }
+        if (validation(firstType, secondType)) addError(errorMessage, parameter)
     } else {
-        addError(errorMessage, parameter.ksValueParameter)
+        addError(errorMessage, parameter)
     }
 }
 
