@@ -16,14 +16,16 @@ import com.squareup.kotlinpoet.ksp.toClassName
 class ClassData(
     val packageNameString: String,
     val interfaceName: String,
-    val functions: List<FunctionData>,
+    val functions: Sequence<FunctionData>,
     val ksFile: KSFile,
     val ksClassDeclaration: KSClassDeclaration,
-    val superClasses: List<KSTypeReference>,
-    val properties: List<KSPropertyDeclaration>,
+    val superClasses: Sequence<KSTypeReference>,
+    val properties: Sequence<KSPropertyDeclaration>,
     val modifierSet: Set<KModifier>,
-    val haveCompanionObject: Boolean,
-    val expectFunctions: List<KSFunctionDeclaration>,
+    val companionObjectDeclaration: KSClassDeclaration?,
+    val expectFunctions: Sequence<KSFunctionDeclaration>,
+    val isKtorGenAnnotationDeclaredOnClass: Boolean,
+    val isKtorGenAnnotationDeclaredOnCompanionClass: Boolean,
     options: ClassGenerationOptions,
 ) : ClassGenerationOptions(options) {
     val httpClientProperty by lazy {

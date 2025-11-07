@@ -41,18 +41,19 @@ internal class ClassMapper : DeclarationMapper {
 
         val companionObject = declaration.declarations
             .filterIsInstance<KSClassDeclaration>()
-            .any { it.isCompanionObject }
+            .firstOrNull { it.isCompanionObject }
 
         val interfaceName = declaration.simpleName.getShortName()
 
-        var options = extractKtorGen(declaration, interfaceName)
+        var ktorGenOnClass = false
+        var ktorGenOnCompanion = false
+        var options = extractKtorGen(declaration, interfaceName)?.also { ktorGenOnClass = true }
             ?: run {
-                if (companionObject) {
-                    extractKtorGen(
-                        declaration.declarations.filterIsInstance<KSClassDeclaration>()
-                            .first { it.isCompanionObject },
-                        interfaceName,
-                    )?.let { return@run it }
+                if (companionObject != null) {
+                    extractKtorGen(companionObject, interfaceName)?.let {
+                        ktorGenOnCompanion = true
+                        return@run it
+                    }
                 }
                 ClassGenerationOptions.default(
                     generatedName = "_${interfaceName}Impl",
@@ -105,7 +106,7 @@ internal class ClassMapper : DeclarationMapper {
             timer.addStep("${symbols.size} unresolved symbols of function: ${func.simpleName.getShortName()}")
             deferredSymbols += symbols
             return@mapNotNull null
-        }.toList()
+        }
 
         timer.addStep("Processed all functions")
 
@@ -114,23 +115,24 @@ internal class ClassMapper : DeclarationMapper {
             return@work null to deferredSymbols
         }
 
-        // an operation terminal of sequences must be in one site
         ClassData(
             ksClassDeclaration = declaration,
             interfaceName = interfaceName,
             packageNameString = packageName,
             functions = functions,
-            superClasses = filteredSupertypes.toList(),
-            properties = properties.toList(),
+            superClasses = filteredSupertypes,
+            properties = properties,
             modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
             ksFile = timer.requireNotNull(
                 declaration.containingFile,
                 KtorGenLogger.INTERFACE_NOT_HAVE_FILE + interfaceName,
                 declaration,
             ),
-            haveCompanionObject = companionObject,
+            companionObjectDeclaration = companionObject,
             options = options,
-            expectFunctions = expectFunctions,
+            expectFunctions = expectFunctions.asSequence(),
+            isKtorGenAnnotationDeclaredOnClass = ktorGenOnClass,
+            isKtorGenAnnotationDeclaredOnCompanionClass = ktorGenOnCompanion,
         ).also { classData ->
             timer.addStep("Mapper complete of ${classData.interfaceName} to ${classData.generatedName}")
         } to emptyList()
