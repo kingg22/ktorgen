@@ -50,38 +50,34 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
         functionBodyGenerator = FunctionBodyGenerator(httpClient)
 
         // Generate functions
-        val functions = classData.functions.filter { it.goingToGenerate }
+        val functions = classData.functions.filter { it.goingToGenerate }.toList()
         timer.addStep("Generated primary constructor and properties, going to generate ${functions.size} functions")
 
         // Build class structure
         classBuilder.buildClassStructure(classData, constructor, properties, functions)
 
         // Generate factory functions
-        val factoryFunctions = generateFactoryFunctions(classData, timer, constructor.build().parameters)
+        val factoryFunctions = generateFactoryFunctions(classData, constructor.build().parameters)
         factoryFunctionGenerator.clean()
         fileBuilder.addFunctions(factoryFunctions)
 
         // Process expects functions if any
-        val extraFiles = if (classData.expectFunctions.isNotEmpty()) {
-            processExpectFunctions(classData, timer, onAddFunction = { expectFunction ->
-                factoryFunctions.firstOrNull { funSpec ->
-                    // compare using build. Builders don't have equals implemented
-                    val factoryFunction = funSpec.toBuilder()
-                        .addModifiers(KModifier.ACTUAL)
-                        .apply { annotations.clear() }.build()
-                    val expectFunctionWithoutAnnotations = expectFunction.toBuilder()
-                        .apply { annotations.clear() }.build()
+        val extraFiles = processExpectFunctions(classData, onAddFunction = { expectFunction ->
+            factoryFunctions.firstOrNull { funSpec ->
+                // compare using build. Builders don't have equals implemented
+                val factoryFunction = funSpec.toBuilder()
+                    .addModifiers(KModifier.ACTUAL)
+                    .apply { annotations.clear() }.build()
+                val expectFunctionWithoutAnnotations = expectFunction.toBuilder()
+                    .apply { annotations.clear() }.build()
 
-                    factoryFunction == expectFunctionWithoutAnnotations
-                }?.let { factoryFunction ->
-                    // Remove normal factory function and add expect one
-                    fileBuilder.members.remove(factoryFunction)
-                    fileBuilder.addFunction(expectFunction)
-                } ?: fileBuilder.addFunction(expectFunction)
-            })
-        } else {
-            emptyList()
-        }
+                factoryFunction == expectFunctionWithoutAnnotations
+            }?.let { factoryFunction ->
+                // Remove normal factory function and add expect one
+                fileBuilder.members.remove(factoryFunction)
+                fileBuilder.addFunction(expectFunction)
+            } ?: fileBuilder.addFunction(expectFunction)
+        })
 
         // Build final result
         timer.addStep("Finished file generation with ${extraFiles.size + 1} files")
@@ -182,11 +178,8 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
         .applyIfNotNull(param.optInAnnotation) { addAnnotation(it) }
         .build()
 
-    private fun generateFactoryFunctions(
-        classData: ClassData,
-        timer: DiagnosticSender,
-        constructorParams: List<ParameterSpec>,
-    ): List<FunSpec> {
+    context(_: DiagnosticSender)
+    private fun generateFactoryFunctions(classData: ClassData, constructorParams: List<ParameterSpec>): List<FunSpec> {
         val classAnnotations = classData.buildAnnotations()
         val optInAnnotation = classAnnotations.firstOrNull { it.typeName == ClassName("kotlin", "OptIn") }
         val functionAnnotation =
@@ -195,26 +188,19 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
 
         return factoryFunctionGenerator.generateFactoryFunctions(
             classData,
-            timer,
             constructorParams,
             functionAnnotation,
             functionVisibilityModifier,
         )
     }
 
-    private fun processExpectFunctions(
-        classData: ClassData,
-        timer: DiagnosticSender,
-        onAddFunction: (FunSpec) -> Unit,
-    ): List<FileSpec> {
-        val constructorSignature = constructorGenerator.computeConstructorSignature(classData)
-        return expectFunctionProcessor.processExpectFunctions(
+    context(_: DiagnosticSender,)
+    private fun processExpectFunctions(classData: ClassData, onAddFunction: (FunSpec) -> Unit): List<FileSpec> =
+        expectFunctionProcessor.processExpectFunctions(
             classData,
-            timer,
-            constructorSignature,
+            constructorGenerator.computeConstructorSignature(classData),
             onAddFunction,
         ).map { it.addDefaultConfig().build() }
-    }
 
     private companion object {
         private val VISIBILITY_KMODIFIER = setOf(PUBLIC, INTERNAL, PROTECTED, PRIVATE)
