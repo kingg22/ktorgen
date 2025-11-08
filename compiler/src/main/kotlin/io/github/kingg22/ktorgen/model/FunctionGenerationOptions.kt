@@ -1,6 +1,7 @@
 package io.github.kingg22.ktorgen.model
 
 import com.squareup.kotlinpoet.AnnotationSpec
+import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
 
 open class FunctionGenerationOptions(
     generate: Boolean,
@@ -8,7 +9,7 @@ open class FunctionGenerationOptions(
     annotationsToPropagate: Set<AnnotationSpec>,
     optIns: Set<AnnotationSpec>,
     val customHeader: String,
-    optInAnnotation: AnnotationSpec? = null,
+    optInAnnotation: AnnotationSpec?,
 ) : Options(
     goingToGenerate = generate,
     propagateAnnotations = propagateAnnotations,
@@ -25,6 +26,7 @@ open class FunctionGenerationOptions(
         customHeader = options.customHeader,
     )
 
+    @KtorGenWithoutCoverage
     fun copy(
         generate: Boolean = this.goingToGenerate,
         propagateAnnotations: Boolean = this.propagateAnnotations,
@@ -41,6 +43,7 @@ open class FunctionGenerationOptions(
         customHeader = customHeader,
     )
 
+    @KtorGenWithoutCoverage
     override fun toString() = "FunctionGenerationOptions(customHeader='$customHeader', options=${super.toString()})"
 
     companion object {

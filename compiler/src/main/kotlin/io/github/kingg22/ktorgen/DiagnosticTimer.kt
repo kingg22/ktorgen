@@ -27,15 +27,19 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
     override fun addStep(message: String, symbol: KSNode?) = root.addStep(message, symbol)
     override fun addWarning(message: String, symbol: KSNode?) = root.addWarning(message, symbol)
     override fun addError(message: String, symbol: KSNode?) = root.addError(message, symbol)
-    override fun die(message: String, symbol: KSNode?, exception: Exception?) = root.die(message, symbol, exception)
+    override fun die(message: String, symbol: KSNode?, cause: Exception?) = root.die(message, symbol, cause)
     override fun isFinish() = root.isFinish()
     override fun hasErrors(): Boolean = root.hasErrors()
     override fun hasWarnings(): Boolean = root.hasWarnings()
+
+    @KtorGenWithoutCoverage
     override fun toString(): String = root.toString()
 
+    @KtorGenWithoutCoverage
     override fun equals(other: Any?): Boolean =
         other is DiagnosticTimer && other.root == root && other.onDebugLog == onDebugLog
 
+    @KtorGenWithoutCoverage
     override fun hashCode(): Int {
         var result = root.hashCode()
         result = 31 * result + onDebugLog.hashCode()
@@ -120,6 +124,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             parent.children.add(this)
         }
 
+        @KtorGenWithoutCoverage // This method is useful while debugging, is not necessary in runtime, I guess
         override fun toString() = (
             "$type $name " +
                 "(${if (isCompleted()) formattedDuration() else "Start at: $startNanos, not finished yet"}). " +
@@ -168,7 +173,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             messages.add(DiagnosticMessage(MessageType.ERROR, message.trim(), symbol))
         }
 
-        override fun die(message: String, symbol: KSNode?, exception: Exception?): Nothing {
+        override fun die(message: String, symbol: KSNode?, cause: Exception?): Nothing {
             messages.add(DiagnosticMessage(MessageType.ERROR, message.trim(), symbol))
             var suppressException: Throwable? = null
 
@@ -184,7 +189,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             } catch (e: Throwable) {
                 suppressException = e
             }
-            val exception = KtorGenFatalError(buildErrorsAndWarningsMessage(), exception)
+            val exception = KtorGenFatalError(buildErrorsAndWarningsMessage(), cause)
             suppressException?.let { exception.addSuppressed(suppressException) }
             throw exception
         }
@@ -203,6 +208,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             return (this * factor).roundToInt() / factor
         }
 
+        @KtorGenWithoutCoverage
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
@@ -219,6 +225,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             return true
         }
 
+        @KtorGenWithoutCoverage
         override fun hashCode(): Int {
             var result = startNanos.hashCode()
             result = 31 * result + endNanos.hashCode()

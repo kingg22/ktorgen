@@ -50,7 +50,7 @@ fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
         name = try {
             name.removeWhitespace()
         } catch (e: NoSuchElementException) {
-            timer.die("Cookie name is required", exception = e)
+            timer.die("Cookie name is required", cause = e)
         },
         value = finalValue,
         isValueParameter = isParameter,

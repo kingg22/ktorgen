@@ -4,6 +4,7 @@ import com.squareup.kotlinpoet.*
 import io.github.kingg22.ktorgen.KtorGenProcessor
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
 import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
+import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
 import io.github.kingg22.ktorgen.applyIf
 import io.github.kingg22.ktorgen.checkImplementation
 import io.github.kingg22.ktorgen.model.*
@@ -488,6 +489,7 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
             }?.also { endControlFlow() }
     }
 
+    @KtorGenWithoutCoverage // utility function must not throw an exception
     private fun TypeName.rawType(): ClassName = when (this) {
         is ParameterizedTypeName -> this.rawType
         is ClassName -> this

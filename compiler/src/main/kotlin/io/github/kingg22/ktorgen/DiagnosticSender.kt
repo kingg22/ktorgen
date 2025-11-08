@@ -2,6 +2,7 @@ package io.github.kingg22.ktorgen
 
 import com.google.devtools.ksp.symbol.KSNode
 
+@KtorGenWithoutCoverage // Kover include default values to cover, but that is not necessary, the impl class is covered
 interface DiagnosticSender {
     fun isStarted(): Boolean
     fun isFinish(): Boolean
@@ -30,5 +31,5 @@ interface DiagnosticSender {
     fun addError(message: String, symbol: KSNode? = null)
 
     /** Fatal error, can be related to a symbol. This is a controlled exception. */
-    fun die(message: String, symbol: KSNode? = null, exception: Exception? = null): Nothing
+    fun die(message: String, symbol: KSNode? = null, cause: Exception? = null): Nothing
 }

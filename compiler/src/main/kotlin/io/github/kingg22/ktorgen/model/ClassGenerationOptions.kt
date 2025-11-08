@@ -1,6 +1,7 @@
 package io.github.kingg22.ktorgen.model
 
 import com.squareup.kotlinpoet.AnnotationSpec
+import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
 
 open class ClassGenerationOptions(
     val generatedName: String,
@@ -47,7 +48,8 @@ open class ClassGenerationOptions(
         optInAnnotation = options.optInAnnotation,
     )
 
-    @Suppress("kotlin:S107")
+    @Suppress("kotlin:S107") // Needs to create a copy method manually because is open class
+    @KtorGenWithoutCoverage
     fun copy(
         generatedName: String = this.generatedName,
         basePath: String = this.basePath,
@@ -84,6 +86,7 @@ open class ClassGenerationOptions(
         optInAnnotation = optInAnnotation,
     )
 
+    @KtorGenWithoutCoverage
     override fun toString() =
         "ClassGenerationOptions(generatedName='$generatedName', classVisibilityModifier='$classVisibilityModifier', constructorVisibilityModifier='$constructorVisibilityModifier', functionVisibilityModifier='$functionVisibilityModifier', customFileHeader='$customFileHeader', customClassHeader='$customClassHeader', basePath='$basePath', generateTopLevelFunction=$generateTopLevelFunction, generateCompanionExtFunction=$generateCompanionExtFunction, generateHttpClientExtension=$generateHttpClientExtension, extensionFunctionAnnotation=$extensionFunctionAnnotation, options=${super.toString()})"
 
