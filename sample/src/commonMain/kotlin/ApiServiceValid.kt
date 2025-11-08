@@ -11,7 +11,8 @@ import kotlinx.coroutines.flow.Flow
 interface ApiServiceValid {
     val httpClient: HttpClient
     val otraCosa: Boolean
-    var valorCambiante: Boolean
+    var valorCambiante: Boolean?
+    val token: String
 
     @Cookie(
         name = "session_id",
@@ -52,7 +53,7 @@ interface ApiServiceValid {
 
     @Multipart
     @POST("media/upload")
-    suspend fun uploadFile(@Part("description") description: String, @Part file: PartData.FileItem): IssueData
+    suspend fun uploadFile(@Part("description") description: String = token, @Part file: PartData.FileItem): IssueData
 
     @HEAD("ping")
     suspend fun ping(@QueryName hola: String)

@@ -197,7 +197,7 @@ Real-life migration example: [deezer-client-kt](https://github.com/kingg22/deeze
 
 ### Roadmap 🚀
 - [ ] Add a matrix compatibility test on CI (_Kotlin versions, KSP versions, Ktor Client versions_) to know the range of compatibility.
-- [ ] Add test for Fragment annotation
+- [X] ~~Add test for Fragment annotation~~
 - [X] ~~Add test for Cookie annotation~~
 - [ ] Resolve knowable issues described in https://github.com/kingg22/ktorgen/pull/27
 - [X] Resolve issues related to unresolved references, ~~multi-round processing, unexpected errors.~~
