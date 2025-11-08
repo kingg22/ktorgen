@@ -276,7 +276,7 @@ internal class FunctionBodyGenerator(
 
     private fun getFragmentTextBlock(func: FunctionData) = CodeBlock.builder().apply {
         func.findAnnotationOrNull<FunctionAnnotation.Fragment>()?.let {
-            addStatement("this.%L = %S", if (it.encoded) "encodedFragment" else "fragment", it.value)
+            addStatement("this.%L = %P", if (it.encoded) "encodedFragment" else "fragment", it.value)
         }
     }.build()
 }
