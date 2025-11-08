@@ -1,6 +1,3 @@
-@file:JvmName("DiagnosticSenderExt")
-@file:JvmMultifileClass
-
 package io.github.kingg22.ktorgen
 
 import com.google.devtools.ksp.symbol.KSNode
@@ -18,12 +15,13 @@ internal inline fun <R> DiagnosticSender.work(block: () -> R): R {
     } catch (e: KtorGenFatalError) {
         throw e
     } catch (e: Exception) {
-        die(e.message ?: "", null, e)
+        die(e.message.orEmpty(), cause = e)
     }
 }
 
 /** If the condition is false, die */
 @Suppress("NOTHING_TO_INLINE") // Don't add this file to stacktrace, the message can be a lambda*
+@KtorGenWithoutCoverage // The idea is not to throw this error
 internal inline fun DiagnosticSender.require(
     condition: Boolean,
     message: String,
@@ -34,8 +32,23 @@ internal inline fun DiagnosticSender.require(
     if (!condition) die(message, symbol, cause)
 }
 
+@KtorGenWithoutCoverage // The idea is not to throw this error
+internal inline fun DiagnosticSender.require(
+    condition: Boolean,
+    symbol: KSNode? = null,
+    cause: Exception? = null,
+    lazyMessage: () -> String,
+) {
+    contract { returns() implies condition }
+    if (!condition) {
+        val (message, suppressException) = safeMessage(lazyMessage)
+        die(message, symbol, cause?.applyIfNotNull(suppressException, Exception::addSuppressed) ?: suppressException)
+    }
+}
+
 /** If the value is null, die */
 @Suppress("NOTHING_TO_INLINE") // Don't add this file to stacktrace, the message can be a lambda*
+@KtorGenWithoutCoverage // The idea is not to throw this error
 internal inline fun <T> DiagnosticSender.requireNotNull(
     value: T?,
     message: String,
@@ -69,6 +82,7 @@ internal inline fun <T, R> T.applyIfNotNull(nullable: R?, block: T.(R) -> Unit):
  * The lambda is called at most once and only if the condition is false.
  * @throws KtorGenFatalError.KtorGenImplementationError if the condition is false.
  */
+@KtorGenWithoutCoverage // The idea is not to throw this error
 internal inline fun checkImplementation(value: Boolean, lazyMessage: () -> String) {
     contract {
         returns() implies value
@@ -85,15 +99,29 @@ internal inline fun checkImplementation(value: Boolean, lazyMessage: () -> Strin
  * @param lazyMessage A lambda function to generate the error message
  * @throws KtorGenFatalError.KtorGenImplementationError
  */
-@Suppress("WRONG_INVOCATION_KIND")
+@KtorGenWithoutCoverage // The idea is not to throw this error
 internal inline fun checkImplementation(lazyMessage: () -> String): Nothing {
     contract { callsInPlace(lazyMessage, InvocationKind.EXACTLY_ONCE) }
-    var suppressException: Exception? = null
-    val message = try {
-        lazyMessage()
-    } catch (e: Exception) {
-        suppressException = e
-        "Caught exception during implementation error message generation"
-    }
+    val (message, suppressException) = safeMessage(lazyMessage)
     throw KtorGenFatalError.KtorGenImplementationError(message, suppressException)
+}
+
+/**
+ * Provide a try-catch with a default message if the lambda throws an exception, plus the exception itself
+ * @param lazyMessage A lambda function to generate the error message
+ * @return The error message and the exception if any
+ */
+@KtorGenWithoutCoverage
+@JvmOverloads
+@Suppress("WRONG_INVOCATION_KIND")
+internal inline fun safeMessage(
+    lazyMessage: () -> String,
+    defaultMessage: String = "Caught exception during error message generation",
+): Pair<String, Exception?> {
+    contract { callsInPlace(lazyMessage, InvocationKind.EXACTLY_ONCE) }
+    return try {
+        lazyMessage() to null
+    } catch (e: Exception) {
+        defaultMessage to e
+    }
 }
