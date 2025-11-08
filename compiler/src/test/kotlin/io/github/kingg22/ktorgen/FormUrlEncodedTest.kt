@@ -24,10 +24,11 @@ class FormUrlEncodedTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source) {
-            it.hasErrorCount(1)
-            it.hasNoWarnings()
-            it.hasErrorContaining(KtorGenLogger.FORM_ENCODED_ANNOTATION_MISMATCH_HTTP_METHOD.trim())
+        runKtorGenProcessor(source) { resultSubject ->
+            resultSubject.hasErrorCount(1)
+            resultSubject.hasNoWarnings()
+            resultSubject.hasErrorContaining(KtorGenLogger.FORM_ENCODED_ANNOTATION_MISMATCH_HTTP_METHOD.trim())
+            resultSubject.hasErrorContaining(KtorGenLogger.FORM_ENCODED_MUST_CONTAIN_AT_LEAST_ONE_FIELD.trim())
         }
     }
 
