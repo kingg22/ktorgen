@@ -31,11 +31,5 @@ fun interface Validator {
                 MultipartValidator(),
                 CookieValidator(),
             )
-
-        @JvmStatic
-        val NO_OP inline get() = Validator { _, _, _, _ -> null }
-
-        @JvmStatic
-        val NO_VALIDATION inline get() = Validator { classData, _, _, _ -> classData }
     }
 }
