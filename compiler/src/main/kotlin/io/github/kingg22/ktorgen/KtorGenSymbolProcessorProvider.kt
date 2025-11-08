@@ -5,6 +5,8 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 
 class KtorGenSymbolProcessorProvider : SymbolProcessorProvider {
-    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
-        KtorGenProcessor(environment, KtorGenOptions(environment.options))
+    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
+        val ktorGenOptions = KtorGenOptions(environment.options)
+        return KtorGenProcessor(environment, KtorGenLogger(environment.logger, ktorGenOptions), ktorGenOptions)
+    }
 }

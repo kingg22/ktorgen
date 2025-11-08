@@ -13,6 +13,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ksp.writeTo
+import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Errors
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.core.KtorGenFunction
@@ -32,8 +33,11 @@ import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_PART_DATA
 import io.github.kingg22.ktorgen.validator.Validator
 
-class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val ktorGenOptions: KtorGenOptions) :
-    SymbolProcessor {
+class KtorGenProcessor internal constructor(
+    private val env: SymbolProcessorEnvironment,
+    private val logger: KtorGenLogger,
+    private val ktorGenOptions: KtorGenOptions,
+) : SymbolProcessor {
     companion object {
         lateinit var listType: KSType
         lateinit var arrayType: KSType
@@ -42,23 +46,14 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         var partDataKtor: KSType? = null
     }
 
-    private val logger = KtorGenLogger(env.logger, ktorGenOptions)
     private val timer = DiagnosticTimer("KtorGen Annotations Processor", logger::logging)
     private var roundCount = 0
-    private var firstInvoked = false
-        set(value) {
-            if (value) timer.start()
-            field = value
-        }
     private var fatalError = false
     private val deferredSymbols = mutableListOf<Pair<KSClassDeclaration, List<KSAnnotated>>>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         roundCount++
-        if (roundCount == 1) {
-            firstInvoked = true
-            onFirstRound(resolver)
-        }
+        if (roundCount == 1) onFirstRound(resolver)
 
         try {
             val (fullClassList, kmpExpectFunctions) = extractAndMapDeclaration(
@@ -67,7 +62,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                     if (symbols.isNotEmpty()) deferredSymbols += ksClassDeclaration to symbols
                 },
             )
-            if (!firstInvoked) cleanDeferredSymbolsWith(fullClassList)
+            if (roundCount > 1) cleanDeferredSymbolsWith(fullClassList)
 
             timer.addStep("After filter ignored interfaces, have ${fullClassList.size} to validate")
 
@@ -110,7 +105,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
                 timer.addStep("Unresolved ${kmpExpectFunctions.size} @KtorGenFunctionKmp", kmpExpectFunctions.first())
             }
         } catch (e: KtorGenFatalError) {
-            logger.fatalError("${KtorGenLogger.KTOR_GEN} ${e.message}", null)
+            logger.fatalError("${KtorGenLogger.KTOR_GEN} ${e.message}")
             logger.exception(e)
             fatalError = true
         } catch (e: Exception) {
@@ -127,7 +122,12 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
         try {
             // deferred errors, util for debug and accumulative errors
             if (fatalError) {
-                logger.fatalError(timer.buildErrorsAndWarningsMessage(), null)
+                val message = if (ktorGenOptions.errorsLoggingType == Errors) {
+                    timer.buildErrorsAndWarningsMessage()
+                } else {
+                    timer.buildErrorsMessage()
+                }
+                logger.fatalError(message)
             } else if (timer.hasWarnings()) {
                 logger.error(timer.buildWarningsMessage(), null)
             }
@@ -151,14 +151,14 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
     }
 
     /** Generate the Impl class using [KotlinpoetGenerator] of ksp */
-    context(timer: DiagnosticSender)
-    fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator) {
+    context(_: DiagnosticSender)
+    private fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator) {
         KtorGenGenerator.DEFAULT.generate(classData).forEach { it.writeTo(codeGenerator, false) }
     }
 
     /** Print a step message if deferred symbols is not empty in the current round, and return symbols */
     private fun finishProcessWithDeferredSymbols() = deferredSymbols.flatMap { it.second }.also {
-        if (it.isNotEmpty())timer.addStep(deferredSymbolsMessage("round $roundCount"))
+        if (it.isNotEmpty()) timer.addStep(deferredSymbolsMessage("round $roundCount"))
     }
 
     private fun deferredSymbolsMessage(round: String) = "Found ${deferredSymbols.size} unresolved symbols on $round: " +
@@ -217,9 +217,10 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
     @OptIn(KspExperimental::class)
     private fun onFirstRound(resolver: Resolver) {
+        timer.start()
         listType = timer.requireNotNull(
             resolver.getKotlinClassByName("kotlin.collections.List")?.asStarProjectedType(),
-            "${KtorGenLogger.KTOR_GEN} Kotlin List type not found",
+            "Kotlin List type not found",
         )
         arrayType = resolver.builtIns.arrayType
         partDataKtor = resolver.getKotlinClassByName(KTOR_CLIENT_PART_DATA)?.asType(emptyList())
@@ -245,7 +246,7 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
     private fun extractAndMapDeclaration(
         resolver: Resolver,
         onDeferredSymbols: (KSClassDeclaration, List<KSAnnotated>) -> Unit,
-    ): Pair<Set<ClassData>, List<KSFunctionDeclaration>> {
+    ): ClassDataWithKmpExpectFunctions {
         // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
         val mapperPhase = timer.createPhase("Extraction and Mapper, round $roundCount")
         mapperPhase.start()
@@ -342,4 +343,6 @@ class KtorGenProcessor(private val env: SymbolProcessorEnvironment, private val 
 
         return classDataSet to kmpExpectFunctions
     }
+
+    private typealias ClassDataWithKmpExpectFunctions = Pair<Set<ClassData>, List<KSFunctionDeclaration>>
 }

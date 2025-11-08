@@ -6,8 +6,9 @@ import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Errors
 import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Off
 import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Warnings
 
-internal class KtorGenLogger(private val kspLogger: KSPLogger, private val options: KtorGenOptions) :
+internal data class KtorGenLogger(private val kspLogger: KSPLogger, private val options: KtorGenOptions) :
     KSPLogger by kspLogger {
+    /** This function bypasses the custom error logging type because the error can be suppressed */
     internal fun fatalError(message: String, symbol: KSNode? = null) = kspLogger.error(message, symbol)
     override fun error(message: String, symbol: KSNode?) {
         when (options.errorsLoggingType) {
