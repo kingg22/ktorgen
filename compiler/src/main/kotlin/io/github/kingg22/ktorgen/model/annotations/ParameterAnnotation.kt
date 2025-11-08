@@ -11,10 +11,7 @@ sealed interface ParameterAnnotation {
     object Url : ParameterAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.Path] */
-    class Path(val value: String, val encoded: Boolean) : ParameterAnnotation {
-        operator fun component1() = value
-        operator fun component2() = encoded
-    }
+    class Path(val value: String, val encoded: Boolean) : ParameterAnnotation
 
     /** See [io.github.kingg22.ktorgen.http.Query] */
     class Query(val value: String, val encoded: Boolean) : ParameterAnnotation
