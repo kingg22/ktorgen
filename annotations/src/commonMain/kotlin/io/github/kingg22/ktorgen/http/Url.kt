@@ -3,7 +3,10 @@ package io.github.kingg22.ktorgen.http
 /**
  * Set the URL of the request
  *
- * Can be type of: `String`, Ktor `Url`, Ktor `UrlBuilder`. More detail, see [Url.takeFrom](https://api.ktor.io/ktor-http/io.ktor.http/take-from.html)
+ * Can be type of: `String`,
+ * [Ktor `Url`](https://api.ktor.io/ktor-http/io.ktor.http/-url/index.html),
+ * [Ktor `UrlBuilder`](https://api.ktor.io/ktor-http/io.ktor.http/-u-r-l-builder/index.html).
+ * More detail, see [Url.takeFrom](https://api.ktor.io/ktor-http/io.ktor.http/take-from.html)
  *
  * ```kotlin
  * @GET

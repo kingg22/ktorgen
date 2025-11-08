@@ -5,7 +5,10 @@ package io.github.kingg22.ktorgen.http
 import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
 
 /**
- * Add a cookie to the request
+ * Add a cookie to the request.
+ *
+ * **If the Cookie plugin is installed,
+ * cookies added in the request are ignored.** Read Ktor docs for more information.
  *
  * This annotation is modeled from [HttpMessageBuilder.cookie](https://api.ktor.io/ktor-client/ktor-client-core/io.ktor.client.request/cookie.html),
  * but adapted to annotation restrictions:
@@ -15,7 +18,7 @@ import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
  *
  *    `domain = ""` and `path = ""` → no value assigned.
  *
- * - The `extensions` field is defined as `Array<PairString>` for added security and type-safety when mapping cookie extensions.
+ * - The `extensions` field is defined as [`Array<PairString>`][PairString] for added security and type-safety when mapping cookie extensions.
  *
  * Example usage:
  * ```kotlin
@@ -31,19 +34,18 @@ import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
  * @GET
  * suspend fun myRequest(@Cookie("yummy_cookie") flavor: String): SecureResponse
  *
- * /* Generated for function:
- *  cookie(
- *     name = "session_id",
- *     value: "abc123",
- *     maxAge = 3600,
- *     expires = GMTDate(timestamp = 1735689600000),
- *     domain = null, // empty is null
- *     path = null, // empty is null
- *     secure = true,
- *     httpOnly = true,
- *     extensions = mapOf("SameSite" to "Strict"),
- *  )
- *  */
+ * // Generated code
+ * this.cookie(
+ *    name = """session_id""",
+ *    value: """abc123""",
+ *    maxAge = 3_600,
+ *    expires = GMTDate(timestamp = 1_735_689_600_000),
+ *    domain = null, // empty string is null
+ *    path = null, // empty string is null
+ *    secure = true,
+ *    httpOnly = true,
+ *    extensions = mapOf("""SameSite""" to """Strict"""),
+ * )
  * ```
  *
  * @property name Name of the cookie
