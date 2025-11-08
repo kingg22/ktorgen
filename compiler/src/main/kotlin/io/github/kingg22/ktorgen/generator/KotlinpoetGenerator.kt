@@ -31,6 +31,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
     private val factoryFunctionGenerator = FactoryFunctionGenerator()
     private lateinit var functionBodyGenerator: FunctionBodyGenerator
     private val expectFunctionProcessor = ExpectFunctionProcessor()
+    private val parameterGenerator = ParameterBodyGenerator()
 
     context(timer: DiagnosticSender)
     override fun generate(classData: ClassData): List<FileSpec> = timer.work {
@@ -47,7 +48,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
                 classData,
                 KModifier.valueOf(classData.constructorVisibilityModifier.uppercase()),
             )
-        functionBodyGenerator = FunctionBodyGenerator(httpClient)
+        functionBodyGenerator = FunctionBodyGenerator(httpClient, parameterGenerator)
 
         // Generate functions
         val functions = classData.functions.filter { it.goingToGenerate }.toList()

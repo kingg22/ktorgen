@@ -1,78 +1,28 @@
 package io.github.kingg22.ktorgen.generator
 
-import com.squareup.kotlinpoet.*
-import io.github.kingg22.ktorgen.KtorGenProcessor
-import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
-import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
-import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.UNIT
 import io.github.kingg22.ktorgen.applyIf
-import io.github.kingg22.ktorgen.checkImplementation
-import io.github.kingg22.ktorgen.model.*
+import io.github.kingg22.ktorgen.model.FunctionData
+import io.github.kingg22.ktorgen.model.RESULT_CLASS
 import io.github.kingg22.ktorgen.model.annotations.CookieValues
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
+import io.github.kingg22.ktorgen.model.isFlowType
+import io.github.kingg22.ktorgen.model.isResultType
+import io.github.kingg22.ktorgen.model.unwrapFlow
+import io.github.kingg22.ktorgen.model.unwrapFlowResult
+import io.github.kingg22.ktorgen.model.unwrapResult
 
-// TODO move functions of parameter to other class
-internal class FunctionBodyGenerator(private val httpClient: MemberName) {
-    // Snapshot must be initialized after the first round of processor
-    private val partDataKtor = KtorGenProcessor.partDataKtor
-    private companion object {
-        private const val FORM_DATA_VARIABLE = "_multiPartDataContent"
-        private const val PART_DATA_LIST_VARIABLE = "_partDataList"
-        private const val FORM_DATA_CONTENT_VARIABLE = "_formDataContent"
-        private const val KTOR_HTTP_PACKAGE = "io.ktor.http"
-        private const val KOTLIN_PACKAGE = "kotlin"
-        private const val KOTLIN_COLLECTIONS_PACKAGE = "$KOTLIN_PACKAGE.collections"
-        private val KTOR_PART_DATA_CLASS = ClassName("$KTOR_HTTP_PACKAGE.content", "PartData")
-        private const val THIS_HEADERS = "this.%M"
-        private val KTOR_CLIENT_REQUEST_HEADER_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "headers")
-        private const val LITERAL_FOREACH = "%L.forEach"
-        private const val LITERAL_FOREACH_SAFE_NULL_ENTRY = "%L?.forEach { entry ->"
-        private const val APPEND_STRING_LITERAL = "this.append(%S, %L)"
-        private const val APPEND_STRING_STRING = "this.append(%S, %P)"
-        private const val LITERAL_NN_LET = "%L?.let"
-        private const val LET_RESULT = ".let { _result ->"
-        private const val ITERABLE_FILTER_NULL_FOREACH = "%L?.filterNotNull()?.forEach"
-        private const val ENTRY_VALUE_NN_LET = "entry.value?.let { value ->"
-        private const val VALUE = $$"$value"
-        private const val BODY_TYPE = ".%M<%T>()"
-        private const val MEMBER_LITERAL = "%M(%L)"
-        private const val THIS_MEMBER_LITERAL = "this.$MEMBER_LITERAL"
-        private val BODY_FUNCTION = MemberName("io.ktor.client.call", "body", true)
-        private const val ENCODED_PARAMETERS_APPEND = "this.encodedParameters.append"
-        private const val PARAMETERS_APPEND = "this.parameters.append"
-        private val FLOW_MEMBER = MemberName("kotlinx.coroutines.flow", "flow")
-        private val KTOR_URL_TAKE_FROM_FUNCTION = MemberName(KTOR_HTTP_PACKAGE, "takeFrom", true)
-        private val DECODE_URL_COMPONENTS_FUNCTION = MemberName(KTOR_HTTP_PACKAGE, "decodeURLQueryComponent", true)
-        private val KTOR_HTTP_METHOD = ClassName(KTOR_HTTP_PACKAGE, "HttpMethod")
-        private val KTOR_ATTRIBUTE_KEY = ClassName("io.ktor.util", "AttributeKey")
-        private val KTOR_REQUEST_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "request", true)
-        private val KTOR_REQUEST_SET_BODY_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "setBody", true)
-        private val KTOR_URL_ENCODE_PATH = MemberName(KTOR_HTTP_PACKAGE, "encodeURLPath", true)
-        private val KTOR_PARAMETERS_CLASS = ClassName(KTOR_HTTP_PACKAGE, "Parameters")
-        private val KTOR_REQUEST_FORM_DATA_CONTENT_CLASS =
-            ClassName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "FormDataContent")
-        private val KTOR_REQUEST_MULTIPART_CONTENT_CLASS =
-            ClassName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "MultiPartFormDataContent")
-        private val KTOR_REQUEST_FORM_DATA_FUNCTION = MemberName("$KTOR_CLIENT_REQUEST_PACKAGE.forms", "formData")
-        private val KOTLIN_LIST_OF = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "listOf")
-        private val KOTLIN_EMPTY_LIST = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "emptyList")
-        private val KOTLIN_MAP_OF = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "mapOf")
-        private val KOTLIN_TO_PAIR_FUNCTION = MemberName(KOTLIN_PACKAGE, "to")
-        private val KOTLIN_EMPTY_MAP = MemberName(KOTLIN_COLLECTIONS_PACKAGE, "emptyMap")
-        private val KTOR_GMT_DATE_CLASS = ClassName("io.ktor.util.date", "GMTDate")
-        private val KTOR_REQUEST_COOKIE_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "cookie", true)
-        private val KTOR_CONTENT_TYPE_FUNCTION = MemberName(KTOR_HTTP_PACKAGE, "contentType", true)
-        private val KTOR_CONTENT_TYPE_CLASS = ClassName(KTOR_HTTP_PACKAGE, "ContentType")
-        private val KTOR_REQUEST_TAKE_FROM_FUNCTION = MemberName(KTOR_CLIENT_REQUEST_PACKAGE, "takeFrom", true)
-        private val COROUTINES_CURRENT_CONTEXT = MemberName("kotlinx.coroutines", "currentCoroutineContext")
-        private val COROUTINES_CONTEXT_ENSURE_ACTIVE = MemberName("kotlinx.coroutines", "ensureActive", true)
-        private val KOTLIN_EXCEPTION_CLASS = ClassName(KOTLIN_PACKAGE, "Exception")
-        private val KOTLIN_PAIR_CLASS = ClassName(KOTLIN_PACKAGE, "Pair")
-    }
-
+internal class FunctionBodyGenerator(
+    private val httpClient: MemberName,
+    private val parameterGenerator: ParameterBodyGenerator,
+) {
     fun generateFunctionBody(func: FunctionData): CodeBlock {
         val returnType = func.returnTypeData.typeName
         val isFlow = returnType.isFlowType()
@@ -144,39 +94,17 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
 
     private fun CodeBlock.Builder.addRequest(func: FunctionData) = apply {
         beginControlFlow("%M.%M", httpClient, KTOR_REQUEST_FUNCTION)
-            .addBuilderCall(func.parameterDataList)
+        parameterGenerator.addBuilderCall(func.parameterDataList)
             .addHttpMethod(func)
             .addUrl(func)
             .addHeaders(func)
             .addCookies(func)
             .addBody(func)
-            .addAttributes(func.parameterDataList)
+        parameterGenerator.addAttributes(func.parameterDataList)
         endControlFlow()
     }
 
     // -- core parts --
-    private fun CodeBlock.Builder.addBuilderCall(parameterList: List<ParameterData>) = apply {
-        parameterList.firstOrNull { it.isValidTakeFrom }?.let { parameterData ->
-            addStatement(
-                "this.%L",
-                if (parameterData.typeData.typeName == HttpRequestBuilderTypeName) {
-                    // member (this.takeFrom)
-                    CodeBlock.of("takeFrom(%L)", parameterData.nameString)
-                } else {
-                    // Extension function
-                    CodeBlock.of(
-                        MEMBER_LITERAL,
-                        KTOR_REQUEST_TAKE_FROM_FUNCTION,
-                        parameterData.nameString,
-                    )
-                },
-            )
-        }
-        parameterList.firstOrNull { it.isHttpRequestBuilderLambda }?.let { param ->
-            addStatement("%L(this)", param.nameString)
-        }
-    }
-
     private fun CodeBlock.Builder.addHttpMethod(func: FunctionData): CodeBlock.Builder {
         val httpMethod = func.httpMethodAnnotation.httpMethod
         return applyIf(httpMethod != HttpMethod.Absent) {
@@ -226,7 +154,7 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
             }
 
             // Query of the url like ?a=1&hello
-            addQuery(func.parameterDataList)
+            parameterGenerator.addQuery(func.parameterDataList)
 
             // Add fragment like end of the url #header or #function
             add(getFragmentTextBlock(func))
@@ -250,9 +178,9 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
             )
         }
 
-        addHeaderParameter(func.parameterDataList)
+        parameterGenerator.addHeaderParameter(func.parameterDataList)
 
-        addHeaderMap(func.parameterDataList)
+        parameterGenerator.addHeaderMap(func.parameterDataList)
 
         func.findAnnotationOrNull<FunctionAnnotation.Headers>()?.value?.associate { (name, value) ->
             name.removeWhitespace() to value.removeWhitespace()
@@ -293,26 +221,24 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
     private fun CodeBlock.Builder.addCookieStatement(cookieValues: CookieValues, useVarargItem: Boolean = false) {
         addStatement("this.%M(", KTOR_REQUEST_COOKIE_FUNCTION)
         indent()
-        addStatement("name = %S,", cookieValues.name)
-        addStatement(
-            "value = %P,",
-            if (cookieValues.isValueParameter) {
-                if (useVarargItem) $$"$it" else "$${cookieValues.value}"
-            } else {
-                cookieValues.value
-            },
-        )
-        addStatement("maxAge = %L,", cookieValues.maxAge)
-        addStatement(
-            "expires = %L,",
-            cookieValues.expiresTimestamp?.let { timestamp ->
-                CodeBlock.of("%T(%L)", KTOR_GMT_DATE_CLASS, timestamp)
-            },
-        )
-        addStatement("domain = %P,", cookieValues.domain)
-        addStatement("path = %P,", cookieValues.path)
-        addStatement("secure = %L,", cookieValues.secure)
-        addStatement("httpOnly = %L,", cookieValues.httpOnly)
+            .addStatement("name = %S,", cookieValues.name)
+            .addStatement(
+                "value = %P,",
+                if (cookieValues.isValueParameter) {
+                    if (useVarargItem) $$"$it" else "$${cookieValues.value}"
+                } else {
+                    cookieValues.value
+                },
+            )
+            .addStatement("maxAge = %L,", cookieValues.maxAge)
+            .addStatement(
+                "expires = %L,",
+                cookieValues.expiresTimestamp?.let { t -> CodeBlock.of("%T(%L)", KTOR_GMT_DATE_CLASS, t) },
+            )
+            .addStatement("domain = %P,", cookieValues.domain)
+            .addStatement("path = %P,", cookieValues.path)
+            .addStatement("secure = %L,", cookieValues.secure)
+            .addStatement("httpOnly = %L,", cookieValues.httpOnly)
 
         if (cookieValues.extensions.isNotEmpty()) {
             addStatement("extensions = %M(", KOTLIN_MAP_OF)
@@ -336,12 +262,6 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
         val varargParamName: String? = null,
     )
 
-    private fun CodeBlock.Builder.addQuery(params: List<ParameterData>) = apply {
-        add(getQueryTextBlock(params))
-        add(getQueryNameTextBlock(params))
-        add(getQueryMapTextBlock(params))
-    }
-
     private fun CodeBlock.Builder.addBody(func: FunctionData) = apply {
         if (func.isBody) {
             addStatement(
@@ -350,459 +270,13 @@ internal class FunctionBodyGenerator(private val httpClient: MemberName) {
                 func.parameterDataList.first { it.hasAnnotation<ParameterAnnotation.Body>() }.nameString,
             )
         }
-        if (func.isMultipart) add(getPartsCodeBlock(func.parameterDataList))
-        if (func.isFormUrl) add(getFieldArgumentsCodeBlock(func.parameterDataList))
+        if (func.isMultipart) add(parameterGenerator.getPartsCodeBlock(func.parameterDataList))
+        if (func.isFormUrl) add(parameterGenerator.getFieldArgumentsCodeBlock(func.parameterDataList))
     }
-
-    private fun CodeBlock.Builder.addAttributes(parameterDataList: List<ParameterData>) = apply {
-        parameterDataList
-            .filter { it.hasAnnotation<ParameterAnnotation.Tag>() }
-            .forEach { param ->
-                val tag = param.findAnnotation<ParameterAnnotation.Tag>()
-
-                if (param.typeData.parameterType.isMarkedNullable) {
-                    addStatement(
-                        "%N?.let { _value -> this.attributes.put(%T(%S), _value) }",
-                        param.nameString,
-                        KTOR_ATTRIBUTE_KEY,
-                        tag.value,
-                    )
-                } else {
-                    addStatement(
-                        "this.attributes.put(%T(%S), %N)",
-                        KTOR_ATTRIBUTE_KEY,
-                        tag.value,
-                        param.nameString,
-                    )
-                }
-            }
-    }
-
-    // -- header --
-    private fun CodeBlock.Builder.addHeaderParameter(parameterDataList: List<ParameterData>) = apply {
-        parameterDataList
-            .filter { it.hasAnnotation<ParameterAnnotation.Header>() }
-            .takeIf { it.isNotEmpty() }
-            ?.also { beginControlFlow(THIS_HEADERS, KTOR_CLIENT_REQUEST_HEADER_FUNCTION) }
-            ?.forEach { parameterData ->
-                val paramName = parameterData.nameString
-
-                val headers = parameterData.findAllAnnotations<ParameterAnnotation.Header>()
-                val starProj = parameterData.typeData.parameterType.starProjection()
-                val isList = starProj.isAssignableFrom(listType)
-                val isArray = starProj.isAssignableFrom(arrayType)
-                val isVararg = parameterData.isVararg
-
-                headers.forEach { headerAnn ->
-                    val headerName = headerAnn.value
-
-                    when {
-                        isList || isArray -> headerParameterListOrArray(parameterData, paramName, headerName)
-
-                        isVararg -> {
-                            // Tratamos el vararg como lista
-                            beginControlFlow(LITERAL_FOREACH, paramName)
-                                .addStatement(APPEND_STRING_LITERAL, headerName, CodeBlock.of($$"\"$it\""))
-                            endControlFlow()
-                        }
-
-                        else -> {
-                            val headerValue = CodeBlock.of("\"$%L\"", paramName)
-                            if (parameterData.typeData.parameterType.isMarkedNullable) {
-                                beginControlFlow(LITERAL_NN_LET, paramName)
-                                    .addStatement(APPEND_STRING_LITERAL, headerName, headerValue)
-                                endControlFlow()
-                            } else {
-                                addStatement(APPEND_STRING_LITERAL, headerName, headerValue)
-                            }
-                        }
-                    }
-                }
-            }?.also { endControlFlow() }
-    }
-
-    private fun CodeBlock.Builder.headerParameterListOrArray(
-        parameterData: ParameterData,
-        paramName: String,
-        headerName: String,
-    ) {
-        val typeArg = (parameterData.typeData.typeName as? ParameterizedTypeName)
-            ?.typeArguments?.firstOrNull()
-        val isStringListOrArray = typeArg?.copy(false)?.equals(STRING) == true
-        val hasNullableInnerType = typeArg?.isNullable == true
-
-        val paramAccess = if (parameterData.typeData.parameterType.isMarkedNullable) {
-            CodeBlock.of("%L?", paramName)
-        } else {
-            CodeBlock.of("%L", paramName)
-        }
-
-        val listExpr = CodeBlock.builder().add(paramAccess)
-        if (hasNullableInnerType) {
-            listExpr.add(".filterNotNull()")
-            if (parameterData.typeData.parameterType.isMarkedNullable) {
-                listExpr.add("?")
-            }
-        }
-
-        beginControlFlow(LITERAL_FOREACH, listExpr.build())
-            .addStatement(
-                APPEND_STRING_LITERAL,
-                headerName,
-                if (isStringListOrArray) CodeBlock.of("it") else CodeBlock.of($$"\"$it\""),
-            )
-        endControlFlow()
-    }
-
-    private fun CodeBlock.Builder.addHeaderMap(parameterDataList: List<ParameterData>) = apply {
-        parameterDataList
-            .filter { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
-            .takeIf { it.isNotEmpty() }
-            ?.also { beginControlFlow(THIS_HEADERS, KTOR_CLIENT_REQUEST_HEADER_FUNCTION) }
-            ?.forEach { parameterData ->
-                val typeName = parameterData.typeData.typeName
-                val paramName = parameterData.nameString
-
-                val isNullable = parameterData.typeData.parameterType.isMarkedNullable
-
-                val isMap = MAP == typeName.rawType()
-                val isPair = KOTLIN_PAIR_CLASS == typeName.rawType()
-                val isVarargPair = parameterData.isVararg && isPair
-                val isVarargMap = parameterData.isVararg && isMap
-
-                val typeArgs = (typeName as? ParameterizedTypeName)?.typeArguments ?: emptyList()
-                val valueType = typeArgs.getOrNull(1) ?: typeArgs.getOrNull(0)
-                val valueIsString = valueType?.copy(false)?.equals(STRING) == true
-                val valueIsNullable = valueType?.isNullable == true
-
-                val paramAccess = if (isNullable) {
-                    CodeBlock.of("%L?", paramName)
-                } else {
-                    CodeBlock.of("%L", paramName)
-                }
-
-                when {
-                    isMap -> headerMapOrVarargMap(isVarargMap, paramAccess, valueIsString, valueIsNullable)
-
-                    isPair -> headerPairOrVarargPair(isVarargPair, paramName, valueIsString, valueIsNullable)
-                }
-            }?.also { endControlFlow() }
-    }
-
-    @KtorGenWithoutCoverage // utility function must not throw an exception
-    private fun TypeName.rawType(): ClassName = when (this) {
-        is ParameterizedTypeName -> this.rawType
-        is ClassName -> this
-        Dynamic,
-        is LambdaTypeName,
-        is TypeVariableName,
-        is WildcardTypeName,
-        -> checkImplementation { "Unsupported type: $this" }
-    }
-
-    private fun CodeBlock.Builder.headerMapOrVarargMap(
-        isVarargMap: Boolean,
-        paramAccess: CodeBlock,
-        valueIsString: Boolean,
-        valueIsNullable: Boolean,
-    ) {
-        if (isVarargMap) {
-            beginControlFlow(LITERAL_FOREACH, paramAccess)
-            beginControlFlow("it.forEach")
-        } else {
-            beginControlFlow(LITERAL_FOREACH, paramAccess)
-        }
-        if (valueIsNullable) {
-            beginControlFlow("it.value?.let { value ->")
-        }
-        addStatement(
-            "this.append(it.key, %L)",
-            if (valueIsString) {
-                if (valueIsNullable) CodeBlock.of("value") else CodeBlock.of("it.value")
-            } else {
-                if (valueIsNullable) CodeBlock.of($$"\"$value\"") else CodeBlock.of($$"\"${it.value}\"")
-            },
-        )
-        if (valueIsNullable) endControlFlow()
-        endControlFlow() // end inner forEach
-        if (isVarargMap) endControlFlow() // end outer forEach
-    }
-
-    private fun CodeBlock.Builder.headerPairOrVarargPair(
-        isVarargPair: Boolean,
-        paramName: String,
-        valueIsString: Boolean,
-        valueIsNullable: Boolean,
-    ) {
-        val forEachExpr = if (isVarargPair) {
-            CodeBlock.of("%L", paramName)
-        } else {
-            CodeBlock.of(MEMBER_LITERAL, KOTLIN_LIST_OF, paramName)
-        }
-        beginControlFlow(LITERAL_FOREACH, forEachExpr)
-
-        if (valueIsNullable) beginControlFlow("it.second?.let { _value ->")
-
-        addStatement(
-            "this.append(it.first, %L)",
-            if (valueIsString) {
-                if (valueIsNullable) CodeBlock.of("_value") else CodeBlock.of("it.second")
-            } else {
-                if (valueIsNullable) CodeBlock.of($$"\"$_value\"") else CodeBlock.of($$"\"${it.second}\"")
-            },
-        )
-
-        if (valueIsNullable) endControlFlow()
-        endControlFlow()
-    }
-
-    // -- query --
-    private fun getQueryMapTextBlock(params: List<ParameterData>) = CodeBlock.builder().apply {
-        params.filter { it.hasAnnotation<ParameterAnnotation.QueryMap>() }
-            .forEach { parameterData ->
-                val queryMap = parameterData.findAnnotation<ParameterAnnotation.QueryMap>()
-                val encoded = queryMap.encoded
-                val data = parameterData.nameString
-
-                beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, data)
-                beginControlFlow(ENTRY_VALUE_NN_LET)
-                    .addStatement(
-                        "%L(entry.key, %P)",
-                        if (encoded) ENCODED_PARAMETERS_APPEND else PARAMETERS_APPEND,
-                        VALUE,
-                    )
-                endControlFlow()
-                endControlFlow()
-            }
-    }.build()
-
-    private fun getQueryNameTextBlock(params: List<ParameterData>) = CodeBlock.builder().apply {
-        params
-            .filter { it.hasAnnotation<ParameterAnnotation.QueryName>() }
-            .forEach { parameterData ->
-                val queryName = parameterData.findAnnotation<ParameterAnnotation.QueryName>()
-                val encoded = queryName.encoded
-                val name = parameterData.nameString
-
-                val starProj = parameterData.typeData.parameterType.starProjection()
-                val isList = starProj.isAssignableFrom(listType)
-                val isArray = starProj.isAssignableFrom(arrayType)
-
-                if (isList || isArray) {
-                    beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
-                        .addStatement(
-                            "%L.appendAll(%P, %M())",
-                            if (encoded) "this.encodedParameters" else "this.parameters",
-                            $$"$it",
-                            KOTLIN_EMPTY_LIST,
-                        )
-                    endControlFlow()
-                } else {
-                    addStatement(
-                        "%L.appendAll(%P, %M())",
-                        if (encoded) "this.encodedParameters" else "this.parameters",
-                        "$$name",
-                        KOTLIN_EMPTY_LIST,
-                    )
-                }
-            }
-    }.build()
-
-    private fun getQueryTextBlock(params: List<ParameterData>) = CodeBlock.builder().apply {
-        params
-            .filter { it.hasAnnotation<ParameterAnnotation.Query>() }
-            .forEach { parameterData ->
-                val query = parameterData.findAnnotation<ParameterAnnotation.Query>()
-                val encoded = query.encoded
-                val starProj = parameterData.typeData.parameterType.starProjection()
-                val isList = starProj.isAssignableFrom(listType)
-                val isArray = starProj.isAssignableFrom(arrayType)
-
-                if (isList || isArray) {
-                    beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, parameterData.nameString)
-                    addStatement(
-                        "%L(%S, %P)",
-                        if (encoded) ENCODED_PARAMETERS_APPEND else PARAMETERS_APPEND,
-                        query.value,
-                        $$"$it",
-                    )
-                    endControlFlow()
-                } else {
-                    beginControlFlow(LITERAL_NN_LET, parameterData.nameString)
-                    addStatement(
-                        "%L(%S, %P)",
-                        if (encoded) ENCODED_PARAMETERS_APPEND else PARAMETERS_APPEND,
-                        query.value,
-                        $$"$it",
-                    )
-                    endControlFlow()
-                }
-            }
-    }.build()
 
     private fun getFragmentTextBlock(func: FunctionData) = CodeBlock.builder().apply {
         func.findAnnotationOrNull<FunctionAnnotation.Fragment>()?.let {
             addStatement("this.%L = %S", if (it.encoded) "encodedFragment" else "fragment", it.value)
         }
     }.build()
-
-    // -- body --
-    private fun getPartsCodeBlock(params: List<ParameterData>): CodeBlock {
-        val partCode = CodeBlock.builder()
-
-        params.filter { it.hasAnnotation<ParameterAnnotation.Part>() }
-            .forEach { parameterData ->
-                val part = parameterData.findAnnotation<ParameterAnnotation.Part>()
-                val name = parameterData.nameString
-                val partValue = part.value
-
-                val starProj = parameterData.typeData.parameterType
-                val isList = listType.isAssignableFrom(starProj)
-                val isArray = arrayType.isAssignableFrom(starProj)
-                val isPartData = partDataKtor != null && partDataKtor.isAssignableFrom(starProj)
-                val isListPartData = (isList || isArray) &&
-                    partDataKtor != null &&
-                    starProj.arguments.firstOrNull()?.type?.resolve()?.let { partDataKtor.isAssignableFrom(it) } ==
-                    true
-
-                when {
-                    isListPartData -> {
-                        partCode.beginControlFlow(LITERAL_NN_LET, name)
-                            .addStatement("%L.addAll(it)", PART_DATA_LIST_VARIABLE)
-                        partCode.endControlFlow()
-                    }
-
-                    isPartData -> {
-                        partCode.beginControlFlow(LITERAL_NN_LET, name)
-                            .addStatement("%L.add(it)", PART_DATA_LIST_VARIABLE)
-                        partCode.endControlFlow()
-                    }
-
-                    isList || isArray -> {
-                        partCode.beginControlFlow(ITERABLE_FILTER_NULL_FOREACH, name)
-                            .addStatement(APPEND_STRING_STRING, partValue, $$"$it")
-                        partCode.endControlFlow()
-                    }
-
-                    else -> {
-                        partCode.beginControlFlow(LITERAL_NN_LET, name)
-                            .addStatement(APPEND_STRING_STRING, partValue, $$"$it")
-                        partCode.endControlFlow()
-                    }
-                }
-            }
-
-        params.filter { it.hasAnnotation<ParameterAnnotation.PartMap>() }
-            .forEach { parameterData ->
-                val starProj = parameterData.typeData.parameterType
-                val isList = starProj.isAssignableFrom(listType)
-                val isArray = starProj.isAssignableFrom(arrayType)
-                val isListPartData = (isList || isArray) &&
-                    partDataKtor != null &&
-                    starProj.arguments.firstOrNull()?.type?.resolve()?.let { partDataKtor.isAssignableFrom(it) } ==
-                    true
-
-                when {
-                    isListPartData -> {
-                        partCode.beginControlFlow(LITERAL_NN_LET, parameterData.nameString)
-                            .addStatement("%L.addAll(it)", PART_DATA_LIST_VARIABLE)
-                        partCode.endControlFlow()
-                    }
-
-                    else -> {
-                        partCode.beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, parameterData.nameString)
-                        partCode.beginControlFlow(ENTRY_VALUE_NN_LET)
-                            .addStatement("this.append(entry.key, %P)", VALUE)
-                        partCode.endControlFlow()
-                        partCode.endControlFlow()
-                    }
-                }
-            }
-
-        return CodeBlock.builder().applyIf(partCode.isNotEmpty()) {
-            addStatement("val %L = mutableListOf<%T>()", PART_DATA_LIST_VARIABLE, KTOR_PART_DATA_CLASS)
-            beginControlFlow("val %L = %M", FORM_DATA_VARIABLE, KTOR_REQUEST_FORM_DATA_FUNCTION)
-                .add(partCode.build())
-            endControlFlow()
-
-            // Unir contenido de formData y lista de PartData
-            addStatement(
-                "this.%M(%T(%L + %L))",
-                KTOR_REQUEST_SET_BODY_FUNCTION,
-                KTOR_REQUEST_MULTIPART_CONTENT_CLASS,
-                PART_DATA_LIST_VARIABLE,
-                FORM_DATA_VARIABLE,
-            )
-        }.build()
-    }
-
-    private fun getFieldArgumentsCodeBlock(params: List<ParameterData>): CodeBlock {
-        val fieldCode = CodeBlock.builder().apply {
-            params.filter { it.hasAnnotation<ParameterAnnotation.Field>() }
-                .forEach { parameterData ->
-                    val field = parameterData.findAnnotation<ParameterAnnotation.Field>()
-                    val encoded = field.encoded
-                    val paramName = parameterData.nameString
-                    val fieldValue = field.value
-
-                    val starProj = parameterData.typeData.parameterType.starProjection()
-                    val isList = starProj.isAssignableFrom(listType)
-                    val isArray = starProj.isAssignableFrom(arrayType)
-
-                    val controlFlow = if (isList || isArray) ITERABLE_FILTER_NULL_FOREACH else LITERAL_NN_LET
-
-                    beginControlFlow(controlFlow, paramName)
-                        .addStatement(
-                            "%L",
-                            if (encoded) {
-                                CodeBlock.of(
-                                    "this.append(%S, %P.%M(plusIsSpace = true))",
-                                    fieldValue,
-                                    $$"$it",
-                                    DECODE_URL_COMPONENTS_FUNCTION,
-                                )
-                            } else {
-                                CodeBlock.of(APPEND_STRING_STRING, fieldValue, $$"$it")
-                            },
-                        )
-                    endControlFlow()
-                }
-
-            params.filter { it.hasAnnotation<ParameterAnnotation.FieldMap>() }
-                .forEach { parameterData ->
-                    val encoded = parameterData.findAnnotation<ParameterAnnotation.FieldMap>().encoded
-
-                    beginControlFlow(LITERAL_FOREACH_SAFE_NULL_ENTRY, parameterData.nameString)
-                        .beginControlFlow(ENTRY_VALUE_NN_LET)
-                        .addStatement(
-                            "%L",
-                            if (encoded) {
-                                CodeBlock.of(
-                                    "this.append(entry.key, %P.%M(plusIsSpace = true))",
-                                    VALUE,
-                                    DECODE_URL_COMPONENTS_FUNCTION,
-                                )
-                            } else {
-                                CodeBlock.of("this.append(entry.key, %P)", VALUE)
-                            },
-                        )
-                        .endControlFlow()
-                    endControlFlow()
-                }
-        }
-
-        return CodeBlock.builder()
-            .applyIf(fieldCode.isNotEmpty()) {
-                beginControlFlow("val %L = %T.build", FORM_DATA_CONTENT_VARIABLE, KTOR_PARAMETERS_CLASS)
-                    .add(fieldCode.build())
-                endControlFlow()
-                // setBody FormDataContent X
-                addStatement(
-                    "this.%M(%T(%L))",
-                    KTOR_REQUEST_SET_BODY_FUNCTION,
-                    KTOR_REQUEST_FORM_DATA_CONTENT_CLASS,
-                    FORM_DATA_CONTENT_VARIABLE,
-                )
-            }.build()
-    }
 }

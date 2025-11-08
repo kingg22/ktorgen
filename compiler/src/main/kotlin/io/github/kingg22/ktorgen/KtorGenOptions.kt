@@ -1,6 +1,5 @@
 package io.github.kingg22.ktorgen
 
-// TODO add secondary constructor
 class KtorGenOptions(val errorsLoggingType: ErrorsLoggingType, val isPrintStackTraceOnException: Boolean) {
     constructor(
         options: Map<String, String>,
