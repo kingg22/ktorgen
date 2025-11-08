@@ -56,6 +56,9 @@ kover {
                 minBound(20, CoverageUnit.BRANCH)
             }
         }
+        filters.excludes {
+            annotatedBy("$group.ktorgen.KtorGenWithoutCoverage")
+        }
     }
 }
 
