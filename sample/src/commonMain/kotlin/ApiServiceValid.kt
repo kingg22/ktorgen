@@ -2,9 +2,10 @@ package io.github.kingg22.ktorgen.sample
 
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.sample.model.IssueData
-import io.ktor.client.HttpClient
-import io.ktor.client.request.HttpRequestBuilder
-import io.ktor.http.content.PartData
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.content.*
 import kotlinx.coroutines.flow.Flow
 
 interface ApiServiceValid {
@@ -69,4 +70,10 @@ interface ApiServiceValid {
 
     @HTTP("TRACE", "media/download")
     fun dynamicQuery(builder: HttpRequestBuilder, @Tag tagValue: String): Flow<IssueData>
+
+    suspend fun dynamicQueryWithoutBody(builder: HttpRequestBuilder.() -> Unit): HttpResponse
+    suspend fun dynamicQueryWithoutResponse(builder: HttpRequestBuilder.() -> Unit)
+
+    @GET
+    suspend fun normalQueryWithoutResponseBody()
 }
