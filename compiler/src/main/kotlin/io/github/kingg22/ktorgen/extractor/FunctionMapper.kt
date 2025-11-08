@@ -150,14 +150,10 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 add(FunctionAnnotation.HttpMethodAnnotation(basePath, HttpMethod.Absent))
                 timer.addStep("Http method not found, adding absent value, need validation!", function)
             } else {
-                timer.require(
-                    method.size == 1,
-                    "${KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED} Found: ${
-                        method.joinToString {
-                            it.httpMethod.value
-                        }
-                    } at ${function.simpleName.asString()}",
-                )
+                timer.require(method.size == 1, function) {
+                    "${KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED} Found: " +
+                        method.joinToString(prefix = "[", postfix = "]") { it.httpMethod.value }
+                }
                 val http = method.first()
                 add(http)
                 timer.addStep("Processed http annotation $http")
