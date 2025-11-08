@@ -10,6 +10,6 @@ fun interface KtorGenGenerator {
 
     companion object {
         @JvmStatic
-        val DEFAULT: KtorGenGenerator by lazy { KotlinpoetGenerator() }
+        val DEFAULT: KtorGenGenerator get() = KotlinpoetGenerator()
     }
 }

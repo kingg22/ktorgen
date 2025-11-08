@@ -30,6 +30,6 @@ fun interface DeclarationMapper : DeclarationLoggerMapper {
 
     companion object {
         @JvmStatic
-        val DEFAULT: DeclarationMapper by lazy { ClassMapper() }
+        val DEFAULT: DeclarationMapper get() = ClassMapper()
     }
 }

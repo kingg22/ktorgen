@@ -25,6 +25,6 @@ fun interface DeclarationParameterMapper {
 
     companion object {
         @JvmStatic
-        val DEFAULT: DeclarationParameterMapper by lazy { ParameterMapper() }
+        val DEFAULT: DeclarationParameterMapper get() = ParameterMapper()
     }
 }

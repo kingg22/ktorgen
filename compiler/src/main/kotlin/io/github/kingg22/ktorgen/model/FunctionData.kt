@@ -37,10 +37,7 @@ class FunctionData(
 
     inline fun <reified T : FunctionAnnotation> hasAnnotation() = this.findAnnotationOrNull<T>() != null
 
-    class UrlTemplateResult(val template: String, val keys: List<String>) {
-        operator fun component1() = template
-        operator fun component2() = keys
-
+    data class UrlTemplateResult(val template: String, val keys: List<String>) {
         val isEmpty = template.isBlank() && keys.isEmpty()
         val isNotEmpty
             inline get() = !isEmpty

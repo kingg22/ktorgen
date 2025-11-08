@@ -26,6 +26,6 @@ fun interface DeclarationFunctionMapper : DeclarationLoggerMapper {
 
     companion object {
         @JvmStatic
-        val DEFAULT: DeclarationFunctionMapper by lazy { FunctionMapper() }
+        val DEFAULT: DeclarationFunctionMapper get() = FunctionMapper()
     }
 }
