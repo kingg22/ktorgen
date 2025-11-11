@@ -147,7 +147,7 @@ private class _AlbumRoutesImpl internal constructor(
 ### Notes
 
 - Some parameters marked as *experimental* may generate invalid code depending on platform support or KSP version.
-- Misconfigured visibility modifiers can lead `fatal error ocurred, invalid visibility` or propagated annotations can lead to `unresolved symbols` during compilation.
+- Misconfigured visibility modifiers can lead `fatal error occurred, invalid visibility` or propagated annotations can lead to `unresolved symbols` during compilation.
 - Annotations like `@JvmOverloads` or `@JvmSynthetic` are only valid on `common`, `jvm`, or `android`; using them on multiplatform-specific configurations may fail, including annotation in params.
 - Custom annotations must have **empty constructors** to be propagated automatically when it's added as parameter.
 - Works across all supported KMP targets.
