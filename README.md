@@ -37,7 +37,7 @@ Ktorgen is a 100% compile-time code generator for creating HTTP clients using Kt
 🔹 Experimental support for [vararg parameters](https://kotlinlang.org/docs/functions.html#variable-number-of-arguments-varargs) and
 [Pair](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-pair/) type.
 
-📚 [More documentation of annotations](https://kingg22.github.io/ktorgen/).
+📚 [See more in documentation page](https://kingg22.github.io/ktorgen/).
 
 ## 📦 Instalación
 [![Maven Central Version](https://img.shields.io/maven-central/v/io.github.kingg22/ktorgen-annotations)](https://mvnrepository.com/artifact/io.github.kingg22/ktorgen-compiler)
@@ -85,82 +85,10 @@ dependencies {
 
   Before on parameters `@Header("Content-Type") param: String` after `@HeaderParam("Content-Type") param: String`
 
-- Feature:
-
-  <details>
-  <summary> Added jetbrains annotations to provide IDE autocompletion and highlights. </summary>
-  <br>
-  <img src="docs/ide_pattern_matching.png" alt="ide_pattern_matching">
-  <img src="docs/jetbrains_highlights.png" alt="jetbrains_highlights">
-  </details>
-
-  Now `@Header` is repeatable and type-safe because follow the format `name: value` parse it,
-  problems with vararg empty is very annoying.
-
-### Additional configuration for Kotlin Multiplatform projects with code in commonMain
-*If you're coming from ktorfit, this configuration was applied by the ktorfit gradle plugin.*
-```kotlin
-kotlin {
-  sourceSets.commonMain {
-    // Tell KMP to compile KSP metadata
-    kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
-    dependencies {
-      implementation(libs.ktorgen.annotations) // ktorgen annotations
-      implementation(libs.ktor.client.core) // ktor client core and any plugins you need
-    }
-  }
-}
-
-dependencies {
-  // For KMP projects, use instead of ksp(...)
-  kspCommonMainMetadata(libs.ktorgen.compiler)
-}
-
-ksp {
-  // optional, additional configuration for KSP
-  arg("ktorgen_check_type", "2")
-  /*
-  0: Disable error checking
-  1: Check errors
-  2: Convert errors into warnings (default)
-  */
-}
-
-// Workaround for KSP in KMP
-tasks.named("runKtlintCheckOverCommonMainSourceSet") {
-    dependsOn("kspCommonMainKotlinMetadata")
-}
-
-tasks.matching { it.name != "kspCommonMainKotlinMetadata" && it.name.startsWith("ksp") }
-    .configureEach {
-        dependsOn("kspCommonMainKotlinMetadata")
-    }
-```
-
-## Samples
-- [sample folder](https://github.com/kingg22/ktorgen/tree/main/sample)
-- [deezer-client-kt](https://github.com/kingg22/deezer-client-kt)
-
-- Demo source code
-
-  ![Github api source code](docs/source_example.png)
-
-  Demo generated code
-
-  ![Github api generated code](docs/generated_example.png)
-
-- Demo advanced usage
-
-  ![Github api advanced usage](docs/advanced_source_example.png)
-
-  Demo generated code
-
-  ![Github api advanced usage](docs/generated_advanced_example.png)
-
-### 🔁 Migrating from Ktorfit to ktorgen
+### 🔁 Migrating from Ktorfit to KtorGen
 Migrating is as simple as:
 
-Changing annotation imports to `io.github.kingg22.ktorgen.annotations.*`
+Changing annotation imports to `io.github.kingg22.ktorgen.http.*`
 
 Comma-separated header annotations are now repeatable and type-safe.
 
@@ -183,18 +111,6 @@ Passing your own Ktor HttpClient to the implementations, like this: `fun UserRou
 
 Real-life migration example: [deezer-client-kt](https://github.com/kingg22/deezer-client-kt/commit/98e7ccc360dc62861c6e9030650f681a99cddceb)
 
-## Advanced use ⚒️
-* Global options (_see above in KMP configuration how to pass this options with KSP_)
-  - `ktorgen_check_type`: The compiler validate code before generate (default: 2)
-
-    0: Turn off all error related to checking
-
-    1: Check for errors
-
-    2: Turn errors into warnings
-  - `ktorgen_print_stacktrace_on_exception`: Print stacktrace on exception using [Throwable#printStacktrace](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Throwable.html#printStackTrace()) (default: false)
-  - _More option soon..._
-
 ### Roadmap 🚀
 - [ ] Add a matrix compatibility test on CI (_Kotlin versions, KSP versions, Ktor Client versions_) to know the range of compatibility.
 - [X] ~~Add test for Fragment annotation~~
@@ -203,6 +119,11 @@ Real-life migration example: [deezer-client-kt](https://github.com/kingg22/deeze
 - [X] Resolve issues related to unresolved references, ~~multi-round processing, unexpected errors.~~
 **EDIT**: Most unresolved symbols are caused by https://github.com/google/ksp/issues/2668 and
 platform-specific issues caused by [Optional expectation](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-optional-expectation/) of some annotations.
+
+### Documentation
+See more in [GitHub Page](https://kingg22.github.io/ktorgen/)
+
+Open to contributions 🚀
 
 ## 📜 Disclaimer
 This repository is a fork of Ktorfit and Retrofit annotations, with my own changes and additions.
