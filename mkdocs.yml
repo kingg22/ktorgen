@@ -1,0 +1,36 @@
+site_name: KtorGen documentation
+site_description: "Documentation of KtorGen annotations and KSP processor"
+site_author: "Kingg22 <https://github.com/kingg22>"
+theme:
+  name: shadcn
+  show_datetime: true
+  topbar_sections: true
+  icon: api/images/logo-icon.svg
+  pygments_style: github-dark
+extra_css:
+  - styles.css
+nav:
+  - Home: index.md
+  - Guides:
+      - Installation: configuration.md
+      - Changelog: CHANGELOG.md
+      - Return Types: return_types.md
+      - Samples: demo_code.md
+      - Advanced:
+          - Options: options.md
+          - Request Customization: advanced.md
+      - Known issues: known_issues.md
+      - Annotations:
+          - Core: annotations/core.md
+          - HTTP: annotations/http.md
+  - Issue Tracker: "https://github.com/kingg22/ktorgen/issues"
+  - API Reference:
+      - Overview: api/index.html
+repo_name: ktorgen
+repo_url: "https://github.com/kingg22/ktorgen"
+site_dir: build/mkdocs
+strict: true
+markdown_extensions:
+  - codehilite
+plugins:
+  - search
