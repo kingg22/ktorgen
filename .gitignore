@@ -98,3 +98,4 @@ dmypy.json
 .pyre/
 .pytype/
 cython_debug/
+/docs/api/
