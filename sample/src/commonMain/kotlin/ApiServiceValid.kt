@@ -75,6 +75,9 @@ interface ApiServiceValid {
     suspend fun dynamicQueryWithoutBody(builder: HttpRequestBuilder.() -> Unit): HttpResponse
     suspend fun dynamicQueryWithoutResponse(builder: HttpRequestBuilder.() -> Unit)
 
+    suspend fun dynamicRequest(builder: HttpRequest): Result<IssueData>
+    suspend fun dynamicRequest(requestData: HttpRequestData): Result<IssueData>
+
     @GET
     suspend fun normalQueryWithoutResponseBody()
 }
