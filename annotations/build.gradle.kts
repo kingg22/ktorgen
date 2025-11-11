@@ -91,13 +91,19 @@ kotlin {
     }
 }
 
-dokka.dokkaSourceSets.configureEach {
-    skipEmptyPackages.set(true)
-    skipDeprecated.set(false)
-    reportUndocumented.set(true)
-    enableJdkDocumentationLink.set(true)
-    enableKotlinStdLibDocumentationLink.set(true)
-    suppressGeneratedFiles.set(true)
+dokka {
+    moduleName.set("Annotations API references")
+    dokkaPublications.configureEach {
+        outputDirectory.set(rootDir.resolve("docs/api"))
+    }
+    dokkaSourceSets.configureEach {
+        skipEmptyPackages.set(true)
+        skipDeprecated.set(false)
+        reportUndocumented.set(true)
+        enableJdkDocumentationLink.set(true)
+        enableKotlinStdLibDocumentationLink.set(true)
+        suppressGeneratedFiles.set(true)
+    }
 }
 
 tasks.check {
