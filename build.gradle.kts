@@ -11,11 +11,17 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.mavenPublish) apply false
     alias(libs.plugins.sonarqube)
+    alias(libs.plugins.changelog)
 }
+
+group = "io.github.kingg22"
+version = libs.versions.ktorgen.version.get()
 
 subprojects {
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
     apply(plugin = "org.sonarqube")
+
+    group = "io.github.kingg22"
 
     dependencyLocking {
         lockAllConfigurations()
@@ -26,7 +32,7 @@ subprojects {
         version.set("1.7.1")
     }
 
-    sonar.run {
+    sonar {
         // ignora completamente estos módulos
         if (project.name == "example" || project.name == "sample") {
             isSkipProject = true
@@ -73,4 +79,17 @@ ktlint {
 
 dependencyLocking {
     lockAllConfigurations()
+}
+
+changelog {
+    // Default values:
+    path = file("docs/CHANGELOG.md").canonicalPath
+    // version = libs.versions.ktorgen.version.get()
+    // keepUnreleasedSection = true
+    // header = provider { "[${version.get()}] - ${date()}" }
+    // unreleasedTerm = "[Unreleased]"
+    // groups = listOf("Added", "Changed", "Deprecated", "Removed", "Fixed", "Security")
+    // combinePreReleases = true
+    versionPrefix.set("")
+    repositoryUrl.set("https://github.com/kingg22/ktorgen")
 }
