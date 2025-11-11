@@ -153,7 +153,7 @@ private class _AlbumRoutesImpl internal constructor(
 - Works across all supported KMP targets.
 - If you omit `name`, the compiler generates a default class name based on the interface (`_UserApiImpl`).
 - You can inject a custom `HttpClient` when instantiating the generated client.
-- Indentation can differ, but have 4 spaces by default*
+- Indentation can differ, but has 4 spaces by default*
 - By default, the generated code have `@Generated` and comments indicate generated code.
 
 ---
