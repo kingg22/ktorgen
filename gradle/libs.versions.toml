@@ -14,6 +14,8 @@ android-minSdk = "21"
 androidx-room-compiler-testing = "2.8.3"
 # https://github.com/Kotlin/dokka/releases
 dokka = "2.1.0"
+# https://github.com/JetBrains/gradle-changelog-plugin/releases
+jetbrains-changelog = "2.4.0"
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
 # https://github.com/google/truth/releases
@@ -26,7 +28,7 @@ kotlin-poet = "2.2.0"
 # https://github.com/Kotlin/kotlinx-kover/releases
 kover = "0.9.3"
 # https://github.com/google/ksp/releases
-ksp = "2.3.0"
+ksp = "2.2.20-2.0.4"
 # https://github.com/pinterest/ktlint/releases
 ktlint-pinterest = "1.7.1"
 # https://github.com/jlleitschuh/ktlint-gradle/releases
@@ -35,6 +37,9 @@ ktlint-plugin = "13.1.0"
 ktor = "3.3.1"
 
 ktorgen-version = "0.5.0-SNAPSHOT"
+
+# https://github.com/SonarSource/sonar-scanner-gradle/releases
+sonarqube = "7.0.1.6134"
 
 # https://github.com/vanniktech/gradle-maven-publish-plugin/releases
 maven-publish = "0.34.0"
@@ -46,17 +51,20 @@ jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version
 ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
 kotlin-poet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlin-poet" }
 kotlin-poet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlin-poet" }
+# test compiler
 androidx-room-compiler-testing = { group = "androidx.room", name = "room-compiler-processing-testing", version.ref = "androidx-room-compiler-testing" }
 google-truth = { group = "com.google.truth", name = "truth", version.ref = "google-truth" }
 
 # samples
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+
 # Libraries can be bundled together for easier import
 [bundles]
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 androidMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+changelog = { id = "org.jetbrains.changelog", version.ref = "jetbrains-changelog" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -64,4 +72,4 @@ kotlinxKover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }
 mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
-sonarqube = { id = "org.sonarqube", version = "7.0.1.6134"}
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
