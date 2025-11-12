@@ -83,8 +83,8 @@ dependencyLocking {
 
 changelog {
     // Default values:
-    path = file("docs/CHANGELOG.md").canonicalPath
-    // version = libs.versions.ktorgen.version.get()
+    path.set(file("docs/CHANGELOG.md").canonicalPath)
+    // version.set(libs.versions.ktorgen.version)
     // keepUnreleasedSection = true
     // header = provider { "[${version.get()}] - ${date()}" }
     // unreleasedTerm = "[Unreleased]"

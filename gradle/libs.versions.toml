@@ -36,7 +36,7 @@ ktlint-plugin = "13.1.0"
 # https://github.com/ktorio/ktor/releases
 ktor = "3.3.2"
 
-ktorgen-version = "0.5.1-SNAPSHOT"
+ktorgen-version = "0.5.1-RC"
 
 # https://github.com/SonarSource/sonar-scanner-gradle/releases
 sonarqube = "7.0.1.6134"
