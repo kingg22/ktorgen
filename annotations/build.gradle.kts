@@ -92,17 +92,25 @@ kotlin {
 }
 
 dokka {
-    moduleName.set("Annotations API references")
     dokkaPublications.configureEach {
         outputDirectory.set(rootDir.resolve("docs/api"))
     }
-    dokkaSourceSets.configureEach {
+    dokkaSourceSets.commonMain {
         skipEmptyPackages.set(true)
         skipDeprecated.set(false)
         reportUndocumented.set(true)
         enableJdkDocumentationLink.set(true)
         enableKotlinStdLibDocumentationLink.set(true)
         suppressGeneratedFiles.set(true)
+        includes.from("README.md")
+
+        // adds source links that lead to this repository, allowing readers
+        // to easily find source code for inspected declarations
+        sourceLink {
+            localDirectory.set(file("src/commonMain/kotlin"))
+            remoteUrl("https://github.com/kingg22/ktorgen/tree/main/annotations/src/commonMain/kotlin")
+            remoteLineSuffix.set("#L")
+        }
     }
 }
 
