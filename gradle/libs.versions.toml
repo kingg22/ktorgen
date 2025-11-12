@@ -17,7 +17,7 @@ dokka = "2.1.0"
 # https://github.com/JetBrains/gradle-changelog-plugin/releases
 jetbrains-changelog = "2.4.0"
 # https://github.com/JetBrains/java-annotations/releases
-jetbrains-jvm-annotations = "26.0.2"
+jetbrains-jvm-annotations = "26.0.2-1"
 # https://github.com/google/truth/releases
 google-truth = "1.4.5"
 # https://github.com/JetBrains/kotlin/releases
