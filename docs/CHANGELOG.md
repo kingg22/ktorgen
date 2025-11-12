@@ -5,12 +5,15 @@
 ### Added
 
 ### Changed
+- [Internal] Update **ktor-client-core** dependency to 3.3.2
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+- Fixed modifiers of interface don't include those in the generated class.
+E.g. `sealed interface Foo` will generate `public class _FooImpl : Foo`. Instead of `public sealed class _FooImpl : Foo`.
 
 ### Security
 
