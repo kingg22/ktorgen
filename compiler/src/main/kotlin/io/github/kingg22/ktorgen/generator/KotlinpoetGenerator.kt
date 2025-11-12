@@ -6,10 +6,6 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.KModifier.INTERNAL
-import com.squareup.kotlinpoet.KModifier.PRIVATE
-import com.squareup.kotlinpoet.KModifier.PROTECTED
-import com.squareup.kotlinpoet.KModifier.PUBLIC
 import com.squareup.kotlinpoet.KModifier.SUSPEND
 import com.squareup.kotlinpoet.KModifier.VARARG
 import com.squareup.kotlinpoet.ParameterSpec
@@ -134,7 +130,6 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
 
     private fun createClassBuilder(classData: ClassData) = TypeSpec.classBuilder(classData.generatedName)
         .addModifiers(KModifier.valueOf(classData.classVisibilityModifier.uppercase()))
-        .addModifiers(classData.modifierSet.filter { it !in VISIBILITY_KMODIFIER })
         .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
         .addKdoc(classData.customClassHeader)
         .addAnnotations(classData.buildAnnotations())
@@ -204,7 +199,6 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
         ).map { it.addDefaultConfig().build() }
 
     private companion object {
-        private val VISIBILITY_KMODIFIER = setOf(PUBLIC, INTERNAL, PROTECTED, PRIVATE)
         private val GeneratedAnnotation = AnnotationSpec.builder(
             ClassName("io.github.kingg22.ktorgen.core", "Generated"),
         ).build()
