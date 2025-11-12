@@ -16,13 +16,14 @@ nav:
       - Changelog: CHANGELOG.md
       - Return Types: return_types.md
       - Samples: demo_code.md
-      - Advanced:
-          - Options: options.md
-          - Request Customization: advanced.md
       - Known issues: known_issues.md
       - Annotations:
           - Core: annotations/core.md
           - HTTP: annotations/http.md
+      - Advanced:
+          - Options: options.md
+          - Request Customization: advanced.md
+          - Dokka External Reference: dokka_references.md
   - Issue Tracker: "https://github.com/kingg22/ktorgen/issues"
   - API Reference:
       - Overview: api/index.html

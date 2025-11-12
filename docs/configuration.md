@@ -9,10 +9,21 @@ The goal is to ensure the KSP (Kotlin Symbol Processing) plugin correctly genera
 
 Ktorgen consists of two main components:
 
+[![Maven Central Version](https://img.shields.io/maven-central/v/io.github.kingg22/ktorgen-annotations)](https://mvnrepository.com/artifact/io.github.kingg22/ktorgen-compiler)
+
+```kotlin
+implementation("io.github.kingg22:ktorgen-annotations:<current-version>")
+ksp("io.github.kingg22:ktorgen-compiler:<current-version>")
+```
+
 - `ktorgen-annotations` → annotations that you apply in your code.
 - `ktorgen-compiler` → KSP processor that generates the corresponding Ktor client implementations.
 
 In any setup, you’ll need to include both modules, plus your chosen **Ktor client engine**.
+
+Install [KSP plugin](https://github.com/google/ksp)
+
+Install [Ktor Client Core and an Engine](https://ktor.io/docs/client-create-new-application.html#add-dependencies)
 
 ### Example — Common Dependencies
 

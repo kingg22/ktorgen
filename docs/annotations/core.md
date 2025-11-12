@@ -10,7 +10,7 @@ These annotations control how Ktorgen scans interfaces, generates client factori
 The main entry point annotation for Ktorgen.
 It’s applied to an **interface** or its **companion object** that defines the HTTP endpoints and client configuration.
 
-### Definition
+### Definition [(_source_)](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/core/KtorGen.kt)
 ```kotlin
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
@@ -164,7 +164,7 @@ Marks a single **function** inside a `@KtorGen` interface as participating in co
 
 Allows fine-grained control over how annotations and visibility are transferred from the source definition to the generated method.
 
-### Definition
+### Definition [(_source_)](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/core/KtorGenFunction.kt)
 ```kotlin
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
@@ -250,12 +250,12 @@ suspend fun getUser(id: Int): User = _httpClient.request {
 
 ---
 
-## 🧪 `@KtorGenFunctionKmp` (Experimental)
+## 🧪 `@KtorGenFunctionKmp` ([_Experimental_](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/core/KtorGenExperimental.kt))
 
 This is an **experimental** annotation designed for **Kotlin Multiplatform (KMP)**.
 It allows you to define generated functions compatible across multiple platforms, particularly where expect/actual declarations are used.
 
-### Definition
+### Definition [(_source_)](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/core/KtorGenFunctionKmp.kt)
 ```kotlin
 @KtorGenExperimental
 @Target(AnnotationTarget.FUNCTION)
@@ -317,7 +317,7 @@ public class _AnalyticsApiImpl public constructor(
 
 This annotation is automatically inserted by the Ktorgen compiler into all generated source files.
 
-### Definition
+### Definition [(_source_)](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/core/Generated.kt)
 
 ```kotlin
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.FILE)

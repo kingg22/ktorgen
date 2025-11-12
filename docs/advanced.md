@@ -1,14 +1,14 @@
 
-## 🛠 Request Customization (Advanced*)
+## 🛠 Request Customization
 
 You can customize the outgoing request using one of three supported parameters:
 
-| Parameter type                  | Scope               | Description                                                     |
-|---------------------------------|---------------------|-----------------------------------------------------------------|
-| `HttpRequestBuilder.() -> Unit` | Lambda              | Adds inline modifications before sending the request.           |
-| `HttpRequestBuilder`            | Mutable object      | Passes a preconfigured `HttpRequestBuilder` instance.           |
-| `HttpRequest`                   | Immutable reference | Uses an already built `HttpRequest` for advanced scenarios.     |
-| `HttpRequestData`               | Immutable reference | Uses an already built `HttpRequestData` for advanced scenarios. |
+| Parameter type                  | Scope               | Description                                                                                                                                                      |
+|---------------------------------|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `HttpRequestBuilder.() -> Unit` | Lambda              | Adds inline modifications before sending the request.                                                                                                            |
+| `HttpRequestBuilder`            | Mutable object      | Passes a preconfigured [HttpRequestBuilder](https://api.ktor.io/3.2.x/ktor-client-core/io.ktor.client.request/-http-request-builder/index.html) instance.        |
+| `HttpRequest`                   | Immutable reference | Uses an already built [HttpRequest](https://api.ktor.io/3.2.x/ktor-client-core/io.ktor.client.request/-http-request/index.html) for advanced scenarios.          |
+| `HttpRequestData`               | Immutable reference | Uses an already built [HttpRequestData](https://api.ktor.io/3.2.x/ktor-client-core/io.ktor.client.request/-http-request-data/index.html) for advanced scenarios. |
 
 **Example – Inline customization**
 
@@ -71,4 +71,4 @@ service.getProfile(customRequest)
 
 ## Summary
 - Request customization is available through builder or request parameters.
-- Focus remains on simplicity, extensibility, and clear debugging aligned with Ktor Client’s design.
+- Focus remains on simplicity, extensibility, and clear debugging aligned with [Ktor Client’s design](https://ktor.io/docs/client-requests.html).
