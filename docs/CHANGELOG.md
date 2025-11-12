@@ -5,17 +5,25 @@
 ### Added
 
 ### Changed
-- [Internal] Update **ktor-client-core** dependency to 3.3.2
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
-- Fixed modifiers of interface don't include those in the generated class.
-E.g. `sealed interface Foo` will generate `public class _FooImpl : Foo`. Instead of `public sealed class _FooImpl : Foo`.
 
 ### Security
+
+## [0.5.1-RC] - 2025-11-12
+
+### Changed
+
+- [Internal] Update **ktor-client-core** dependency to 3.3.2
+
+### Fixed
+
+- Fixed modifiers of interface don't include those in the generated class.
+E.g. `sealed interface Foo` will generate `public class _FooImpl : Foo`. Instead of `public sealed class _FooImpl : Foo`.
 
 ## [0.5.0] - 2025-11-11
 
@@ -78,5 +86,6 @@ E.g. `sealed interface Foo` will generate `public class _FooImpl : Foo`. Instead
 
 - No direct security patches, but build pipelines now use **explicit action SHAs** and version-locked dependencies for safety.
 
-[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.5.1-RC...HEAD
+[0.5.1-RC]: https://github.com/kingg22/ktorgen/compare/0.5.0...0.5.1-RC
 [0.5.0]: https://github.com/kingg22/ktorgen/commits/0.5.0
