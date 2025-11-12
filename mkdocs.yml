@@ -30,7 +30,7 @@ repo_name: ktorgen
 repo_url: "https://github.com/kingg22/ktorgen"
 site_dir: build/mkdocs
 strict: true
-site_url: ""
+site_url: "https://kingg22.github.io/ktorgen/"
 use_directory_urls: false
 markdown_extensions:
   - codehilite
