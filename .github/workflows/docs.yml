@@ -27,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          lfs: true # needed for mkdocs include files
           persist-credentials: false
 
       - name: Cache konan
