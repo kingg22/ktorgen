@@ -41,3 +41,9 @@ inline fun String.toRelativePath() = replace('.', File.separatorChar)
     .replace("${File.separatorChar}${File.separatorChar}", File.separator) + ".kt"
 
 val TEST_SERVICE_IMPL_PATH = "com.example.api._TestServiceImpl".toRelativePath()
+
+const val SOURCE_FILE_NAME = "Source.kt"
+
+const val CLASS_TEST_SERVICE_IMPL = "public class _TestServiceImpl"
+
+const val IMPLEMENT_TEST_SERVICE = ") : TestService"

@@ -9,7 +9,7 @@ class InheritanceTest {
     @Test
     fun testInterfaceGeneratedIsExtendedOtherInterfaceAddDelegationInChild() {
         val source = Source.kotlin(
-            "Source.kt",
+            SOURCE_FILE_NAME,
             """
                 package com.example.api
 
@@ -30,11 +30,11 @@ class InheritanceTest {
         )
 
         val expectedGeneratedCode = listOf(
-            "public class _TestServiceImpl",
+            CLASS_TEST_SERVICE_IMPL,
             "superTestService: SuperTestService",
-            ") : TestService",
+            IMPLEMENT_TEST_SERVICE,
             "SuperTestService by superTestService",
-            "override suspend fun test(): String",
+            OVERRIDE_FUN_TEST,
             "override suspend fun test2(): String",
         )
 
@@ -54,7 +54,7 @@ class InheritanceTest {
     @Test
     fun testInterfaceNoGeneratedIsExtendedAddDelegationInChild() {
         val source = Source.kotlin(
-            "Source.kt",
+            SOURCE_FILE_NAME,
             """
                 package com.example.api
 
@@ -84,13 +84,13 @@ class InheritanceTest {
 
         val expectedHeadersArgumentText = listOf(
             "this.method = HttpMethod.Get",
-            "public class _TestServiceImpl",
+            CLASS_TEST_SERVICE_IMPL,
             "superTestService1: SuperTestService1,",
             "superTestService2: SuperTestService2",
-            ") : TestService",
+            IMPLEMENT_TEST_SERVICE,
             "SuperTestService1 by superTestService1",
             "SuperTestService2 by superTestService2",
-            "override suspend fun test(): String",
+            OVERRIDE_FUN_TEST,
             "override suspend fun test3(): String",
         )
 
@@ -108,5 +108,41 @@ class InheritanceTest {
                 generatedFile.contains(expectedLine)
             }
         }
+    }
+
+    @Test
+    fun testSealeadInterfaceGenerateNormalValidClass() {
+        val source = Source.kotlin(
+            SOURCE_FILE_NAME,
+            """
+                package com.example.api
+
+                import io.github.kingg22.ktorgen.http.GET
+
+                sealed interface TestService {
+                    @GET("posts")
+                    suspend fun test(): String
+                }
+            """.trimIndent(),
+        )
+
+        val expectedLines = listOf(
+            CLASS_TEST_SERVICE_IMPL,
+            IMPLEMENT_TEST_SERVICE,
+            OVERRIDE_FUN_TEST,
+        )
+
+        runKtorGenProcessor(source) { compilationResultSubject ->
+            compilationResultSubject.hasNoWarnings()
+            compilationResultSubject.hasErrorCount(0)
+            val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+            for (expectedLine in expectedLines) {
+                generatedFile.contains(expectedLine)
+            }
+        }
+    }
+
+    companion object {
+        private const val OVERRIDE_FUN_TEST = "override suspend fun test(): String"
     }
 }
