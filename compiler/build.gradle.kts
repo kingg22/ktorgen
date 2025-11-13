@@ -34,15 +34,17 @@ kotlin {
 
 dependencies {
     implementation(projects.annotations)
-    implementation(kotlin("reflect"))
+    implementation(libs.kotlin.reflect)
     implementation(libs.ksp.api)
-    implementation(libs.kotlin.poet)
     implementation(libs.kotlin.poet.ksp)
     implementation(libs.ktor.http)
 
-    testImplementation(kotlin("test"))
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.parametrized)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.androidx.room.compiler.testing)
     testImplementation(libs.google.truth)
+    testRuntimeOnly(libs.junit.platform)
     testRuntimeClasspath(libs.ktor.client.core)
 }
 

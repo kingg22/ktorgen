@@ -18,6 +18,8 @@ dokka = "2.1.0"
 jetbrains-changelog = "2.4.0"
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
+# https://docs.junit.org/current/release-notes/index.html#release-notes
+junit-bom = "5.14.1" # IDK why junit6 is not resolved
 # https://github.com/google/truth/releases
 google-truth = "1.4.5"
 # https://github.com/JetBrains/kotlin/releases
@@ -49,12 +51,16 @@ maven-publish = "0.34.0"
 jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrains-jvm-annotations" }
 # compiler
 ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
-kotlin-poet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlin-poet" }
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 kotlin-poet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlin-poet" }
 ktor-http = { group = "io.ktor", name = "ktor-http", version = "3.2.0" }
 # test compiler
 androidx-room-compiler-testing = { group = "androidx.room", name = "room-compiler-processing-testing", version.ref = "androidx-room-compiler-testing" }
 google-truth = { group = "com.google.truth", name = "truth", version.ref = "google-truth" }
+junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit-bom" }
+junit-parametrized = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter" }
+junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher" }
 
 # samples
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
