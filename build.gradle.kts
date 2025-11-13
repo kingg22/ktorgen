@@ -23,10 +23,6 @@ subprojects {
 
     group = "io.github.kingg22"
 
-    dependencyLocking {
-        lockAllConfigurations()
-    }
-
     ktlint {
         // Synchronized with libs.versions.ktlint.pinterest.get()
         version.set("1.7.1")
@@ -75,10 +71,6 @@ tasks.sonar {
 
 ktlint {
     version.set(libs.versions.ktlint.pinterest.get())
-}
-
-dependencyLocking {
-    lockAllConfigurations()
 }
 
 changelog {
