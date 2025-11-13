@@ -1,12 +1,13 @@
 package io.github.kingg22.ktorgen
 
-import androidx.room.compiler.processing.util.Source
-import kotlin.test.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 /** Test related to the [@Part][io.github.kingg22.ktorgen.http.Part] annotation */
 class PartTest {
-    @Test
-    fun testNoPartAnnotationsFoundNoCreateFormData() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testNoPartAnnotationsFoundNoCreateFormData(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -23,7 +24,7 @@ class PartTest {
 
         val noExpectedPartsArgumentText = listOf(MULTIPART_FORM_DATA, PART_DATA_LIST)
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             noExpectedPartsArgumentText.forEach {
@@ -32,8 +33,9 @@ class PartTest {
         }
     }
 
-    @Test
-    fun testPartAnnotationFoundAndAddItToPartsArgument() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testPartAnnotationFoundAndAddItToPartsArgument(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -58,7 +60,7 @@ class PartTest {
             """append("name", """ stringTemplate $$"$it",
         )
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             expectedPartsArgumentText.forEach {
@@ -67,8 +69,9 @@ class PartTest {
         }
     }
 
-    @Test
-    fun testPartAnnotationWithListFoundAddItToPartsArgument() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testPartAnnotationWithListFoundAddItToPartsArgument(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -94,7 +97,7 @@ class PartTest {
             SET_BODY_MULTIPART_FORM_DATA,
         )
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             expectedPartsArgumentText.forEach {
@@ -103,8 +106,9 @@ class PartTest {
         }
     }
 
-    @Test
-    fun testPartAnnotationWithoutMultipartAnnotation() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testPartAnnotationWithoutMultipartAnnotation(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -131,6 +135,7 @@ class PartTest {
 
         runKtorGenProcessor(
             source,
+            kspVersion = kspVersion,
             processorOptions = mapOf(
                 KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Off.intValue.toString(),
             ),
@@ -142,8 +147,9 @@ class PartTest {
         }
     }
 
-    @Test
-    fun testPartMapAnnotationFoundAddItToPartsArgument() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testPartMapAnnotationFoundAddItToPartsArgument(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -170,7 +176,7 @@ class PartTest {
             "append(entry.key, " stringTemplate $$"$value",
         )
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             expectedPartsArgumentText.forEach {
@@ -179,8 +185,9 @@ class PartTest {
         }
     }
 
-    @Test
-    fun testFunctionWithPartAndPartMap() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testFunctionWithPartAndPartMap(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -210,7 +217,7 @@ class PartTest {
             "append(entry.key, " stringTemplate $$"$value",
         )
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             expectedPartsArgumentText.forEach {
@@ -219,8 +226,9 @@ class PartTest {
         }
     }
 
-    @Test
-    fun testPartMapTypeIsNotMapThrowsError() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testPartMapTypeIsNotMapThrowsError(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -238,15 +246,16 @@ class PartTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source) {
-            it.hasNoWarnings()
-            it.hasErrorCount(1)
-            it.hasErrorContaining(KtorGenLogger.PART_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING.trim())
+        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+            result.hasNoWarnings()
+            result.hasErrorCount(1)
+            result.hasErrorContaining(KtorGenLogger.PART_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING.trim())
         }
     }
 
-    @Test
-    fun testPartNullableThrowsError() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testPartNullableThrowsError(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -272,7 +281,7 @@ class PartTest {
             """append("name", """ stringTemplate $$"$it",
         )
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)

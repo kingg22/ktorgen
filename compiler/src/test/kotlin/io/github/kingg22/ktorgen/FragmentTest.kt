@@ -1,13 +1,14 @@
 package io.github.kingg22.ktorgen
 
-import androidx.room.compiler.processing.util.Source
-import kotlin.test.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 /** Tests for [@Fragment][io.github.kingg22.ktorgen.http.Fragment] */
 class FragmentTest {
     // -- on the function target --
-    @Test
-    fun testFragmentNotEncoded_generatesFragmentAssignment() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testFragmentNotEncoded_generatesFragmentAssignment(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -26,7 +27,7 @@ class FragmentTest {
 
         val expected = "this.fragment = " stringTemplate "header"
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -34,8 +35,9 @@ class FragmentTest {
         }
     }
 
-    @Test
-    fun testFragmentEncoded_generatesEncodedFragmentAssignment() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testFragmentEncoded_generatesEncodedFragmentAssignment(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source2.kt",
             """
@@ -54,7 +56,7 @@ class FragmentTest {
 
         val expected = "this.encodedFragment = " stringTemplate "header%20text"
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)

@@ -1,11 +1,12 @@
 package io.github.kingg22.ktorgen
 
-import androidx.room.compiler.processing.util.Source
-import kotlin.test.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class HeaderMapTest {
-    @Test
-    fun testNullableHeaderMapWithStringValueAnnotationFound_AddHeader() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testNullableHeaderMapWithStringValueAnnotationFound_AddHeader(kspVersion: KSPVersion) {
         val source =
             Source.kotlin(
                 "Source.kt",
@@ -24,7 +25,7 @@ class HeaderMapTest {
 
         val expectedHeadersArgumentText = listOf("testParameter?.forEach {", "this.append(it.key, it.value)")
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
@@ -36,8 +37,9 @@ class HeaderMapTest {
         }
     }
 
-    @Test
-    fun testHeaderMapWithNullableStringValueAnnotationFound_AddHeader() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testHeaderMapWithNullableStringValueAnnotationFound_AddHeader(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -59,7 +61,7 @@ class HeaderMapTest {
             "this.append(it.key, value)",
         )
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
@@ -71,8 +73,9 @@ class HeaderMapTest {
         }
     }
 
-    @Test
-    fun testHeaderMapTypeIsNotMapThrowsError() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testHeaderMapTypeIsNotMapThrowsError(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -88,14 +91,15 @@ class HeaderMapTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source) {
-            it.hasErrorCount(1)
-            it.hasErrorContaining(KtorGenLogger.HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING)
+        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+            result.hasErrorCount(1)
+            result.hasErrorContaining(KtorGenLogger.HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING)
         }
     }
 
-    @Test
-    fun testHeaderMapKeysIsNotStringThrowsError() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testHeaderMapKeysIsNotStringThrowsError(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -111,9 +115,9 @@ class HeaderMapTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source) {
-            it.hasErrorCount(1)
-            it.hasErrorContaining(KtorGenLogger.HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING)
+        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+            result.hasErrorCount(1)
+            result.hasErrorContaining(KtorGenLogger.HEADER_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING)
         }
     }
 }

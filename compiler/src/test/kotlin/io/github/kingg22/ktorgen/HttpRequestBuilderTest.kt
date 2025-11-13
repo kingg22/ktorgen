@@ -1,12 +1,12 @@
 package io.github.kingg22.ktorgen
 
-import androidx.room.compiler.processing.util.Source
-import kotlin.test.Test
-import kotlin.test.assertNull
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class HttpRequestBuilderTest {
-    @Test
-    fun testAddRequestBuilderArgumentWhenIsDetectedLambda() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testAddRequestBuilderArgumentWhenIsDetectedLambda(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -24,7 +24,7 @@ class HttpRequestBuilderTest {
 
         val expectedRequestBuilderArgumentText = "builder(this)"
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             generatedFile.contains(expectedRequestBuilderArgumentText)
@@ -32,8 +32,9 @@ class HttpRequestBuilderTest {
         }
     }
 
-    @Test
-    fun testAddRequestBuilderArgumentWhenIsDetectedBuilder() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testAddRequestBuilderArgumentWhenIsDetectedBuilder(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -57,7 +58,7 @@ class HttpRequestBuilderTest {
         // Kotlinpoet can import extension functions with alias
         val expectedRequestBuilderArgumentText = listOf("builder", "request", "requestData")
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -67,8 +68,9 @@ class HttpRequestBuilderTest {
         }
     }
 
-    @Test
-    fun testAddMultipleRequestBuilderArgumentThrowsError() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testAddMultipleRequestBuilderArgumentThrowsError(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -86,15 +88,16 @@ class HttpRequestBuilderTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source) { compilationResultSubject ->
+        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(1)
             compilationResultSubject.hasErrorContaining(KtorGenLogger.ONLY_ONE_HTTP_REQUEST_BUILDER)
         }
     }
 
-    @Test
-    fun testUnknowRoleOfParameterThrowsError() {
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun testUnknowRoleOfParameterThrowsError(kspVersion: KSPVersion) {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -109,11 +112,11 @@ class HttpRequestBuilderTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source) {
-            it.hasErrorContaining(KtorGenLogger.PARAMETER_WITHOUT_ANNOTATION.trim())
-            it.hasErrorCount(1)
-            it.hasNoWarnings()
-            assertNull(it.findGeneratedSource(TEST_SERVICE_IMPL_PATH))
+        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+            result.hasErrorContaining(KtorGenLogger.PARAMETER_WITHOUT_ANNOTATION.trim())
+            result.hasErrorCount(1)
+            result.hasNoWarnings()
+            assertNull(result.findGeneratedSource(TEST_SERVICE_IMPL_PATH))
         }
     }
 }
