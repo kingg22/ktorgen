@@ -21,9 +21,10 @@ internal class UrlSyntaxValidator : ValidatorStrategy {
                 addError(KtorGenLogger.URL_WITH_PATH_VALUE, function)
             }
 
-            if (pathValue.contains("/{2,}".toRegex())) {
+            if (!isValidUrl(pathValue)) {
                 addWarning(
-                    KtorGenLogger.URL_SYNTAX_ERROR + "Current path: $pathValue",
+                    KtorGenLogger.URL_SYNTAX_ERROR +
+                        "Current path ('valid' is a placeholder for runtime values): $pathValue",
                     function,
                 )
             }
@@ -49,5 +50,12 @@ internal class UrlSyntaxValidator : ValidatorStrategy {
                 }
             }
         }
+    }
+
+    private fun isValidUrl(url: String): Boolean = try {
+        io.ktor.http.Url(url)
+        true
+    } catch (_: Throwable) {
+        false
     }
 }
