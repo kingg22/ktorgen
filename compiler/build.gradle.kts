@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.ksp.api)
     implementation(libs.kotlin.poet)
     implementation(libs.kotlin.poet.ksp)
+    implementation(libs.ktor.http)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.androidx.room.compiler.testing)
