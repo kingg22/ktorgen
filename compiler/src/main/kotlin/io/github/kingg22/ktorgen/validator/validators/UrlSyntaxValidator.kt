@@ -30,7 +30,7 @@ internal class UrlSyntaxValidator : ValidatorStrategy {
             }
 
             val basePath = context.classData.basePath
-            val methodPath = function.httpMethodAnnotation.path.removePrefix(basePath)
+            val methodPath = function.httpMethodAnnotation.path
 
             if (hasSuspiciousDoubleSlash(basePath, methodPath)) {
                 addWarning(
@@ -72,13 +72,14 @@ internal class UrlSyntaxValidator : ValidatorStrategy {
         false
     }
 
-    private fun hasSuspiciousDoubleSlash(basePath: String?, methodPath: String): Boolean {
+    private fun hasSuspiciousDoubleSlash(basePath: String?, fullPath: String): Boolean {
         if (basePath.isNullOrBlank()) return false
-        if (methodPath.isBlank()) return false
+        if (fullPath.isBlank()) return false
+        if (basePath == fullPath) return false
 
         return basePath.endsWith("/") &&
-            methodPath.startsWith("/") &&
+            fullPath.removePrefix(basePath).startsWith("/") &&
             basePath != "/" &&
-            methodPath != "/"
+            fullPath != "/"
     }
 }
