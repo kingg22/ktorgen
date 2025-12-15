@@ -1,9 +1,7 @@
 package io.github.kingg22.ktorgen.generator
 
+import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
-import io.github.kingg22.ktorgen.KtorGenProcessor
-import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.arrayType
-import io.github.kingg22.ktorgen.KtorGenProcessor.Companion.listType
 import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
 import io.github.kingg22.ktorgen.applyIf
 import io.github.kingg22.ktorgen.checkImplementation
@@ -12,9 +10,11 @@ import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 
 /** This class contains the logic for generating the body of [ParameterAnnotation] */
-internal class ParameterBodyGenerator {
-    // Snapshot must be initialized after the first round of processor
-    private val partDataKtor = KtorGenProcessor.partDataKtor
+internal class ParameterBodyGenerator(
+    private val partDataKtor: KSType?,
+    private val listType: KSType,
+    private val arrayType: KSType,
+) {
 
     context(blockBuilder: CodeBlock.Builder)
     fun addBuilderCall(parameterList: List<ParameterData>) = blockBuilder.apply {
@@ -178,7 +178,6 @@ internal class ParameterBodyGenerator {
 
                 when {
                     isMap -> headerMapOrVarargMap(isVarargMap, paramAccess, valueIsString, valueIsNullable)
-
                     isPair -> headerPairOrVarargPair(isVarargPair, paramName, valueIsString, valueIsNullable)
                 }
             }?.also { endControlFlow() }
@@ -187,7 +186,9 @@ internal class ParameterBodyGenerator {
     @KtorGenWithoutCoverage // utility function must not throw an exception
     private fun TypeName.rawType(): ClassName = when (this) {
         is ParameterizedTypeName -> this.rawType
+
         is ClassName -> this
+
         Dynamic,
         is LambdaTypeName,
         is TypeVariableName,

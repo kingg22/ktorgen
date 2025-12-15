@@ -1,5 +1,6 @@
 package io.github.kingg22.ktorgen.generator
 
+import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -29,7 +30,12 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
     private val expectFunctionProcessor = ExpectFunctionProcessor()
 
     context(timer: DiagnosticSender)
-    override fun generate(classData: ClassData): List<FileSpec> = timer.work {
+    override fun generate(
+        classData: ClassData,
+        partDataKtor: KSType?,
+        listType: KSType,
+        arrayType: KSType,
+    ): List<FileSpec> = timer.work {
         factoryFunctionGenerator.clean()
         // Initialize builders
         val classBuilder = createClassBuilder(classData)
@@ -44,7 +50,10 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
                 KModifier.valueOf(classData.constructorVisibilityModifier.uppercase()),
             )
         // Needs to refresh the reference of Ktor PartData
-        functionBodyGenerator = FunctionBodyGenerator(httpClient, ParameterBodyGenerator())
+        functionBodyGenerator = FunctionBodyGenerator(
+            httpClient,
+            ParameterBodyGenerator(partDataKtor, listType, arrayType),
+        )
 
         // Generate functions
         val functions = classData.functions.filter { it.goingToGenerate }.toList()
@@ -190,7 +199,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
         )
     }
 
-    context(_: DiagnosticSender,)
+    context(_: DiagnosticSender)
     private fun processExpectFunctions(classData: ClassData, onAddFunction: (FunSpec) -> Unit): List<FileSpec> =
         expectFunctionProcessor.processExpectFunctions(
             classData,
