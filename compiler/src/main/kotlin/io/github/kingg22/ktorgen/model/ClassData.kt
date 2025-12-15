@@ -26,6 +26,7 @@ class ClassData(
     val expectFunctions: Sequence<KSFunctionDeclaration>,
     val isKtorGenAnnotationDeclaredOnClass: Boolean,
     val isKtorGenAnnotationDeclaredOnCompanionClass: Boolean,
+    val qualifiedName: String,
     options: ClassGenerationOptions,
 ) : ClassGenerationOptions(options) {
     val httpClientProperty by lazy {

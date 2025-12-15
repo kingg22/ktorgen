@@ -116,23 +116,29 @@ internal class ClassMapper : DeclarationMapper {
         }
 
         ClassData(
-            ksClassDeclaration = declaration,
-            interfaceName = interfaceName,
             packageNameString = packageName,
+            interfaceName = interfaceName,
+            qualifiedName = declaration.qualifiedName?.asString() ?: run {
+                timer.addStep(
+                    "No qualified name found, building qualified name manually using package name and interface name. This can lead errors in deferred symbols processing.",
+                )
+                "$packageName.$interfaceName"
+            },
             functions = functions,
-            superClasses = filteredSupertypes,
-            properties = properties,
-            modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
             ksFile = timer.requireNotNull(
                 declaration.containingFile,
                 KtorGenLogger.INTERFACE_NOT_HAVE_FILE + interfaceName,
                 declaration,
             ),
+            ksClassDeclaration = declaration,
+            superClasses = filteredSupertypes,
+            properties = properties,
+            modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
             companionObjectDeclaration = companionObject,
-            options = options,
             expectFunctions = expectFunctions.asSequence(),
             isKtorGenAnnotationDeclaredOnClass = ktorGenOnClass,
             isKtorGenAnnotationDeclaredOnCompanionClass = ktorGenOnCompanion,
+            options = options,
         ).also { classData ->
             timer.addStep("Mapper complete of ${classData.interfaceName} to ${classData.generatedName}")
         } to emptyList()
