@@ -29,6 +29,19 @@ internal class UrlSyntaxValidator : ValidatorStrategy {
                 )
             }
 
+            val basePath = context.classData.basePath
+            val methodPath = function.httpMethodAnnotation.path
+
+            if (hasSuspiciousDoubleSlash(basePath, methodPath)) {
+                addWarning(
+                    KtorGenLogger.DOUBLE_SLASH_IN_URL_PATH +
+                        "Base path '$basePath' and endpoint path '$methodPath' " +
+                        "will generate a double slash ('//'). " +
+                        "Consider removing the trailing or leading '/'.",
+                    function,
+                )
+            }
+
             if (function.parameterDataList.count { it.hasAnnotation<ParameterAnnotation.Url>() } > 1 ||
                 function.parameterDataList
                     .firstOrNull { it.hasAnnotation<ParameterAnnotation.Url>() }?.isVararg == true
@@ -57,5 +70,15 @@ internal class UrlSyntaxValidator : ValidatorStrategy {
         true
     } catch (_: Throwable) {
         false
+    }
+
+    private fun hasSuspiciousDoubleSlash(basePath: String?, methodPath: String): Boolean {
+        if (basePath.isNullOrBlank()) return false
+        if (methodPath.isBlank()) return false
+
+        return basePath.endsWith("/") &&
+            methodPath.startsWith("/") &&
+            basePath != "/" &&
+            methodPath != "/"
     }
 }

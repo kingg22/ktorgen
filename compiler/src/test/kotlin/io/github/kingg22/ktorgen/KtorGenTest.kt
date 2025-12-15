@@ -243,7 +243,7 @@ class KtorGenTest {
         ) { compilationResultSubject ->
             compilationResultSubject.hasErrorCount(0)
             compilationResultSubject.hasWarningCount(1)
-            compilationResultSubject.hasWarningContaining(KtorGenLogger.URL_SYNTAX_ERROR)
+            compilationResultSubject.hasWarningContaining(KtorGenLogger.DOUBLE_SLASH_IN_URL_PATH)
             val result = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             result.contains("this.takeFrom(".stringTemplate("/api//user"))
         }

@@ -118,5 +118,6 @@ internal data class KtorGenLogger(private val kspLogger: KSPLogger, private val 
         const val PRIVATE_FUNCTION = "Private function is not valid, make public or internal to can access it."
         const val INVALID_VISIBILITY_MODIFIER =
             "Invalid visibility modifier, see https://kotlinlang.org/docs/visibility-modifiers.html"
+        const val DOUBLE_SLASH_IN_URL_PATH = "Suspicious URL path: possible double '/' detected."
     }
 }
