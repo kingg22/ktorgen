@@ -253,6 +253,39 @@ class KtorGenTest {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(KSPVersion::class)
+    fun validSyntaxOfPathSplitWithBaseAndMethodPass(kspVersion: KSPVersion) {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+                package com.example.api
+
+                import io.github.kingg22.ktorgen.core.KtorGen
+                import io.github.kingg22.ktorgen.http.GET
+
+                @KtorGen(basePath = "/api/v1")
+                interface TestService {
+                    @GET("0/user")
+                    suspend fun test(): String
+                }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(
+            source,
+            kspVersion = kspVersion,
+            processorOptions = mapOf(
+                KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Warnings.intValue.toString(),
+            ),
+        ) { compilationResultSubject ->
+            compilationResultSubject.hasErrorCount(0)
+            compilationResultSubject.hasWarningCount(0)
+            val result = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+            result.contains("this.takeFrom(".stringTemplate("/api/v10/user"))
+        }
+    }
+
     // -- top level factory function --
     @ParameterizedTest
     @EnumSource(KSPVersion::class)
@@ -629,6 +662,7 @@ class KtorGenTest {
                         "This class can only be used as an annotation or as an argument to @OptIn",
                     )
                 }
+
                 KSP2 -> {
                     // Kotlin 2.x + KSP2 debería compilar bien
                     result.hasNoWarnings()
