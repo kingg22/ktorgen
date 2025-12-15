@@ -1,8 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    // Can't use android multiplatform library. See https://github.com/google/ksp/issues/2476
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ksp)
 }
@@ -18,9 +17,11 @@ kotlin {
 
     applyDefaultHierarchyTemplate()
 
-    // TODO add a android app to samples
-    androidTarget {
-        publishLibraryVariants("release")
+    androidLibrary {
+        namespace = "$group.ktorgen.sample"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        packaging.resources.excludes += "/META-INF/*"
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_1_8)
         }
@@ -64,21 +65,19 @@ kotlin {
     mingwX64()
     watchosDeviceArm64()
 
-    sourceSets.commonMain {
-        dependencies {
-            implementation(projects.annotations)
-            implementation(libs.ktor.client.core)
-        }
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+    dependencies {
+        implementation(projects.annotations)
+        implementation(libs.ktor.client.core)
     }
 }
 
 dependencies {
     // ksp(projects.compiler) // KMP project don't use this, only jvm or android kotlin projects
 
-    // don't apply on common main because we going to generate on each platform
+    // don't apply on common main because we going to generate on each platform. STILL FAILING
     // kspCommonMainMetadata(projects.compiler)
-    add("kspAndroidDebug", projects.compiler)
-    add("kspAndroidRelease", projects.compiler)
+    add("kspAndroid", projects.compiler)
     add("kspJvm", projects.compiler)
     add("kspJs", projects.compiler)
     add("kspAndroidNativeX64", projects.compiler)
@@ -94,28 +93,6 @@ dependencies {
     add("kspTvosArm64", projects.compiler)
     add("kspMacosArm64", projects.compiler)
     add("kspMacosX64", projects.compiler)
-}
-
-android {
-    namespace = "$group.ktorgen.sample"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    testOptions {
-        unitTests.all {
-            it.useJUnitPlatform()
-        }
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
 }
 
 ksp {
