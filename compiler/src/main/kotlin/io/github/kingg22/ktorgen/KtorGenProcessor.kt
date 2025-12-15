@@ -10,12 +10,12 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ksp.writeTo
 import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Errors
 import io.github.kingg22.ktorgen.core.KtorGen
-import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.extractor.DeclarationMapper
@@ -33,33 +33,44 @@ import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_PART_DATA
 import io.github.kingg22.ktorgen.validator.Validator
 
-class KtorGenProcessor internal constructor(
+internal class KtorGenProcessor(
     private val env: SymbolProcessorEnvironment,
     private val logger: KtorGenLogger,
     private val ktorGenOptions: KtorGenOptions,
 ) : SymbolProcessor {
-    companion object {
-        lateinit var listType: KSType
-        lateinit var arrayType: KSType
-
-        @JvmStatic
-        var partDataKtor: KSType? = null
-    }
-
     private val timer = DiagnosticTimer("KtorGen Annotations Processor", logger::logging)
     private var roundCount = 0
     private var fatalError = false
-    private val deferredSymbols = mutableListOf<Pair<KSClassDeclaration, List<KSAnnotated>>>()
+    private val deferredSymbols = mutableListOf<DeferredSymbolRef>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         roundCount++
-        if (roundCount == 1) onFirstRound(resolver)
+        if (roundCount == 1) onFirstRound()
 
         try {
             val (fullClassList, kmpExpectFunctions) = extractAndMapDeclaration(
                 resolver,
                 onDeferredSymbols = { ksClassDeclaration, symbols ->
-                    if (symbols.isNotEmpty()) deferredSymbols += ksClassDeclaration to symbols
+                    if (symbols.isEmpty()) return@extractAndMapDeclaration
+
+                    val ownerFqName = ksClassDeclaration
+                        .qualifiedName
+                        ?.asString()
+                        ?: return@extractAndMapDeclaration
+
+                    val unresolvedFqNames = symbols.mapNotNull { symbol ->
+                        when (symbol) {
+                            is KSDeclaration -> symbol.qualifiedName?.asString()
+                            else -> null
+                        }
+                    }
+
+                    if (unresolvedFqNames.isNotEmpty()) {
+                        deferredSymbols += DeferredSymbolRef(
+                            ownerClassFqName = ownerFqName,
+                            unresolvedSymbolFqNames = unresolvedFqNames,
+                        )
+                    }
                 },
             )
             if (roundCount > 1) cleanDeferredSymbolsWith(fullClassList)
@@ -68,7 +79,7 @@ class KtorGenProcessor internal constructor(
 
             if (fullClassList.isEmpty()) {
                 timer.addStep("Skipping round $roundCount, no valid class data extracted")
-                return finishProcessWithDeferredSymbols()
+                return finishProcessWithDeferredSymbols(resolver)
             }
 
             val validationPhase = timer.createPhase("Validation for round $roundCount")
@@ -84,7 +95,7 @@ class KtorGenProcessor internal constructor(
 
             if (validClassData.isEmpty()) {
                 timer.addStep("Skipping round $roundCount, no valid class data found")
-                return finishProcessWithDeferredSymbols()
+                return finishProcessWithDeferredSymbols(resolver)
             }
 
             timer.addStep(
@@ -95,7 +106,7 @@ class KtorGenProcessor internal constructor(
             // 6. Generamos el código
             for (classData in validClassData) {
                 context(timer.createPhase("Code Generation for ${classData.interfaceName} and round $roundCount")) {
-                    generateKsp(classData, env.codeGenerator)
+                    generateKsp(classData, env.codeGenerator, resolver)
                 }
             }
 
@@ -113,29 +124,28 @@ class KtorGenProcessor internal constructor(
             logger.exception(e)
         }
 
-        return finishProcessWithDeferredSymbols()
+        return finishProcessWithDeferredSymbols(resolver)
     }
 
     override fun finish() {
         var message: String? = null
 
         try {
-            // deferred errors, util for debug and accumulative errors
             if (fatalError) {
-                val message = if (ktorGenOptions.errorsLoggingType == Errors) {
+                val msg = if (ktorGenOptions.errorsLoggingType == Errors) {
                     timer.buildErrorsAndWarningsMessage()
                 } else {
                     timer.buildErrorsMessage()
                 }
-                logger.fatalError(message)
+                logger.fatalError(msg)
             } else if (timer.hasWarnings()) {
                 logger.error(timer.buildWarningsMessage(), null)
             }
 
             if (deferredSymbols.isNotEmpty()) {
                 logger.fatalError(
-                    "${KtorGenLogger.KTOR_GEN} " + deferredSymbolsMessage("finish round"),
-                    deferredSymbols.first().first,
+                    "${KtorGenLogger.KTOR_GEN} " +
+                        deferredSymbolsMessage("finish round"),
                 )
             }
 
@@ -152,24 +162,64 @@ class KtorGenProcessor internal constructor(
 
     /** Generate the Impl class using [KotlinpoetGenerator] of ksp */
     context(_: DiagnosticSender)
-    private fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator) {
-        KtorGenGenerator.DEFAULT.generate(classData).forEach { it.writeTo(codeGenerator, false) }
+    private fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator, resolver: Resolver) {
+        val (partDataKtor, listType, arrayType) = resolveTypes(resolver)
+        KtorGenGenerator.DEFAULT.generate(classData, partDataKtor, listType, arrayType).forEach { fileSpec ->
+            fileSpec.writeTo(codeGenerator, false)
+        }
+    }
+
+    /** @return PartData of Ktor Client, Kotlin List, and Array types */
+    @OptIn(KspExperimental::class)
+    context(timer: DiagnosticSender)
+    private fun resolveTypes(resolver: Resolver): Triple<KSType?, KSType, KSType> {
+        val listType = timer.requireNotNull(
+            resolver.getKotlinClassByName("kotlin.collections.List")?.asStarProjectedType(),
+            "Kotlin List type not found",
+        )
+        val arrayType = resolver.builtIns.arrayType
+        val partDataKtor = resolver.getKotlinClassByName(KTOR_CLIENT_PART_DATA)?.asType(emptyList())
+
+        // Only log in the first round, skip repeat the same logs in all rounds
+        timer.addStep("Retrieve KSTypes [Ktor PartData class founded: ${partDataKtor != null}]")
+        return Triple(partDataKtor, listType, arrayType)
     }
 
     /** Print a step message if deferred symbols is not empty in the current round, and return symbols */
-    private fun finishProcessWithDeferredSymbols() = deferredSymbols.flatMap { it.second }.also {
-        if (it.isNotEmpty()) timer.addStep(deferredSymbolsMessage("round $roundCount"))
+    private fun finishProcessWithDeferredSymbols(resolver: Resolver): List<KSAnnotated> {
+        val unresolved = mutableListOf<KSAnnotated>()
+
+        for (ref in deferredSymbols) {
+            for (fqName in ref.unresolvedSymbolFqNames) {
+                resolver.getClassDeclarationByName(
+                    resolver.getKSNameFromString(fqName),
+                )?.let(unresolved::add)
+            }
+        }
+
+        if (unresolved.isNotEmpty()) {
+            timer.addStep(deferredSymbolsMessage("round $roundCount"))
+        }
+
+        return unresolved
     }
 
-    private fun deferredSymbolsMessage(round: String) = "Found ${deferredSymbols.size} unresolved symbols on $round: " +
-        deferredSymbols.joinToString(
+    private fun deferredSymbolsMessage(round: String): String = buildString {
+        append("Found ${deferredSymbols.size} unresolved symbols on $round:\n[")
+
+        deferredSymbols.joinTo(
+            this,
             separator = "\n",
-            prefix = "[",
-            postfix = "]",
-        ) { (declaration, unresolvedSymbols) ->
-            declaration.simpleName.asString() + " => " +
-                unresolvedSymbols.joinToString(prefix = "[", postfix = "]") { s -> s.toString() }
+        ) { ref ->
+            buildString {
+                append(ref.ownerClassFqName)
+                append(" => ")
+                append(ref.unresolvedSymbolFqNames.joinToString(prefix = "[", postfix = "]"))
+            }
         }
+
+        append("\n]")
+    }
 
     private fun getAnnotatedInterfaceTypes(resolver: Resolver) =
         resolver.getSymbolsWithAnnotation(KtorGen::class.qualifiedName!!)
@@ -177,13 +227,15 @@ class KtorGenProcessor internal constructor(
             .mapNotNull { decl ->
                 when (decl.classKind) {
                     ClassKind.INTERFACE -> decl
+
                     ClassKind.OBJECT, ClassKind.CLASS -> if (decl.isCompanionObject) {
                         decl.parentDeclaration as? KSClassDeclaration
                     } else {
                         logger.error(KtorGenLogger.KTOR_GEN_TYPE_NOT_ALLOWED, decl)
                         null
                     }
-                    else -> {
+
+                    ClassKind.ENUM_CLASS, ClassKind.ENUM_ENTRY, ClassKind.ANNOTATION_CLASS -> {
                         logger.error(KtorGenLogger.KTOR_GEN_TYPE_NOT_ALLOWED, decl)
                         null
                     }
@@ -215,34 +267,18 @@ class KtorGenProcessor internal constructor(
             ).filterIsInstance<KSFunctionDeclaration>().distinct()
     }
 
-    @OptIn(KspExperimental::class)
-    private fun onFirstRound(resolver: Resolver) {
+    private fun onFirstRound() {
         timer.start()
-        listType = timer.requireNotNull(
-            resolver.getKotlinClassByName("kotlin.collections.List")?.asStarProjectedType(),
-            "Kotlin List type not found",
-        )
-        arrayType = resolver.builtIns.arrayType
-        partDataKtor = resolver.getKotlinClassByName(KTOR_CLIENT_PART_DATA)?.asType(emptyList())
-        timer.addStep("Retrieve KSTypes [Ktor PartData class founded: ${partDataKtor != null}]")
     }
 
-    private fun cleanDeferredSymbolsWith(fullClassList: Set<ClassData>) {
-        val interfaceNames = fullClassList.mapNotNull { it.ksClassDeclaration.qualifiedName?.asString() }.toSet()
-        val allRelatedNames = fullClassList.flatMap { classData ->
-            classData.superClasses.mapNotNull {
-                val type = it.resolve()
-                if (type.isError) return@mapNotNull null
-                type.declaration.qualifiedName?.asString()
-            }
-        } + interfaceNames
+    private fun cleanDeferredSymbolsWith(validClasses: Set<ClassData>) {
+        val resolvedClassNames = validClasses.map { it.qualifiedName }.toSet()
 
-        deferredSymbols.removeAll { (decl, _) ->
-            allRelatedNames.contains(decl.qualifiedName?.asString())
+        deferredSymbols.removeAll { ref ->
+            ref.ownerClassFqName in resolvedClassNames
         }
     }
 
-    @OptIn(KtorGenExperimental::class)
     private fun extractAndMapDeclaration(
         resolver: Resolver,
         onDeferredSymbols: (KSClassDeclaration, List<KSAnnotated>) -> Unit,
@@ -345,4 +381,5 @@ class KtorGenProcessor internal constructor(
     }
 
     private typealias ClassDataWithKmpExpectFunctions = Pair<Set<ClassData>, List<KSFunctionDeclaration>>
+    private data class DeferredSymbolRef(val ownerClassFqName: String, val unresolvedSymbolFqNames: List<String>)
 }
