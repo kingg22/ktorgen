@@ -88,22 +88,29 @@ class KtorGenFunctionTest {
                 import io.github.kingg22.ktorgen.http.GET
                 import io.github.kingg22.ktorgen.http.Header
 
-                import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+                $REQUIRED_OPTIN_ANNOTATION_DECL
 
                 interface TestService {
-                    @KtorGenFunction(optInAnnotations = [ExperimentalCompilerApi::class])
+                    @KtorGenFunction(optInAnnotations = [${REQUIRED_OPTIN_ANNOTATION}::class])
                     @Header("x", "y")
                     @GET("posts")
-                    @ExperimentalCompilerApi
+                    @${REQUIRED_OPTIN_ANNOTATION}
                     suspend fun test(): String
                 }
             """.trimIndent(),
         )
 
-        val expectedHeadersArgumentText = "@OptIn(ExperimentalCompilerApi::class)"
-        val noExpectedHeadersArgumentText = "@ExperimentalCompilerApi"
+        val expectedHeadersArgumentText = "@OptIn(${REQUIRED_OPTIN_ANNOTATION}::class)"
+        val noExpectedHeadersArgumentText = "@${REQUIRED_OPTIN_ANNOTATION}"
 
         runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+            if (kspVersion == KSP1) {
+                compilationResultSubject.hasErrorCount(1)
+                compilationResultSubject.hasErrorContaining(
+                    "This class can only be used as an annotation or as an argument to @OptIn",
+                )
+                return@runKtorGenProcessor
+            }
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -209,6 +216,13 @@ class KtorGenFunctionTest {
         val noExpectedAnnotationsText = "@OptIn(ExperimentalCompilerApi::class)"
 
         runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+            if (kspVersion == KSP1) {
+                compilationResultSubject.hasErrorCount(1)
+                compilationResultSubject.hasErrorContaining(
+                    "This class can only be used as an annotation or as an argument to @OptIn",
+                )
+                return@runKtorGenProcessor
+            }
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -243,6 +257,13 @@ class KtorGenFunctionTest {
         val noExpectedAnnotationsText = "@OptIn(ExperimentalCompilerApi::class)"
 
         runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+            if (kspVersion == KSP1) {
+                compilationResultSubject.hasErrorCount(1)
+                compilationResultSubject.hasErrorContaining(
+                    "This class can only be used as an annotation or as an argument to @OptIn",
+                )
+                return@runKtorGenProcessor
+            }
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -311,5 +332,13 @@ class KtorGenFunctionTest {
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             generatedFile.contains(expectedCustomHeaderText)
         }
+    }
+
+    companion object {
+        const val REQUIRED_OPTIN_ANNOTATION = "RequiredOptInAnnotation"
+        const val REQUIRED_OPTIN_ANNOTATION_DECL = """
+            @RequiresOptIn("", level = RequiresOptIn.Level.ERROR)
+            annotation class RequiredOptInAnnotation
+        """
     }
 }
