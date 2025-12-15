@@ -10,7 +10,7 @@ class ValidationContext(classData: ClassData) {
     // shortcuts
     val classData = SnapshotClassData(classData)
     val expectFunctions = classData.expectFunctions
-    val functions = classData.functions.asSequence()
+    val functions = classData.functions
 
     class SnapshotClassData private constructor(
         val packageNameString: String,
