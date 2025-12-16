@@ -13,6 +13,7 @@ jobs:
   release:
     # Only release on macOS
     runs-on: macos-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:

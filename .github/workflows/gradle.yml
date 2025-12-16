@@ -9,6 +9,8 @@ name: Kotlin CI with Gradle
 
 on:
   push:
+    tags-ignore:
+      - "*"
   pull_request:
     branches:
       - main
@@ -20,6 +22,7 @@ concurrency:
 
 jobs:
   build:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     permissions:
       contents: read
