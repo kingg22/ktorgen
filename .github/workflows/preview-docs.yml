@@ -15,6 +15,10 @@ concurrency: preview-${{ github.ref }}
 jobs:
   preview_docs:
     if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: write
+      pull-requests: write
+      pages: write
     runs-on: ubuntu-latest
     env:
       TERM: dumb
