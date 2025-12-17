@@ -6,7 +6,6 @@
 - Add [wasmJs target](https://kotlinlang.org/docs/wasm-overview.html) on annotations. This target was missing from
 [all supported targets](https://ktor.io/docs/client-supported-platforms.html) to match the ktor client core.
 - Add warning _suspicious DOUBLE_SLASH_IN_URL_PATH_ when the url path contains double slashes caused by baseUrl + path.
-- Add ProGuard consumer rules for Android target
 
 ### Changed
 - [internal] Add parametrized tests for different KSP versions (K1, K2)
@@ -21,6 +20,7 @@
 ### Fixed
 - [issue #48](https://github.com/kingg22/ktorgen/issues/48): [ERROR] Accessing symbol but the PSI changes KtorGenProcessor.onFinish
 - [issue #55](https://github.com/kingg22/ktorgen/issues/55): [FALSE POSITIVE] URL checker for syntax error is raised in valid URL
+- [issue #61](https://github.com/kingg22/ktorgen/issues/61) Add ProGuard consumer rules for Android target
 
 ### Security
 - Remove dependency verification metadata because it adds an overhead to the development environment
