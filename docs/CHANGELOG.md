@@ -14,7 +14,7 @@
 
 ### Security
 
-## [0.6.0-RC] - 2025-12-17
+## [0.6.0] - 2025-12-17
 
 ### Added
 
@@ -24,7 +24,20 @@
 
 ### Changed
 
-- [internal] Add parametrized tests for different KSP versions (K1, K2)
+- update agp to v8.13.2 by @renovate[bot]
+- ~~[internal] Add parametrized tests for different KSP versions (K1, K2)~~
+- [internal] update softprops/action-gh-release action to v2.5.0 by @renovate[bot]
+- [internal] update dependency org.jlleitschuh.gradle.ktlint to v14 by @renovate[bot]
+- [internal] update dependency com.vanniktech.maven.publish to v0.35.0 by @renovate[bot]
+- [internal] update dependency org.sonarqube to v7.2.1.6560 by @renovate[bot]
+- [internal] update actions/checkout action to v6 by @renovate[bot]
+- [internal] update astral-sh/setup-uv action to v7.1.6 by @renovate[bot]
+- [internal] update gradle to v9.2.1 by @renovate[bot]
+- [internal] update dependency androidx.room:room-compiler-processing-testing to v2.8.4 by @renovate[bot]
+- [internal] update dependency org.jetbrains.changelog to v2.5.0 by @renovate[bot]
+- [internal] update dependency org.jetbrains.kotlinx.kover to v0.9.4 by @renovate[bot]
+- [internal] update actions/cache action to v5 by @renovate[bot]
+- [internal] update actions/upload-artifact action to v6 by @renovate[bot]
 - [internal] Update **KSP plugin** to 2.3.4
 - [internal] Downgrade **ktor-client-core** to 3.3.1
 - [internal] Update **klib api** file and **yarn lock** files
@@ -124,7 +137,8 @@ E.g. `sealed interface Foo` will generate `public class _FooImpl : Foo`. Instead
 
 - No direct security patches, but build pipelines now use **explicit action SHAs** and version-locked dependencies for safety.
 
-[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.6.0-RC...HEAD
+[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/kingg22/ktorgen/compare/0.5.1...0.6.0
 [0.6.0-RC]: https://github.com/kingg22/ktorgen/compare/0.5.1...0.6.0-RC
 [0.5.1]: https://github.com/kingg22/ktorgen/compare/0.5.1-RC...0.5.1
 [0.5.1-RC]: https://github.com/kingg22/ktorgen/compare/0.5.0...0.5.1-RC
