@@ -7,9 +7,13 @@ import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.runKspProcessorTest
 import io.github.kingg22.ktorgen.KSPVersion.KSP1
 import io.github.kingg22.ktorgen.KSPVersion.KSP2
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.io.File
 import androidx.room.compiler.processing.util.Source as RoomSource
 import org.junit.jupiter.api.Assertions as JunitAssertions
+import org.junit.jupiter.api.Test as JupiterTest
+
+private val isCodeQl = System.getenv("CODEQL_ACTION") == "true"
 
 /**
  * Runs the KtorGen processor on the given sources and returns the compilation result using androidx room compiler processing test
@@ -25,6 +29,8 @@ fun runKtorGenProcessor(
     kotlincArguments: List<String> = emptyList(),
     onCompilationResult: (CompilationResultSubject) -> Unit,
 ) {
+    assumeTrue(!(isCodeQl && kspVersion == KSP1))
+
     when (kspVersion) {
         KSP2 -> runKspProcessorTest(
             sources = sources.toList(),
@@ -77,6 +83,6 @@ enum class KSPVersion { KSP1, KSP2 }
 /** Factory to create an input source code can be [Source.kotlin][RoomSource.kotlin] or [Source.java][RoomSource.java] */
 typealias Source = RoomSource
 
-typealias Test = org.junit.jupiter.api.Test
+typealias Test = JupiterTest
 
 inline fun assertNull(actual: Any?, message: String? = null) = JunitAssertions.assertNull(actual, message)
