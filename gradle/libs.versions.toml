@@ -19,7 +19,7 @@ jetbrains-changelog = "2.4.0"
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
 # https://docs.junit.org/current/release-notes/index.html#release-notes
-junit-bom = "5.14.1" # IDK why junit6 is not resolved
+junit-bom = "5.14.1" # wait until Gradle support junit 6 is not resolved yet
 # https://github.com/google/truth/releases
 google-truth = "1.4.5"
 # https://github.com/JetBrains/kotlin/releases
@@ -30,15 +30,16 @@ kotlin-poet = "2.2.0"
 # https://github.com/Kotlin/kotlinx-kover/releases
 kover = "0.9.3"
 # https://github.com/google/ksp/releases
-ksp = "2.2.20-2.0.4"
+ksp-api = "2.2.20-2.0.4"
+ksp-plugin = "2.3.3"
 # https://github.com/pinterest/ktlint/releases
 ktlint-pinterest = "1.7.1"
 # https://github.com/jlleitschuh/ktlint-gradle/releases
 ktlint-plugin = "13.1.0"
 # https://github.com/ktorio/ktor/releases
-ktor = "3.3.2"
+ktor = "3.3.1" # don't update until kotlin 2.2.21 because wasm needs matchs stdlib version
 
-ktorgen-version = "0.5.2-SNAPSHOT"
+ktorgen-version = "0.6.0-SNAPSHOT"
 
 # https://github.com/SonarSource/sonar-scanner-gradle/releases
 sonarqube = "7.0.1.6134"
@@ -50,7 +51,7 @@ maven-publish = "0.34.0"
 # annotation
 jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrains-jvm-annotations" }
 # compiler
-ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
+ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp-api" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 kotlin-poet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlin-poet" }
 ktor-http = { group = "io.ktor", name = "ktor-http", version = "3.2.0" }
@@ -76,7 +77,7 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinxKover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp-plugin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }
 mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
