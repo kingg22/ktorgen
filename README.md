@@ -117,7 +117,7 @@ Real-life migration example: [deezer-client-kt](https://github.com/kingg22/deeze
 - [ ] Add better sample projects.
 - [ ] Improve the internal state of the processor to avoid unnecessary state-sharing between rounds.
 Includes: logging, tracing, validation, deferred symbols, etc.
-- [ ] Add more options to customize the generated code. Includes: include generated annotations, custom kdoc, etc.
+- [ ] Add more options to customize the generated code. Includes: generated annotations, custom KDoc, etc.
 - [ ] Add more options to the behavior of the processor. Includes: fail-fast, no-processing, no-tracing, etc.
 - [ ] Add performance benchmarks.
 - [X] ~~Add test for Fragment annotation~~
