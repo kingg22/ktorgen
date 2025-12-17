@@ -15,7 +15,7 @@ androidx-room-compiler-testing = "2.8.4"
 # https://github.com/Kotlin/dokka/releases
 dokka = "2.1.0"
 # https://github.com/JetBrains/gradle-changelog-plugin/releases
-jetbrains-changelog = "2.4.0"
+jetbrains-changelog = "2.5.0"
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
 # https://docs.junit.org/current/release-notes/index.html#release-notes
