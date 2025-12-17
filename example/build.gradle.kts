@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -22,46 +23,55 @@ kotlin {
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
         packaging.resources.excludes += "/META-INF/*"
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_1_8)
-        }
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
 
     jvm {
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_1_8)
-        }
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
 
     js {
+        browser()
         nodejs()
+        binaries.library()
+    }
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        nodejs()
+        binaries.library()
     }
 
     // Tiers are in accordance with <https://kotlinlang.org/docs/native-target-support.html>
     // Tier 1
+    // iOS
+    iosArm64()
+    iosX64()
+    iosSimulatorArm64()
+    // macOs
     macosX64()
     macosArm64()
-    iosSimulatorArm64()
-    iosX64()
-    iosArm64()
     // Tier 2
-    linuxX64()
-    linuxArm64()
-    watchosSimulatorArm64()
-    watchosX64()
+    // watchOS
     watchosArm32()
     watchosArm64()
-    tvosSimulatorArm64()
-    tvosX64()
+    watchosX64()
+    watchosSimulatorArm64()
+    // tvOS
     tvosArm64()
+    tvosX64()
+    tvosSimulatorArm64()
+    // linux
+    linuxX64()
+    linuxArm64()
     // Tier 3
+    // android native
     androidNativeArm32()
     androidNativeArm64()
     androidNativeX86()
     androidNativeX64()
+    // windows
     mingwX64()
     watchosDeviceArm64()
 
@@ -75,11 +85,12 @@ kotlin {
 dependencies {
     // ksp(projects.compiler) // KMP project don't use this, only jvm or android kotlin projects
 
-    // don't apply on common main because we going to generate on each platform. STILL FAILING
+    // don't apply on common main because we're going to generate on each platform. STILL FAILING
     // kspCommonMainMetadata(projects.compiler)
     add("kspAndroid", projects.compiler)
     add("kspJvm", projects.compiler)
     add("kspJs", projects.compiler)
+    add("kspWasmJs", projects.compiler)
     add("kspAndroidNativeX64", projects.compiler)
     add("kspAndroidNativeX86", projects.compiler)
     add("kspAndroidNativeArm32", projects.compiler)

@@ -1,8 +1,8 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    // Can't use android multiplatform library. See https://github.com/google/ksp/issues/2476
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ksp)
 }
@@ -19,48 +19,60 @@ kotlin {
     applyDefaultHierarchyTemplate()
 
     // TODO add a android app to samples
-    androidTarget {
-        publishLibraryVariants("release")
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_1_8)
-        }
+    androidLibrary {
+        namespace = "$group.ktorgen.sample"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        packaging.resources.excludes.add("/META-INF/*")
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
 
     jvm {
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_1_8)
-        }
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
 
     js {
+        browser()
         nodejs()
+        binaries.library()
+    }
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        nodejs()
+        binaries.library()
     }
 
     // Tiers are in accordance with <https://kotlinlang.org/docs/native-target-support.html>
     // Tier 1
+    // iOS
+    iosArm64()
+    iosX64()
+    iosSimulatorArm64()
+    // macOs
     macosX64()
     macosArm64()
-    iosSimulatorArm64()
-    iosX64()
-    iosArm64()
     // Tier 2
-    linuxX64()
-    linuxArm64()
-    watchosSimulatorArm64()
-    watchosX64()
+    // watchOS
     watchosArm32()
     watchosArm64()
-    tvosSimulatorArm64()
-    tvosX64()
+    watchosX64()
+    watchosSimulatorArm64()
+    // tvOS
     tvosArm64()
+    tvosX64()
+    tvosSimulatorArm64()
+    // linux
+    linuxX64()
+    linuxArm64()
     // Tier 3
+    // android native
     androidNativeArm32()
     androidNativeArm64()
     androidNativeX86()
     androidNativeX64()
+    // windows
     mingwX64()
     watchosDeviceArm64()
 
@@ -75,7 +87,7 @@ kotlin {
 }
 
 dependencies {
-    // ksp(projects.compiler) // KMP project don't use this, only jvm or android kotlin projects
+    // ksp(projects.compiler) // a KMP project doesn't use this, only jvm or android kotlin projects
     // apply on common main because in there is my code
     kspCommonMainMetadata(projects.compiler)
     /*
@@ -93,28 +105,6 @@ dependencies {
     add("kspMingwX64", projects.compiler)
     // add("kspMingwX64Test", project(":test-processor"))
      */
-}
-
-android {
-    namespace = "$group.ktorgen.sample"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    testOptions {
-        unitTests.all {
-            it.useJUnitPlatform()
-        }
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
 }
 
 ksp {
