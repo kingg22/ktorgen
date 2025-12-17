@@ -115,7 +115,7 @@ jobs:
       - if: matrix.build-mode == 'manual'
         name: Manual build
         shell: bash
-        run: ./gradlew build --no-build-cache --no-daemon --max-workers=2
+        run: ./gradlew build --no-build-cache --no-daemon --max-workers=2 --no-parallel
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
