@@ -31,7 +31,7 @@ kotlin-poet = "2.2.0"
 kover = "0.9.3"
 # https://github.com/google/ksp/releases
 ksp-api = "2.2.20-2.0.4"
-ksp-plugin = "2.3.3"
+ksp-plugin = "2.3.4"
 # https://github.com/pinterest/ktlint/releases
 ktlint-pinterest = "1.7.1"
 # https://github.com/jlleitschuh/ktlint-gradle/releases
