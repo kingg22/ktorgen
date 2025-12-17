@@ -1,13 +1,9 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 /** Test related to the [@Field][io.github.kingg22.ktorgen.http.Field] annotation */
 class FieldTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testNoFieldBuilderFoundWhenNoFieldAnnotationsFound(kspVersion: KSPVersion) {
+    @Test
+    fun testNoFieldBuilderFoundWhenNoFieldAnnotationsFound() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -22,7 +18,7 @@ class FieldTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             actualSource.contains("HttpMethod.Get")
@@ -31,9 +27,8 @@ class FieldTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFieldUsedWithoutFormEncodingThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testFieldUsedWithoutFormEncodingThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -49,7 +44,7 @@ class FieldTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             // With strick check this warning is converted to error
             result.hasErrorCount(1)
@@ -57,9 +52,8 @@ class FieldTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFieldAnnotationFoundAndAddItToFieldsBuilder(kspVersion: KSPVersion) {
+    @Test
+    fun testFieldAnnotationFoundAndAddItToFieldsBuilder() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -84,7 +78,7 @@ class FieldTest {
             SET_BODY_FORM_DATA,
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             for (expectedLine in expectedFieldsBuilderText) {
@@ -93,9 +87,8 @@ class FieldTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFieldAnnotationWitDefaultValueFoundAndAddItToFieldsBuilder(kspVersion: KSPVersion) {
+    @Test
+    fun testFieldAnnotationWitDefaultValueFoundAndAddItToFieldsBuilder() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -120,7 +113,7 @@ class FieldTest {
             SET_BODY_FORM_DATA,
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             for (expectedLine in expectedFieldsBuilderText) {
@@ -129,9 +122,8 @@ class FieldTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFieldAnnotationWithListFoundAndAddItToFieldsBuilder(kspVersion: KSPVersion) {
+    @Test
+    fun testFieldAnnotationWithListFoundAndAddItToFieldsBuilder() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -156,7 +148,7 @@ class FieldTest {
             SET_BODY_FORM_DATA,
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             for (expectedLine in expectedFieldsBuilderText) {
@@ -165,9 +157,8 @@ class FieldTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFieldAnnotationWithArrayFoundAndAddItToFieldsBuilder(kspVersion: KSPVersion) {
+    @Test
+    fun testFieldAnnotationWithArrayFoundAndAddItToFieldsBuilder() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -192,7 +183,7 @@ class FieldTest {
             SET_BODY_FORM_DATA,
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             for (expectedLine in expectedFieldsBuilderText) {
@@ -201,9 +192,8 @@ class FieldTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFieldMapAnnotationFoundAndAddItToFieldsBuilder(kspVersion: KSPVersion) {
+    @Test
+    fun testFieldMapAnnotationFoundAndAddItToFieldsBuilder() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -229,7 +219,7 @@ class FieldTest {
             PARAMETERS_APPEND_ENTRY_KEY_VALUE,
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             for (expectedLine in expectedFieldsBuilderText) {
@@ -238,9 +228,8 @@ class FieldTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithFieldAndFieldMap(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithFieldAndFieldMap() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -268,7 +257,7 @@ class FieldTest {
             SET_BODY_FORM_DATA,
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             for (expectedLine in expectedFieldsBuilderText) {
@@ -277,9 +266,8 @@ class FieldTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFieldMapTypeIsNotMapThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testFieldMapTypeIsNotMapThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -297,16 +285,15 @@ class FieldTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(1)
             result.hasErrorContaining(KtorGenLogger.FIELD_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING)
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFieldMapKeysIsNotStringThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testFieldMapKeysIsNotStringThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -324,7 +311,7 @@ class FieldTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(1)
             result.hasErrorContaining(KtorGenLogger.FIELD_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING.trim())

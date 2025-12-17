@@ -1,15 +1,11 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 /** Tests focused on constructor and properties generation (ConstructorGenerator) */
 class ConstructorGeneratorTest {
     // Interface declares HttpClient property -> generated class must override it (not private)
     // and factory function must include it among constructor params.
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun constructorWithHttpClientProperty_overridesAndFactoryContainsIt(kspVersion: KSPVersion) {
+    @Test
+    fun constructorWithHttpClientProperty_overridesAndFactoryContainsIt() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -42,7 +38,7 @@ class ConstructorGeneratorTest {
         val expectedOverrideValorCambiante = "override var valorCambiante: Boolean?"
         val expectedOverrideToken = "override val token: String"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generated = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -57,9 +53,8 @@ class ConstructorGeneratorTest {
 
     // Interface DOES NOT declare HttpClient property -> generated class must keep a private _httpClient
     // and factory function should still expose parameter named httpClient (not _httpClient).
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun constructorWithoutHttpClientProperty_usesPrivateAndFactoryHasHttpClientParam(kspVersion: KSPVersion) {
+    @Test
+    fun constructorWithoutHttpClientProperty_usesPrivateAndFactoryHasHttpClientParam() {
         val source = Source.kotlin(
             "Source2.kt",
             """
@@ -87,7 +82,7 @@ class ConstructorGeneratorTest {
         val expectedOverrideOtraCosa = "override val otraCosa: Boolean"
         val expectedOverrideValorCambiante = "override var valorCambiante: Boolean?"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generated = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)

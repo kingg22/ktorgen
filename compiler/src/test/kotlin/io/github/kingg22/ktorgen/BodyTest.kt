@@ -1,12 +1,8 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 class BodyTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testBodyUsedWithFormUrlEncodedThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testBodyUsedWithFormUrlEncodedThrowsError() {
         val source = Source.kotlin(
             "com.example.api.TestServiceWithFormUrlEncoded.kt",
             """
@@ -24,15 +20,14 @@ class BodyTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasErrorCount(1)
             compilationResultSubject.hasErrorContaining(KtorGenLogger.CONFLICT_BODY_TYPE)
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithBody(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithBody() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -50,7 +45,7 @@ class BodyTest {
 
         val expectedBodyDataArgumentText = "setBody(id)"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
@@ -60,9 +55,8 @@ class BodyTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithBodyAndNotContentTypeHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithBodyAndNotContentTypeHeader() {
         val source = Source.kotlin(
             "TestServiceWithoutContentTypeHeader.kt",
             """
@@ -79,7 +73,7 @@ class BodyTest {
 
         val expectedBodyDataArgumentText = "setBody(id)"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(1)
             compilationResultSubject.hasErrorContaining(KtorGenLogger.CONTENT_TYPE_BODY_UNKNOWN.trim())
@@ -89,9 +83,8 @@ class BodyTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testNoBodyAnnotationsFoundNoGeneratedSetBody(kspVersion: KSPVersion) {
+    @Test
+    fun testNoBodyAnnotationsFoundNoGeneratedSetBody() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -108,7 +101,7 @@ class BodyTest {
 
         val notExpectedBodyDataArgumentText = "setBody("
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
             )

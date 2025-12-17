@@ -1,12 +1,8 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 class TagTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testTagsAnnotationFoundAddedAsAttributeKey(kspVersion: KSPVersion) {
+    @Test
+    fun testTagsAnnotationFoundAddedAsAttributeKey() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -27,7 +23,7 @@ class TagTest {
             """attributes.put(AttributeKey("myTag2"), _value)""",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),

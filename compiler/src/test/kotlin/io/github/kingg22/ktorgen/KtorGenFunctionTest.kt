@@ -1,15 +1,11 @@
 package io.github.kingg22.ktorgen
 
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_COMMENT
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 /** Test related to [@KtorGenFunction][io.github.kingg22.ktorgen.core.KtorGenFunction] annotation */
 class KtorGenFunctionTest {
     // -- propagate annotation --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testOptInAnnotationIsPropagatedInFunctionGenerated(kspVersion: KSPVersion) {
+    @Test
+    fun testOptInAnnotationIsPropagatedInFunctionGenerated() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -32,7 +28,7 @@ class KtorGenFunctionTest {
 
         val expectedHeadersArgumentText = "@OptIn(ExperimentalCompilerApi::class)"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             generatedFile.contains(expectedHeadersArgumentText)
@@ -40,9 +36,8 @@ class KtorGenFunctionTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testRequiredOptInAnnotationIsPropagatedInFunctionGeneratedWithoutOptInAnnotation(kspVersion: KSPVersion) {
+    @Test
+    fun testRequiredOptInAnnotationIsPropagatedInFunctionGeneratedWithoutOptInAnnotation() {
         val source = Source.kotlin(
             "Source2.kt",
             """
@@ -66,7 +61,7 @@ class KtorGenFunctionTest {
         val expectedHeadersArgumentText = "@ExperimentalCompilerApi"
         val noExpectedHeadersArgumentText = "@OptIn(ExperimentalCompilerApi::class)"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -76,9 +71,8 @@ class KtorGenFunctionTest {
     }
 
     // -- optIn annotations --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testRequiredOptInAnnotationIsPropagatedInFunctionGeneratedWithOptInOption(kspVersion: KSPVersion) {
+    @Test
+    fun testRequiredOptInAnnotationIsPropagatedInFunctionGeneratedWithOptInOption() {
         val source = Source.kotlin(
             "Source2.kt",
             """
@@ -103,14 +97,7 @@ class KtorGenFunctionTest {
         val expectedHeadersArgumentText = "@OptIn(${REQUIRED_OPTIN_ANNOTATION}::class)"
         val noExpectedHeadersArgumentText = "@${REQUIRED_OPTIN_ANNOTATION}"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
-            if (kspVersion == KSP1) {
-                compilationResultSubject.hasErrorCount(1)
-                compilationResultSubject.hasErrorContaining(
-                    "This class can only be used as an annotation or as an argument to @OptIn",
-                )
-                return@runKtorGenProcessor
-            }
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -120,9 +107,8 @@ class KtorGenFunctionTest {
     }
 
     // -- generate? --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testGenerateFalseDontGenerateFunction(kspVersion: KSPVersion) {
+    @Test
+    fun testGenerateFalseDontGenerateFunction() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -144,7 +130,7 @@ class KtorGenFunctionTest {
         val expectedText = listOf("public class _TestServiceImpl", ": TestService")
         val nonExpectedText = listOf("override suspend fun test(): String")
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
 
@@ -163,9 +149,8 @@ class KtorGenFunctionTest {
      * When a function is declared on an interface, for implemented classes it's mandatory to override it;
      * the processor should throw an error if the generated file does not override it == no compile
      */
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testGenerateFalseAndMandatoryFunctionThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testGenerateFalseAndMandatoryFunctionThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -185,7 +170,7 @@ class KtorGenFunctionTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { resultSubject ->
+        runKtorGenProcessor(source) { resultSubject ->
             resultSubject.hasNoWarnings()
             resultSubject.hasErrorCount(2) // androidx room compiler counts exception as error, total = 2
             resultSubject.hasErrorContaining(KtorGenLogger.ABSTRACT_FUNCTION_IGNORED.trim())
@@ -193,9 +178,8 @@ class KtorGenFunctionTest {
     }
 
     // -- annotations --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testPassAnnotationsGeneratedFunctionHaveThose(kspVersion: KSPVersion) {
+    @Test
+    fun testPassAnnotationsGeneratedFunctionHaveThose() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -215,14 +199,7 @@ class KtorGenFunctionTest {
         val expectedAnnotationsText = "@ExperimentalCompilerApi"
         val noExpectedAnnotationsText = "@OptIn(ExperimentalCompilerApi::class)"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
-            if (kspVersion == KSP1) {
-                compilationResultSubject.hasErrorCount(1)
-                compilationResultSubject.hasErrorContaining(
-                    "This class can only be used as an annotation or as an argument to @OptIn",
-                )
-                return@runKtorGenProcessor
-            }
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -231,9 +208,8 @@ class KtorGenFunctionTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testPassAnnotationsAndPropagateAnnotationGeneratedFunctionHaveThose(kspVersion: KSPVersion) {
+    @Test
+    fun testPassAnnotationsAndPropagateAnnotationGeneratedFunctionHaveThose() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -256,14 +232,7 @@ class KtorGenFunctionTest {
         val expectedAnnotationsText = listOf("@ExperimentalCompilerApi", "@MyAnnotation")
         val noExpectedAnnotationsText = "@OptIn(ExperimentalCompilerApi::class)"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
-            if (kspVersion == KSP1) {
-                compilationResultSubject.hasErrorCount(1)
-                compilationResultSubject.hasErrorContaining(
-                    "This class can only be used as an annotation or as an argument to @OptIn",
-                )
-                return@runKtorGenProcessor
-            }
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -275,9 +244,8 @@ class KtorGenFunctionTest {
     }
 
     // -- custom header kdoc --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testCustomHeaderOptionIsGenerated(kspVersion: KSPVersion) {
+    @Test
+    fun testCustomHeaderOptionIsGenerated() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -297,7 +265,7 @@ class KtorGenFunctionTest {
         val expectedCustomHeaderText = "* Hello, World!"
         val noExpectedCustomHeaderText = KTORG_GENERATED_COMMENT
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -306,9 +274,8 @@ class KtorGenFunctionTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testDefaultCustomHeaderIsGenerated(kspVersion: KSPVersion) {
+    @Test
+    fun testDefaultCustomHeaderIsGenerated() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -326,7 +293,7 @@ class KtorGenFunctionTest {
 
         val expectedCustomHeaderText = KTORG_GENERATED_COMMENT
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)

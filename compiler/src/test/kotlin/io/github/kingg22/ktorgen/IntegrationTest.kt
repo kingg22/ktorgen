@@ -1,12 +1,8 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 class IntegrationTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun getWithBodyThrowWarningsAsError(kspVersion: KSPVersion) {
+    @Test
+    fun getWithBodyThrowWarningsAsError() {
         val source = Source.kotlin(
             "foo.bar.MyGetWarnings.kt",
             """
@@ -24,15 +20,14 @@ class IntegrationTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasError()
             compilationResultSubject.hasErrorCount(1)
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun validGetGeneratesImplAndCanBeReferenced(kspVersion: KSPVersion) {
+    @Test
+    fun validGetGeneratesImplAndCanBeReferenced() {
         val api = Source.kotlin(
             "foo.bar.MyApi.kt",
             """
@@ -60,14 +55,13 @@ class IntegrationTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(api, useGenerated, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(api, useGenerated) { compilationResultSubject ->
             compilationResultSubject.hasErrorCount(0)
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun privateInterfaceCantGeneratedThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun privateInterfaceCantGeneratedThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -80,7 +74,7 @@ class IntegrationTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(1)
             compilationResultSubject.hasErrorContaining(KtorGenLogger.PRIVATE_INTERFACE_CANT_GENERATE.trim())

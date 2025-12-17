@@ -1,13 +1,9 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 /** Test related to Url construction */
 class UrlTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithGet(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithGet() {
         val source = Source.kotlin(
             "com.example.api.TestService.kt",
             """
@@ -24,16 +20,15 @@ class UrlTest {
 
         val expectedFunctionSource = "takeFrom(".stringTemplate("user") + ")"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject
                 .generatedSourceFileWithPath("com.example.api._TestServiceImpl".toRelativePath())
                 .contains(expectedFunctionSource)
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithGetAndPath(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithGetAndPath() {
         val source = Source.kotlin(
             "com.example.api.TestServiceWithPath.kt",
             """
@@ -50,7 +45,7 @@ class UrlTest {
 
         val expectedFunctionText = "takeFrom(".stringTemplate($$"""user/${"$userId".encodeURLPath()}""") + ")"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceWithPathImpl".toRelativePath(),
             )
@@ -58,9 +53,8 @@ class UrlTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithGETAndPathWithInferredName(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithGETAndPathWithInferredName() {
         val source = Source.kotlin(
             "com.example.api.TestServiceWithPathInferredName.kt",
             """
@@ -78,7 +72,7 @@ class UrlTest {
 
         val expectedFunctionText = "takeFrom(".stringTemplate($$"""user/${"$userId".encodeURLPath()}""") + ")"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             val generated = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceWithPathInferredNameImpl".toRelativePath(),
             )
@@ -86,9 +80,8 @@ class UrlTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithGetAndUrl(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithGetAndUrl() {
         val source = Source.kotlin(
             "com.example.api.TestServiceWithUrl.kt",
             """
@@ -106,7 +99,7 @@ class UrlTest {
 
         val expectedFunctionSource = "takeFrom(url)"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             val generated = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceWithUrlImpl".toRelativePath(),
             )
@@ -115,9 +108,8 @@ class UrlTest {
     }
 
     // Multiple
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testGetNoHavePathSuccess(kspVersion: KSPVersion) {
+    @Test
+    fun testGetNoHavePathSuccess() {
         val source = Source.kotlin(
             "com.example.api.TestServiceGetEmpty.kt",
             """
@@ -131,7 +123,7 @@ class UrlTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject
                 .generatedSourceFileWithPath("com.example.api._TestServiceGetEmptyImpl".toRelativePath())
@@ -139,9 +131,8 @@ class UrlTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testWhenMultipleParameterWithUrlAnnotationThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testWhenMultipleParameterWithUrlAnnotationThrowsError() {
         val source = Source.kotlin(
             "com.example.api.TestServiceMultipleUrl.kt",
             """
@@ -157,16 +148,15 @@ class UrlTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasError()
             compilationResultSubject.hasErrorCount(1)
             compilationResultSubject.hasErrorContaining(KtorGenLogger.MULTIPLE_URL_FOUND.trim())
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithGetAndAlreadyEncodedPath(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithGetAndAlreadyEncodedPath() {
         val source = Source.kotlin(
             "com.example.api.TestServiceWithEncodedPath.kt",
             """
@@ -183,7 +173,7 @@ class UrlTest {
 
         val expectedFunctionText = "takeFrom(".stringTemplate($$"user/$id") + ")"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceWithEncodedPathImpl".toRelativePath(),
@@ -192,9 +182,8 @@ class UrlTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testPathParameterIsNullableThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testPathParameterIsNullableThrowsError() {
         val source = Source.kotlin(
             "com.example.api.TestServiceWithNullablePath.kt",
             """
@@ -210,15 +199,14 @@ class UrlTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasErrorCount(1)
             compilationResultSubject.hasErrorContaining(KtorGenLogger.PATH_PARAMETER_TYPE_MAY_NOT_BE_NULLABLE.trim())
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testPathWithEmptyHttpAnnotationValueThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testPathWithEmptyHttpAnnotationValueThrowsError() {
         val source = Source.kotlin(
             "com.example.api.TestServiceWithEmptyHttpAnnotationValue.kt",
             """
@@ -234,7 +222,7 @@ class UrlTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasErrorCount(1)
             compilationResultSubject.hasErrorContaining(KtorGenLogger.PATH_CAN_ONLY_BE_USED_WITH_RELATIVE_URL_ON)
         }

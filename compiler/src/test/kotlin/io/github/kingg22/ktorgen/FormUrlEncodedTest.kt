@@ -1,12 +1,8 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 class FormUrlEncodedTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFormUrlEncodedUsedWithNonBodyMethodThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testFormUrlEncodedUsedWithNonBodyMethodThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -25,7 +21,7 @@ class FormUrlEncodedTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { resultSubject ->
+        runKtorGenProcessor(source) { resultSubject ->
             resultSubject.hasErrorCount(1)
             resultSubject.hasNoWarnings()
             resultSubject.hasErrorContaining(KtorGenLogger.FORM_ENCODED_ANNOTATION_MISMATCH_HTTP_METHOD.trim())
@@ -33,9 +29,8 @@ class FormUrlEncodedTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFormUrlEncodedUsedWithNoFieldAnnotationThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testFormUrlEncodedUsedWithNoFieldAnnotationThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -53,16 +48,15 @@ class FormUrlEncodedTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { resultSubject ->
+        runKtorGenProcessor(source) { resultSubject ->
             resultSubject.hasErrorCount(1)
             resultSubject.hasNoWarnings()
             resultSubject.hasErrorContaining(KtorGenLogger.FORM_ENCODED_MUST_CONTAIN_AT_LEAST_ONE_FIELD.trim())
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFormUrlEncodedUsedAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testFormUrlEncodedUsedAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -82,7 +76,7 @@ class FormUrlEncodedTest {
 
         val expectedHeaderCode = """this.contentType(ContentType.Application.FormUrlEncoded)"""
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generated = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
@@ -91,9 +85,8 @@ class FormUrlEncodedTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun whenFormUrlEncodedUsedWithMultipart_ThrowCompilationError(kspVersion: KSPVersion) {
+    @Test
+    fun whenFormUrlEncodedUsedWithMultipart_ThrowCompilationError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -113,7 +106,7 @@ class FormUrlEncodedTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasErrorCount(1)
             result.hasErrorContaining(KtorGenLogger.CONFLICT_BODY_TYPE)
         }

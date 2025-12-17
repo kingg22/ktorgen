@@ -3,17 +3,11 @@
 package io.github.kingg22.ktorgen
 
 import androidx.room.compiler.processing.util.CompilationResultSubject
-import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.runKspProcessorTest
-import io.github.kingg22.ktorgen.KSPVersion.KSP1
-import io.github.kingg22.ktorgen.KSPVersion.KSP2
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.io.File
 import androidx.room.compiler.processing.util.Source as RoomSource
 import org.junit.jupiter.api.Assertions as JunitAssertions
 import org.junit.jupiter.api.Test as JupiterTest
-
-private val isCodeQl = System.getenv("CODEQL_ACTION") == "true"
 
 /**
  * Runs the KtorGen processor on the given sources and returns the compilation result using androidx room compiler processing test
@@ -22,33 +16,18 @@ private val isCodeQl = System.getenv("CODEQL_ACTION") == "true"
  */
 fun runKtorGenProcessor(
     vararg sources: Source,
-    kspVersion: KSPVersion,
     processorOptions: Map<String, String> = mapOf(
         KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Errors.intValue.toString(),
     ),
     kotlincArguments: List<String> = emptyList(),
     onCompilationResult: (CompilationResultSubject) -> Unit,
-) {
-    assumeTrue(!(isCodeQl && kspVersion == KSP1))
-
-    when (kspVersion) {
-        KSP2 -> runKspProcessorTest(
-            sources = sources.toList(),
-            options = processorOptions,
-            symbolProcessorProviders = listOf(KtorGenSymbolProcessorProvider()),
-            kotlincArguments = listOf("-Wextra", "-Werror") + kotlincArguments,
-            onCompilationResult = onCompilationResult,
-        )
-
-        KSP1 -> runKspProcessorTest(
-            sources = sources.toList(),
-            symbolProcessorProviders = listOf(KtorGenSymbolProcessorProvider()),
-            kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS + kotlincArguments,
-            options = mapOf("ksp.useKsp2" to "false") + processorOptions,
-            onCompilationResult = onCompilationResult,
-        )
-    }
-}
+) = runKspProcessorTest(
+    sources = sources.toList(),
+    options = processorOptions,
+    symbolProcessorProviders = listOf(KtorGenSymbolProcessorProvider()),
+    kotlincArguments = listOf("-Wextra", "-Werror") + kotlincArguments,
+    onCompilationResult = onCompilationResult,
+)
 
 /** @return `this"""str"""` */
 inline infix fun String.stringTemplate(str: String) = this + stringTemplate(string = str)
@@ -68,14 +47,6 @@ const val SOURCE_FILE_NAME = "Source.kt"
 const val CLASS_TEST_SERVICE_IMPL = "public class _TestServiceImpl"
 
 const val IMPLEMENT_TEST_SERVICE = ") : TestService"
-
-/**
- * Ksp version supported by KtorGen processor and going to test.
- *
- * This is for unit tests.
- * In integration test can probe with real dependency and Ktor client versions
- */
-enum class KSPVersion { KSP1, KSP2 }
 
 // abstract of the library.
 // only have junit parametrized in other files!

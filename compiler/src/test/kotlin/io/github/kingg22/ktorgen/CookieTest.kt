@@ -1,13 +1,9 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 class CookieTest {
     // -- positives --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun cookieOnFunctionGeneratesCookieCall(kspVersion: KSPVersion) {
+    @Test
+    fun cookieOnFunctionGeneratesCookieCall() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -51,7 +47,7 @@ class CookieTest {
             stringTemplate("SameSite") + (" to " stringTemplate "Strict"),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generated = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -61,9 +57,8 @@ class CookieTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun cookieOnParameterGeneratesCookieCallUsingParamValue(kspVersion: KSPVersion) {
+    @Test
+    fun cookieOnParameterGeneratesCookieCallUsingParamValue() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -90,7 +85,7 @@ class CookieTest {
             "extensions = emptyMap()",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generated = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -101,9 +96,8 @@ class CookieTest {
     }
 
     // -- negatives --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun cookieOnFunctionWithoutValueThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun cookieOnFunctionWithoutValueThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -122,16 +116,15 @@ class CookieTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasWarningCount(0)
             compilationResultSubject.hasErrorCount(2) // androidx room compiler count exception as error, total = 2
             compilationResultSubject.hasErrorContaining(KtorGenLogger.COOKIE_ON_FUNCTION_WITHOUT_VALUE.trim())
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun varargParameterWithMultipleCookieAnnotationsWarns(kspVersion: KSPVersion) {
+    @Test
+    fun varargParameterWithMultipleCookieAnnotationsWarns() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -149,7 +142,7 @@ class CookieTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(1)
             result.hasErrorContaining(KtorGenLogger.VARARG_PARAMETER_EXPERIMENTAL.trim())

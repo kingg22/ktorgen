@@ -1,12 +1,8 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 class QueryTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testNotEncodedQueryAnnotationAndEncoded(kspVersion: KSPVersion) {
+    @Test
+    fun testNotEncodedQueryAnnotationAndEncoded() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -33,7 +29,7 @@ class QueryTest {
             """encodedParameters.append("testQuery2", """ stringTemplate $$"$it",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
@@ -44,9 +40,8 @@ class QueryTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testQueryAnnotationWithList(kspVersion: KSPVersion) {
+    @Test
+    fun testQueryAnnotationWithList() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -68,7 +63,7 @@ class QueryTest {
             """encodedParameters.append("user", """ stringTemplate $$"$it",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
@@ -79,9 +74,8 @@ class QueryTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testQueryNamesFound(kspVersion: KSPVersion) {
+    @Test
+    fun testQueryNamesFound() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -103,7 +97,7 @@ class QueryTest {
             "parameters.appendAll(".stringTemplate($$"$testQueryName2") + ", emptyList())",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
@@ -115,9 +109,8 @@ class QueryTest {
     }
 
     // TODO can add a query with value int and convert to string? Can be nullable?
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testNotEncodedQueryMapAnnotationAndEncodedFound(kspVersion: KSPVersion) {
+    @Test
+    fun testNotEncodedQueryMapAnnotationAndEncodedFound() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -145,7 +138,7 @@ class QueryTest {
             "encodedParameters.append(entry.key, " stringTemplate $$"$value",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
@@ -157,9 +150,8 @@ class QueryTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithQueryAndQueryNameAndQueryMap(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithQueryAndQueryNameAndQueryMap() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -191,7 +183,7 @@ class QueryTest {
             "encodedParameters.append(entry.key, " stringTemplate $$"$value",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
@@ -202,9 +194,8 @@ class QueryTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testQueryMapTypeIsNotMapThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testQueryMapTypeIsNotMapThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -220,15 +211,14 @@ class QueryTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorContaining(KtorGenLogger.QUERY_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING)
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testQueryMapKeysIsNotStringThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testQueryMapKeysIsNotStringThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -244,7 +234,7 @@ class QueryTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorContaining(KtorGenLogger.QUERY_MAP_PARAMETER_TYPE_MUST_BE_MAP_PAIR_STRING)
         }

@@ -1,15 +1,11 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 /** Tests focused on validating return types and the generated bodies. */
 class ReturnTypeTest {
 
     // -- suspend + simple type --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun suspendSimpleReturnGeneratesBodyCall(kspVersion: KSPVersion) {
+    @Test
+    fun suspendSimpleReturnGeneratesBodyCall() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -26,7 +22,7 @@ class ReturnTypeTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(0)
             val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -37,9 +33,8 @@ class ReturnTypeTest {
     }
 
     // -- suspend + Result<T> --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun suspendResultReturnGeneratesTryCatch(kspVersion: KSPVersion) {
+    @Test
+    fun suspendResultReturnGeneratesTryCatch() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -56,7 +51,7 @@ class ReturnTypeTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(0)
             val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -71,9 +66,8 @@ class ReturnTypeTest {
     }
 
     // -- non-suspend + Flow<T> is allowed and generates flow { ... } --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun flowReturnNonSuspendAllowedAndGeneratesFlowBody(kspVersion: KSPVersion) {
+    @Test
+    fun flowReturnNonSuspendAllowedAndGeneratesFlowBody() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -91,7 +85,7 @@ class ReturnTypeTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(0)
             val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -105,9 +99,8 @@ class ReturnTypeTest {
     }
 
     // -- non-suspend + Flow<Result<T>> produces try/catch inside flow and emit Result --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun flowResultReturnGeneratesFlowResultBody(kspVersion: KSPVersion) {
+    @Test
+    fun flowResultReturnGeneratesFlowResultBody() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -125,7 +118,7 @@ class ReturnTypeTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(0)
             val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -140,9 +133,8 @@ class ReturnTypeTest {
     }
 
     // -- validation: non-suspend and non-Flow must be an error --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun nonSuspendNonFlowThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun nonSuspendNonFlowThrowsError() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -159,7 +151,7 @@ class ReturnTypeTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(1)
             // Message is prefixed by constant and finishes with a short return type name
@@ -168,9 +160,8 @@ class ReturnTypeTest {
     }
 
     // -- suspend + Unit --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun suspendUnitReturnGeneratesBodyWithoutReturnValue(kspVersion: KSPVersion) {
+    @Test
+    fun suspendUnitReturnGeneratesBodyWithoutReturnValue() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -187,7 +178,7 @@ class ReturnTypeTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(0)
             val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -201,9 +192,8 @@ class ReturnTypeTest {
     }
 
     // -- suspend + Result<Unit> --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun suspendResultUnitReturnGeneratesTryCatchWithoutBodyCall(kspVersion: KSPVersion) {
+    @Test
+    fun suspendResultUnitReturnGeneratesTryCatchWithoutBodyCall() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -220,7 +210,7 @@ class ReturnTypeTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(0)
             val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -236,9 +226,8 @@ class ReturnTypeTest {
     }
 
     // -- non-suspend + Flow<Unit> --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun flowUnitReturnGeneratesFlowBodyWithoutBodyCall(kspVersion: KSPVersion) {
+    @Test
+    fun flowUnitReturnGeneratesFlowBodyWithoutBodyCall() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -256,7 +245,7 @@ class ReturnTypeTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(0)
             val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -270,9 +259,8 @@ class ReturnTypeTest {
     }
 
     // -- non-suspend + Flow<Result<Unit>> --
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun flowResultUnitReturnGeneratesTryCatchWithEmitResult(kspVersion: KSPVersion) {
+    @Test
+    fun flowResultUnitReturnGeneratesTryCatchWithEmitResult() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -290,7 +278,7 @@ class ReturnTypeTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorCount(0)
             val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)

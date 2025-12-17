@@ -1,13 +1,9 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 /** Test related to interface extends other interfaces */
 class InheritanceTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testInterfaceGeneratedIsExtendedOtherInterfaceAddDelegationInChild(kspVersion: KSPVersion) {
+    @Test
+    fun testInterfaceGeneratedIsExtendedOtherInterfaceAddDelegationInChild() {
         val source = Source.kotlin(
             SOURCE_FILE_NAME,
             """
@@ -38,7 +34,7 @@ class InheritanceTest {
             "override suspend fun test2(): String",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             compilationResultSubject.generatedSourceFileWithPath(
@@ -51,9 +47,8 @@ class InheritanceTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testInterfaceNoGeneratedIsExtendedAddDelegationInChild(kspVersion: KSPVersion) {
+    @Test
+    fun testInterfaceNoGeneratedIsExtendedAddDelegationInChild() {
         val source = Source.kotlin(
             SOURCE_FILE_NAME,
             """
@@ -95,7 +90,7 @@ class InheritanceTest {
             "override suspend fun test3(): String",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             assertNull(
@@ -111,9 +106,8 @@ class InheritanceTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testSealeadInterfaceGenerateNormalValidClass(kspVersion: KSPVersion) {
+    @Test
+    fun testSealeadInterfaceGenerateNormalValidClass() {
         val source = Source.kotlin(
             SOURCE_FILE_NAME,
             """
@@ -134,7 +128,7 @@ class InheritanceTest {
             OVERRIDE_FUN_TEST,
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)

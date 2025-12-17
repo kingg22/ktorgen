@@ -1,12 +1,8 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 class HeaderTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testAllHeaderAnnotations(kspVersion: KSPVersion) {
+    @Test
+    fun testAllHeaderAnnotations() {
         val source = Source.kotlin(
             "com.example.api.TestService.kt",
             """
@@ -35,7 +31,7 @@ class HeaderTest {
             """this.append("a", "b")""",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val resultFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -45,9 +41,8 @@ class HeaderTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testHeadersAnnotationFoundAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testHeadersAnnotationFoundAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -69,7 +64,7 @@ class HeaderTest {
             """this.append("x", "y")""",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)

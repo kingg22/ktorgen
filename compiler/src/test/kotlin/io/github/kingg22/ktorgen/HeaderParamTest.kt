@@ -1,12 +1,8 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 class HeaderParamTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testNoHeaderAnnotationsFoundNoAddItToRequestBuilder(kspVersion: KSPVersion) {
+    @Test
+    fun testNoHeaderAnnotationsFoundNoAddItToRequestBuilder() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -23,7 +19,7 @@ class HeaderParamTest {
 
         val notExpectedHeadersArgumentText = "this.headers {"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -32,9 +28,8 @@ class HeaderParamTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testHeaderAnnotationWithNonNullableStringFoundAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testHeaderAnnotationWithNonNullableStringFoundAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -55,7 +50,7 @@ class HeaderParamTest {
             $$"""this.append("testHeader", "$testParameter")""",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -65,9 +60,8 @@ class HeaderParamTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testHeaderAnnotationWithNullableStringFoundAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testHeaderAnnotationWithNullableStringFoundAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -85,7 +79,7 @@ class HeaderParamTest {
 
         val expectedHeadersArgumentText = $$"""this.append("testHeader", "$testParameter")"""
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -93,9 +87,8 @@ class HeaderParamTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testHeaderAnnotationWithNonNullableIntFoundAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testHeaderAnnotationWithNonNullableIntFoundAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -113,7 +106,7 @@ class HeaderParamTest {
 
         val expectedHeadersArgumentText = $$"""append("testHeader", "$testParameter")"""
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -121,9 +114,8 @@ class HeaderParamTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testHeaderAnnotationWithNullableIntFoundAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testHeaderAnnotationWithNullableIntFoundAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -144,7 +136,7 @@ class HeaderParamTest {
             $$"""this.append("testHeader", "$testParameter")""",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -154,9 +146,8 @@ class HeaderParamTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testHeaderAnnotationWithListTypeFoundAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testHeaderAnnotationWithListTypeFoundAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -177,7 +168,7 @@ class HeaderParamTest {
             $$"""this.append("testHeader", "$it")""",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -187,9 +178,8 @@ class HeaderParamTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testHeaderAnnotationWithNullableListTypeFoundAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testHeaderAnnotationWithNullableListTypeFoundAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -210,7 +200,7 @@ class HeaderParamTest {
             $$"""append("testHeader", "$it")""",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -220,9 +210,8 @@ class HeaderParamTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testHeaderAnnotationWithNullableListTypeAndNullableIntFoundAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testHeaderAnnotationWithNullableListTypeAndNullableIntFoundAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -243,7 +232,7 @@ class HeaderParamTest {
             $$"""append("testHeader", "$it")""",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
@@ -253,9 +242,8 @@ class HeaderParamTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testHeaderAnnotationWithArrayTypeFoundAddHeader(kspVersion: KSPVersion) {
+    @Test
+    fun testHeaderAnnotationWithArrayTypeFoundAddHeader() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -276,7 +264,7 @@ class HeaderParamTest {
             """append("testHeader", it)""",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)

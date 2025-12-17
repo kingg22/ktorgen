@@ -1,12 +1,8 @@
 package io.github.kingg22.ktorgen
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-
 class HttpMethodTest {
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testFunctionWithGET(kspVersion: KSPVersion) {
+    @Test
+    fun testFunctionWithGET() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -22,7 +18,7 @@ class HttpMethodTest {
         )
         val expectedSource = "method = HttpMethod.Get"
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
@@ -31,9 +27,8 @@ class HttpMethodTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testCustomHttpMethod(kspVersion: KSPVersion) {
+    @Test
+    fun testCustomHttpMethod() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -51,7 +46,7 @@ class HttpMethodTest {
 
         val expectedSource = """this.method = HttpMethod.parse("CUSTOM")"""
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
@@ -60,9 +55,8 @@ class HttpMethodTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testCustomHttpMethodWithBody(kspVersion: KSPVersion) {
+    @Test
+    fun testCustomHttpMethodWithBody() {
         val source = Source.kotlin(
             "Source.kt",
             """
@@ -86,7 +80,7 @@ class HttpMethodTest {
             "this.setBody(body)",
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { compilationResultSubject ->
+        runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val actualSource = compilationResultSubject.generatedSourceFileWithPath(
                 "com.example.api._TestServiceImpl".toRelativePath(),
@@ -97,9 +91,8 @@ class HttpMethodTest {
         }
     }
 
-    @ParameterizedTest
-    @EnumSource(KSPVersion::class)
-    fun testMultipleHttpMethodsFoundThrowsError(kspVersion: KSPVersion) {
+    @Test
+    fun testMultipleHttpMethodsFoundThrowsError() {
         val source = Source.kotlin(
             "com.example.api.GithubService.kt",
             """
@@ -116,7 +109,7 @@ class HttpMethodTest {
             """.trimIndent(),
         )
 
-        runKtorGenProcessor(source, kspVersion = kspVersion) { result ->
+        runKtorGenProcessor(source) { result ->
             result.hasNoWarnings()
             result.hasErrorContaining(KtorGenLogger.ONLY_ONE_HTTP_METHOD_IS_ALLOWED.trim())
         }
