@@ -3,21 +3,34 @@
 ## [Unreleased]
 
 ### Added
-- Add [wasmJs target](https://kotlinlang.org/docs/wasm-overview.html) on annotations. This target was missing from
-[all supported targets](https://ktor.io/docs/client-supported-platforms.html) to match the ktor client core.
-- Add warning _suspicious DOUBLE_SLASH_IN_URL_PATH_ when the url path contains double slashes caused by baseUrl + path.
 
 ### Changed
-- [internal] Add parametrized tests for different KSP versions (K1, K2)
-- [internal] Update **KSP plugin** to 2.3.4
-- [internal] Downgrade **ktor-client-core** to 3.3.1
-- [internal] Update **klib api** file and **yarn lock** files
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+### Security
+
+## [0.6.0-RC] - 2025-12-17
+
+### Added
+
+- Add [wasmJs target](https://kotlinlang.org/docs/wasm-overview.html) on annotations. This target was missing from
+[all supported targets](https://ktor.io/docs/client-supported-platforms.html) to match the ktor client core.
+- Add warning _suspicious DOUBLE_SLASH_IN_URL_PATH_ when the url path contains double slashes caused by baseUrl + path.
+
+### Changed
+
+- [internal] Add parametrized tests for different KSP versions (K1, K2)
+- [internal] Update **KSP plugin** to 2.3.4
+- [internal] Downgrade **ktor-client-core** to 3.3.1
+- [internal] Update **klib api** file and **yarn lock** files
+
+### Fixed
+
 - [issue #48](https://github.com/kingg22/ktorgen/issues/48): [ERROR] Accessing symbol but the PSI changes KtorGenProcessor.onFinish
 - [issue #55](https://github.com/kingg22/ktorgen/issues/55): [FALSE POSITIVE] URL checker for syntax error is raised in valid URL
 - [issue #61](https://github.com/kingg22/ktorgen/issues/61) Add ProGuard consumer rules for Android target
@@ -25,6 +38,7 @@
 is not valid when have an expect KMP function
 
 ### Security
+
 - Remove dependency verification metadata because it adds an overhead to the development environment
 
 ## [0.5.1] - 2025-11-12
@@ -110,7 +124,8 @@ E.g. `sealed interface Foo` will generate `public class _FooImpl : Foo`. Instead
 
 - No direct security patches, but build pipelines now use **explicit action SHAs** and version-locked dependencies for safety.
 
-[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.5.1...HEAD
+[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.6.0-RC...HEAD
+[0.6.0-RC]: https://github.com/kingg22/ktorgen/compare/0.5.1...0.6.0-RC
 [0.5.1]: https://github.com/kingg22/ktorgen/compare/0.5.1-RC...0.5.1
 [0.5.1-RC]: https://github.com/kingg22/ktorgen/compare/0.5.0...0.5.1-RC
 [0.5.0]: https://github.com/kingg22/ktorgen/commits/0.5.0
