@@ -18,19 +18,20 @@ group = "io.github.kingg22"
 version = libs.versions.ktorgen.version.get()
 
 subprojects {
-    apply(plugin = "org.jlleitschuh.gradle.ktlint")
-    apply(plugin = "org.sonarqube")
+    val libs = rootProject.libs
+
+    apply(plugin = libs.plugins.ktlint.get().pluginId)
+    apply(plugin = libs.plugins.sonarqube.get().pluginId)
 
     group = "io.github.kingg22"
 
     ktlint {
-        // Synchronized with libs.versions.ktlint.pinterest.get()
-        version.set("1.7.1")
+        version.set(libs.versions.ktlint.pinterest)
     }
 
     sonar {
         // ignora completamente estos módulos
-        if (project.name == "example" || project.name == "sample") {
+        if (project.name != "annotations" && project.name != "compiler") {
             isSkipProject = true
         }
 
@@ -70,7 +71,7 @@ tasks.sonar {
 }
 
 ktlint {
-    version.set(libs.versions.ktlint.pinterest.get())
+    version.set(libs.versions.ktlint.pinterest)
 }
 
 changelog {
