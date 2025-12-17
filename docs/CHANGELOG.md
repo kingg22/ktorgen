@@ -3,16 +3,26 @@
 ## [Unreleased]
 
 ### Added
+- Add [wasmJs target](https://kotlinlang.org/docs/wasm-overview.html) on annotations. This target was missing of
+[all supported targets](https://ktor.io/docs/client-supported-platforms.html) to match the ktor client core.
+- Add warning _suspicious DOUBLE_SLASH_IN_URL_PATH_ when the url path contains double slashes caused by baseUrl + path.
 
 ### Changed
+- [internal] Add parametrized tests for different KSP versions (K1, K2)
+- [internal] Update **KSP plugin** to 2.3.4
+- [internal] Downgrade **ktor-client-core** to 3.3.1
+- [internal] Update **klib api** file and **yarn lock** files
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+- [issue #48](https://github.com/kingg22/ktorgen/issues/48): [ERROR] Accessing symbol but the PSI changes KtorGenProcessor.onFinish
+- [issue #55](https://github.com/kingg22/ktorgen/issues/55): [FALSE POSITIVE] URL checker for syntax error is raised in valid URL
 
 ### Security
+- Remove dependency verification metadata because it adds an overhead to the development environment
 
 ## [0.5.1] - 2025-11-12
 
