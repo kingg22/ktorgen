@@ -113,6 +113,13 @@ Real-life migration example: [deezer-client-kt](https://github.com/kingg22/deeze
 
 ### Roadmap 🚀
 - [ ] Add a matrix compatibility test on CI (_Kotlin versions, KSP versions, Ktor Client versions_) to know the range of compatibility.
+- [ ] Improve support for the default behavior of KSP in KMP projects.
+- [ ] Add better sample projects.
+- [ ] Improve the internal state of the processor to avoid unnecessary state-sharing between rounds.
+Includes: logging, tracing, validation, deferred symbols, etc.
+- [ ] Add more options to customize the generated code. Includes: include generated annotations, custom kdoc, etc.
+- [ ] Add more options to the behavior of the processor. Includes: fail-fast, no-processing, no-tracing, etc.
+- [ ] Add performance benchmarks.
 - [X] ~~Add test for Fragment annotation~~
 - [X] ~~Add test for Cookie annotation~~
 - [ ] Resolve knowable issues described in https://github.com/kingg22/ktorgen/pull/27
