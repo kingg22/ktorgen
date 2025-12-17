@@ -6,6 +6,7 @@
 - Add [wasmJs target](https://kotlinlang.org/docs/wasm-overview.html) on annotations. This target was missing from
 [all supported targets](https://ktor.io/docs/client-supported-platforms.html) to match the ktor client core.
 - Add warning _suspicious DOUBLE_SLASH_IN_URL_PATH_ when the url path contains double slashes caused by baseUrl + path.
+- Add consumer rules proguard for android target
 
 ### Changed
 - [internal] Add parametrized tests for different KSP versions (K1, K2)
