@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
@@ -16,7 +18,7 @@ version = libs.versions.ktorgen.version.get()
 kotlin {
     compilerOptions {
         languageVersion.set(KotlinVersion.KOTLIN_2_0)
-        apiVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(languageVersion)
         extraWarnings.set(true)
         allWarningsAsErrors.set(true)
     }
@@ -30,6 +32,9 @@ kotlin {
         }
     }
 
+    // Maintain the list of targets in sync with ktor client core
+    // https://ktor.io/docs/client-supported-platforms.html
+    // https://github.com/ktorio/ktor/blob/main/build-logic/src/main/kotlin/ktorbuild/targets/KtorTargets.kt
     applyDefaultHierarchyTemplate()
 
     androidLibrary {
@@ -37,56 +42,62 @@ kotlin {
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
-        packaging {
-            resources {
-                excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            }
-        }
+        packaging.resources.excludes.add("/META-INF/*")
 
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_1_8)
-        }
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
 
     jvm {
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_1_8)
-        }
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
 
     js {
+        browser()
         nodejs()
+        binaries.library()
+    }
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        nodejs()
+        binaries.library()
     }
 
     // Tiers are in accordance with <https://kotlinlang.org/docs/native-target-support.html>
     // Tier 1
+    // iOS
+    iosArm64()
+    iosX64()
+    iosSimulatorArm64()
+    // macOs
     macosX64()
     macosArm64()
-    iosSimulatorArm64()
-    iosX64()
-    iosArm64()
     // Tier 2
-    linuxX64()
-    linuxArm64()
-    watchosSimulatorArm64()
-    watchosX64()
+    // watchOS
     watchosArm32()
     watchosArm64()
-    tvosSimulatorArm64()
-    tvosX64()
+    watchosX64()
+    watchosSimulatorArm64()
+    // tvOS
     tvosArm64()
+    tvosX64()
+    tvosSimulatorArm64()
+    // linux
+    linuxX64()
+    linuxArm64()
     // Tier 3
+    // android native
     androidNativeArm32()
     androidNativeArm64()
     androidNativeX86()
     androidNativeX64()
+    // windows
     mingwX64()
     watchosDeviceArm64()
 
-    sourceSets.commonMain.dependencies {
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    dependencies {
         implementation(libs.jetbrains.annotations)
     }
 }
@@ -126,28 +137,28 @@ mavenPublishing {
     coordinates(group.toString(), "ktorgen-annotations", version.toString())
 
     pom {
-        name = "KtorGen - Annotations"
-        description = project.description
-        inceptionYear = "2025"
-        url = "https://github.com/kingg22/ktorgen"
+        name.set("KtorGen - Annotations")
+        description.set(project.description)
+        inceptionYear.set("2025")
+        url.set("https://github.com/kingg22/ktorgen")
         licenses {
             license {
-                name = "The Apache Software License, Version 2.0"
-                url = "https://www.apache.org/licenses/LICENSE-2.0"
-                distribution = "repo"
+                name.set("The Apache Software License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                distribution.set("repo")
             }
         }
         developers {
             developer {
-                id = "kingg22"
-                name = "Rey Acosta (Kingg22)"
-                url = "https://github.com/kingg22"
+                id.set("kingg22")
+                name.set("Rey Acosta (Kingg22)")
+                url.set("https://github.com/kingg22")
             }
         }
         scm {
-            url = "https://github.com/kingg22/ktorgen"
-            connection = "scm:git:git://github.com/kingg22/ktorgen.git"
-            developerConnection = "scm:git:ssh://git@github.com/kingg22/ktorgen.git"
+            url.set("https://github.com/kingg22/ktorgen")
+            connection.set("scm:git:git://github.com/kingg22/ktorgen.git")
+            developerConnection.set("scm:git:ssh://git@github.com/kingg22/ktorgen.git")
         }
     }
 }
