@@ -21,6 +21,8 @@
 - [issue #48](https://github.com/kingg22/ktorgen/issues/48): [ERROR] Accessing symbol but the PSI changes KtorGenProcessor.onFinish
 - [issue #55](https://github.com/kingg22/ktorgen/issues/55): [FALSE POSITIVE] URL checker for syntax error is raised in valid URL
 - [issue #61](https://github.com/kingg22/ktorgen/issues/61) Add ProGuard consumer rules for Android target
+- [issue #57](https://github.com/kingg22/ktorgen/issues/57): [FALSE POSITIVE]: A private class without accessors
+is not valid when have an expect KMP function
 
 ### Security
 - Remove dependency verification metadata because it adds an overhead to the development environment
