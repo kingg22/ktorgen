@@ -9,8 +9,8 @@ name: Kotlin CI with Gradle
 
 on:
   push:
-    tags-ignore:
-      - "*"
+    branches:
+      - "**"
   pull_request:
     branches:
       - main
