@@ -42,9 +42,13 @@ kotlin {
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
-        packaging.resources.excludes.add("/META-INF/*")
-
         compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
+
+        @Suppress("UnstableApiUsage")
+        with(optimization.consumerKeepRules) {
+            publish = true
+            files.add(project.file("consumer-rules.pro"))
+        }
     }
 
     jvm {
