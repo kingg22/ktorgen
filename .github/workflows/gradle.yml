@@ -72,8 +72,9 @@ jobs:
     - name: Build with Gradle Wrapper
       run: ./gradlew build
 
+    # With configuration cache parallel, the KMP plugin fails with ConcurrentModificationException
     - name: Sonar analyze
-      run: ./gradlew sonar --info
+      run: ./gradlew sonar --info --no-configuration-cache
       if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') ||
         (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
       env:
