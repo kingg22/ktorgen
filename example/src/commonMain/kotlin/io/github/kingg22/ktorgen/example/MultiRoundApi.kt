@@ -1,10 +1,17 @@
 package io.github.kingg22.ktorgen.example
 
 import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
+import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.http.Body
 import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.POST
 import io.github.kingg22.ktorgen.http.Query
+import io.ktor.client.HttpClient
+
+@OptIn(KtorGenExperimental::class, ExperimentalApi::class)
+@KtorGenFunctionKmp
+internal expect fun MultiRoundApi(httpClient: HttpClient): MultiRoundApi
 
 @KtorGen(
     classVisibilityModifier = "private",

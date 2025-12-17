@@ -1,6 +1,8 @@
 package io.github.kingg22.ktorgen.example
 
 import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
+import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.example.model.IssueData
 import io.github.kingg22.ktorgen.http.Body
 import io.github.kingg22.ktorgen.http.Cookie
@@ -10,7 +12,12 @@ import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.HeaderParam
 import io.github.kingg22.ktorgen.http.POST
 import io.github.kingg22.ktorgen.http.Part
+import io.ktor.client.HttpClient
 import io.ktor.http.content.*
+
+@OptIn(KtorGenExperimental::class)
+@KtorGenFunctionKmp
+expect fun ApiServiceWithWarnings(httpClient: HttpClient): ApiServiceWithWarnings
 
 interface ApiServiceWithWarnings {
     // ⚠️ @GET con @Body (no permitido en ejecución)
@@ -39,6 +46,11 @@ interface ApiServiceWithWarnings {
     @POST("/redundant")
     suspend fun endpointWithCookieVararg(@Cookie(Cookie.Auth) @Cookie(Cookie.Csrf) vararg token: String): IssueData
 
-    @KtorGen("ApiWarnings", basePath = "github/", generateCompanionExtFunction = true)
+    @KtorGen(
+        name = "ApiWarnings",
+        basePath = "github/",
+        generateTopLevelFunction = false,
+        generateCompanionExtFunction = true,
+    )
     companion object
 }

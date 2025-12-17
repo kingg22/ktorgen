@@ -1,11 +1,19 @@
 package io.github.kingg22.ktorgen.example
 
 import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
+import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.http.GET
 import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.HeaderParam
 import io.github.kingg22.ktorgen.http.Path
+import io.ktor.client.HttpClient
 import io.ktor.client.request.*
+
+@Suppress("ktlint:standard:function-naming")
+@OptIn(KtorGenExperimental::class, ExperimentalApi::class)
+@KtorGenFunctionKmp
+internal expect fun DemoGithub(httpClient: HttpClient, apiServiceValid: ApiServiceValid): DemoGithub
 
 @KtorGen(optInAnnotations = [ExperimentalApi::class])
 @ExperimentalApi
