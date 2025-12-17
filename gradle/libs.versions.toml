@@ -39,7 +39,7 @@ ktlint-plugin = "14.0.1"
 # https://github.com/ktorio/ktor/releases
 ktor = "3.3.1" # don't update until kotlin 2.2.21 because wasm needs matchs stdlib version
 
-ktorgen-version = "0.6.0-SNAPSHOT"
+ktorgen-version = "0.6.0-RC"
 
 # https://github.com/SonarSource/sonar-scanner-gradle/releases
 sonarqube = "7.2.1.6560"
