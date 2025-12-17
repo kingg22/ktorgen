@@ -11,7 +11,7 @@ android-compileSdk = "36"
 android-minSdk = "21"
 
 # https://mvnrepository.com/artifact/androidx.room/room-compiler-processing-testing
-androidx-room-compiler-testing = "2.8.3"
+androidx-room-compiler-testing = "2.8.4"
 # https://github.com/Kotlin/dokka/releases
 dokka = "2.1.0"
 # https://github.com/JetBrains/gradle-changelog-plugin/releases
