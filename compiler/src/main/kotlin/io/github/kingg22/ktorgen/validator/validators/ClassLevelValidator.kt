@@ -16,10 +16,11 @@ internal class ClassLevelValidator : ValidatorStrategy {
         val interfaceDeclaration = context.classData
 
         val classVisibility = context.classData.classVisibilityModifier
-        if (classVisibility.isBlank() ||
-            classVisibility.equals("public", true).not() &&
-            classVisibility.equals("internal", true).not() &&
-            classVisibility.equals("private", true).not()
+        if (classVisibility.isBlank() || (
+                classVisibility.equals("public", true).not() &&
+                    classVisibility.equals("internal", true).not() &&
+                    classVisibility.equals("private", true).not()
+                )
         ) {
             addError(
                 KtorGenLogger.ONLY_PUBLIC_INTERNAL_CLASS + "Current '$classVisibility'",
@@ -40,12 +41,16 @@ internal class ClassLevelValidator : ValidatorStrategy {
         }
         validateKModifier(constructorVisibility, interfaceDeclaration)
 
-        if (context.classData.classVisibilityModifier.equals("private", true) &&
+        if (classVisibility.equals("private", true) &&
             context.classData.generateTopLevelFunction.not() &&
             context.classData.generateCompanionExtFunction.not() &&
             context.classData.generateHttpClientExtension.not()
         ) {
-            addError(KtorGenLogger.PRIVATE_CLASS_NO_ACCESS, interfaceDeclaration)
+            if (context.expectFunctions.none()) {
+                addError(KtorGenLogger.PRIVATE_CLASS_NO_ACCESS, interfaceDeclaration)
+            } else {
+                addWarning(KtorGenLogger.PRIVATE_CLASS_NO_ACCESS, interfaceDeclaration)
+            }
         }
 
         val functionVisibility = context.classData.functionVisibilityModifier
