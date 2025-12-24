@@ -42,7 +42,7 @@ ktor = "3.3.1" # don't update until kotlin 2.2.21 because wasm needs matchs stdl
 ktorgen-version = "0.6.0"
 
 # https://github.com/SonarSource/sonar-scanner-gradle/releases
-sonarqube = "7.2.1.6560"
+sonarqube = "7.2.2.6593"
 
 # https://github.com/vanniktech/gradle-maven-publish-plugin/releases
 maven-publish = "0.35.0"
