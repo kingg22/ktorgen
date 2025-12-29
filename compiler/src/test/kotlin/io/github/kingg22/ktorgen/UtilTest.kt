@@ -7,6 +7,7 @@ import androidx.room.compiler.processing.util.runKspProcessorTest
 import java.io.File
 import androidx.room.compiler.processing.util.Source as RoomSource
 import org.junit.jupiter.api.Assertions as JunitAssertions
+import org.junit.jupiter.api.Disabled as JunitDisabled
 import org.junit.jupiter.api.Test as JupiterTest
 
 /**
@@ -49,11 +50,14 @@ const val CLASS_TEST_SERVICE_IMPL = "public class _TestServiceImpl"
 const val IMPLEMENT_TEST_SERVICE = ") : TestService"
 
 // abstract of the library.
-// only have junit parametrized in other files!
 
 /** Factory to create an input source code can be [Source.kotlin][RoomSource.kotlin] or [Source.java][RoomSource.java] */
 typealias Source = RoomSource
 
 typealias Test = JupiterTest
 
-inline fun assertNull(actual: Any?, message: String? = null) = JunitAssertions.assertNull(actual, message)
+typealias Ignore = JunitDisabled
+
+inline fun assertNull(actual: Any?, message: String? = null) {
+    JunitAssertions.assertNull(actual, message)
+}
