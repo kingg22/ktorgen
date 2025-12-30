@@ -46,7 +46,7 @@ dependencyResolutionManagement {
                 version("kotlin", kotlinVersionOverride)
             }
             if (ktorClientCoreVersionOverride != null && !ktorClientCoreVersionOverride.isBlank()) {
-                settingsLogger.lifecycle("Reemplacing Ktor Client Core version: ${ktorClientCoreVersionOverride}")
+                settingsLogger.lifecycle("Replacing Ktor Client Core version: ${ktorClientCoreVersionOverride}")
                 version("ktor", ktorClientCoreVersionOverride)
             }
         }
