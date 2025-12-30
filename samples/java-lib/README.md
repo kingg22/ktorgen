@@ -5,8 +5,8 @@ This module contains an example of a Java library
 THIS IS JUST AN EXAMPLE, is not recommended, but KSP works with java code.
 KSP needs to be applied with kotlin gradle plugin to work.
 
-The generated code is ALWAYS going to be in kotlin because KtorGen is for Ktor-Client,
-so, it's kotlin only and needs `suspend function` to build the request.
+The generated code is ALWAYS going to be in Kotlin because KtorGen is for Ktor-Client,
+so it's Kotlin-only and needs `suspend functions` to build the request.
 
 KtorGen doesn't go to generate code for java, not generated compatibility code like `runBlocking` or `completableFuture`.
 
