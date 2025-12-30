@@ -15,11 +15,10 @@ expect fun ApiServiceValid(httpClient: HttpClient): ApiServiceValid
 interface ApiServiceValid {...}
 ```
 
-KtorGen will generate the accessors for all platform source set according to the `expect` modality.
-Is **required** to `expect` function have a valid interface as return type knowed by KtorGen, the exact parameters of
-the constructor, and the `HttpClient` parameter (if you don't have it already as property).
+KtorGen will generate the accessors for all platform source sets according to the `expect` modality.
+It is **required** that the `expect` function has a valid interface as a return type known by KtorGen, the exact constructor parameters, and the `HttpClient` parameter (if you don't already have it as a property).
 
-The exact parameters include the delegate interfaces when you have inheritance. See DemoGithub interface, for example.
+The exact parameters include delegate interfaces when you have inheritance (see the `DemoGithub` interface, for example).
 
 ### Known limitations
 
