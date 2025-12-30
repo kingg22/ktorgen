@@ -1,8 +1,5 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
-import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
@@ -23,7 +20,6 @@ kotlin {
         allWarningsAsErrors.set(true)
     }
 
-    @OptIn(ExperimentalAbiValidation::class)
     abiValidation {
         enabled.set(true)
         klib {
@@ -38,17 +34,14 @@ kotlin {
     applyDefaultHierarchyTemplate()
 
     androidLibrary {
-        namespace = "$group.ktorgen.annotations"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
-        minSdk = libs.versions.android.minSdk.get().toInt()
+        namespace = "${group}.ktorgen.annotations"
+        compileSdk = Integer.parseInt(libs.versions.android.compileSdk.get())
+        minSdk = Integer.parseInt(libs.versions.android.minSdk.get())
 
         compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
 
-        @Suppress("UnstableApiUsage")
-        with(optimization.consumerKeepRules) {
-            publish = true
-            files.add(project.file("consumer-rules.pro"))
-        }
+        optimization.consumerKeepRules.publish = true
+        optimization.consumerKeepRules.files.add(project.file("consumer-rules.pro"))
     }
 
     jvm {
@@ -61,7 +54,6 @@ kotlin {
         binaries.library()
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
         nodejs()
@@ -100,7 +92,6 @@ kotlin {
     mingwX64()
     watchosDeviceArm64()
 
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
     dependencies {
         implementation(libs.jetbrains.annotations)
     }
@@ -108,7 +99,7 @@ kotlin {
 
 dokka {
     dokkaPublications.configureEach {
-        outputDirectory.set(rootDir.resolve("docs/api"))
+        outputDirectory.set(new File(rootDir, "docs/api"))
     }
     dokkaSourceSets.commonMain {
         skipEmptyPackages.set(true)

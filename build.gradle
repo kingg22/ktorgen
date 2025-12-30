@@ -16,12 +16,11 @@ plugins {
 
 group = "io.github.kingg22"
 version = libs.versions.ktorgen.version.get()
+def libs = libs
 
 subprojects {
-    val libs = rootProject.libs
-
-    apply(plugin = libs.plugins.ktlint.get().pluginId)
-    apply(plugin = libs.plugins.sonarqube.get().pluginId)
+    apply(plugin: libs.plugins.ktlint.get().pluginId)
+    apply(plugin: libs.plugins.sonarqube.get().pluginId)
 
     group = "io.github.kingg22"
 

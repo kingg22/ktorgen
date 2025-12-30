@@ -1,3 +1,4 @@
+import kotlinx.kover.gradle.plugin.dsl.AggregationType
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -52,15 +53,15 @@ kover {
     reports.total {
         verify {
             rule("Basic Line Coverage") {
-                minBound(60, CoverageUnit.LINE)
+                minBound(60, CoverageUnit.LINE, AggregationType.COVERED_PERCENTAGE)
             }
 
             rule("Basic Branch Coverage") {
-                minBound(20, CoverageUnit.BRANCH)
+                minBound(20, CoverageUnit.BRANCH, AggregationType.COVERED_PERCENTAGE)
             }
         }
         filters.excludes {
-            annotatedBy("$group.ktorgen.KtorGenWithoutCoverage")
+            annotatedBy("${group}.ktorgen.KtorGenWithoutCoverage")
         }
     }
 }
@@ -73,7 +74,7 @@ tasks.compileTestKotlin {
     compilerOptions.optIn.add("androidx.room.compiler.processing.ExperimentalProcessingApi")
 }
 
-rootProject.tasks.named<SonarTask>("sonar") {
+rootProject.tasks.named("sonar", SonarTask.class) {
     dependsOn(tasks.koverXmlReport)
 }
 
