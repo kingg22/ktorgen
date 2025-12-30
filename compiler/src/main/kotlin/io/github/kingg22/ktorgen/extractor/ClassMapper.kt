@@ -17,6 +17,7 @@ import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
+import io.github.kingg22.ktorgen.checkImplementation
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.ClassGenerationOptions
@@ -33,6 +34,12 @@ internal class ClassMapper : DeclarationMapper {
         declaration: KSClassDeclaration,
         expectFunctions: List<KSFunctionDeclaration>,
     ): DeclarationMapper.ClassDataOrDeferredSymbols = timer.work {
+        timer.require(
+            !declaration.modifiers.contains(Modifier.EXTERNAL),
+            KtorGenLogger.EXTERNAL_DECLARATION_NOT_ALLOWED,
+            declaration,
+        )
+
         timer.require(
             !declaration.modifiers.contains(Modifier.EXPECT),
             KtorGenLogger.INTERFACE_IS_EXPECTED,
@@ -78,14 +85,14 @@ internal class ClassMapper : DeclarationMapper {
 
         val packageName = declaration.packageName.asString()
 
-        val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, interfaceName)
+        val filteredSupertypes = filterSupertypes(declaration.superTypes, deferredSymbols, interfaceName).toList()
         timer.addStep("Retrieved all supertypes")
 
         timer.addStep("Have companion object: $companionObject")
 
-        val properties = declaration.getDeclaredProperties()
+        val properties = declaration.getDeclaredProperties().toList()
 
-        properties.map { it.type.resolve() }.filter { it.isError }.forEach { type ->
+        properties.asSequence().map { it.type.resolve() }.filter { it.isError }.forEach { type ->
             timer.addStep("Found error type reference of property: $type")
             // Investigate the correct approach type.resolve.declaration or type or type.declaration
             deferredSymbols += type.declaration
@@ -106,7 +113,7 @@ internal class ClassMapper : DeclarationMapper {
             timer.addStep("${symbols.size} unresolved symbols of function: ${func.simpleName.getShortName()}")
             deferredSymbols += symbols
             return@mapNotNull null
-        }
+        }.toList()
 
         timer.addStep("Processed all functions")
 
@@ -124,15 +131,15 @@ internal class ClassMapper : DeclarationMapper {
                 )
                 "$packageName.$interfaceName"
             },
-            functions = functions,
+            functions = functions.asSequence(),
             ksFile = timer.requireNotNull(
                 declaration.containingFile,
                 KtorGenLogger.INTERFACE_NOT_HAVE_FILE + interfaceName,
                 declaration,
             ),
             ksClassDeclaration = declaration,
-            superClasses = filteredSupertypes,
-            properties = properties,
+            superClasses = filteredSupertypes.asSequence(),
+            properties = properties.asSequence(),
             modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
             companionObjectDeclaration = companionObject,
             expectFunctions = expectFunctions.asSequence(),
