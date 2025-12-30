@@ -95,6 +95,11 @@ jobs:
     - name: Check the API binary validator
       run: ./gradlew checkLegacyAbi
 
+    - name: Build samples
+      run: cd samples && ./gradlew build
+      env:
+        ktorgen_samples_local: true
+
     - name: Upload reports (if build failed)
       uses: actions/upload-artifact@v6
       if: failure()

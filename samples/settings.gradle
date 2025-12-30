@@ -9,10 +9,11 @@ pluginManagement {
 rootProject.name = "ktorgen-samples"
 
 boolean isCi = System.getenv("CI") == "true"
+boolean includeLocalProjects = System.getenv("ktorgen_samples_local") == "true"
 
 def settingsLogger = logger
 
-if (!isCi) {
+if (!isCi || includeLocalProjects) {
     includeBuild("../.") {
         settingsLogger.lifecycle("Replacing Ktorgen dependencies with local projects")
         String publishGroup = "io.github.kingg22"
