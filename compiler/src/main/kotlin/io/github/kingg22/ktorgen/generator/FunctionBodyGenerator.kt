@@ -161,7 +161,7 @@ internal class FunctionBodyGenerator(
         }
 
         if (content.isNotEmpty()) {
-            beginControlFlow("this.url")
+            beginControlFlow("this.url { _ ->")
                 .add(content.build())
             endControlFlow()
         }
