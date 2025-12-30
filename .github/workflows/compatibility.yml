@@ -1,0 +1,258 @@
+name: KtorGen Compatibility Matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      ktor:
+        description: "Ktor version (empty = default matrix)"
+        required: false
+        type: string
+        default: ''
+      kotlin:
+        description: "Kotlin version (empty = default matrix)"
+        required: false
+        type: string
+        default: ''
+      ksp:
+        description: "KSP version (empty = default matrix)"
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and Publish to MavenLocal KtorGen
+    timeout-minutes: 15
+    runs-on: ubuntu-latest # Runs only on ubuntu to save time and costs, expect don't lose any results of macOS
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'jetbrains'
+          cache: 'gradle'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache konan
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.konan/dependencies
+          key: ${{ runner.os }}-konan
+          restore-keys: ${{ runner.os }}-konan
+
+      - name: Change wrapper permissions
+        run: chmod +x ./gradlew
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5.0.0
+        with:
+          cache-read-only: false
+          validate-wrappers: false
+
+      - name: Build with Gradle Wrapper
+        run: ./gradlew publishToMavenLocal --no-daemon --stacktrace
+        env:
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
+
+      - name: Upload MavenLocal directory
+        uses: actions/upload-artifact@v6
+        with:
+          name: MavenLocal
+          path: ~/.m2/repository/io/github/kingg22/ktorgen/
+          if-no-files-found: error
+
+      - name: Upload reports (if build failed)
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: reports
+          path: './**/build/reports/'
+
+  # TODO reduce duplicate steps, reuse workflow
+  build-sample-matrix:
+    if: |
+      github.event.inputs.ktor == '' &&
+      github.event.inputs.kotlin == '' &&
+      github.event.inputs.ksp == ''
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Latest
+          - ktor: 3.3.3
+            kotlin: 2.3.0
+            ksp: 2.3.4
+
+          - ktor: 3.2.3
+            kotlin: 2.2.0
+            ksp: 2.2.0-2.0.2
+
+          - ktor: 3.0.0
+            kotlin: 2.1.20
+            ksp: 2.1.20-1.0.32
+
+          - ktor: 2.3.13
+            kotlin: 2.0.21
+            ksp: 2.0.21-1.0.28
+
+          # Older with K1.9
+          - ktor: 2.3.0
+            kotlin: 1.9.24
+            ksp: 1.9.24-1.0.20
+
+    name: Build Samples with Ktor ${{ matrix.ktor }}, Kotlin ${{ matrix.kotlin }}, KSP ${{ matrix.ksp }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'jetbrains'
+          cache: 'gradle'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache konan
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.konan/dependencies
+          key: ${{ runner.os }}-konan
+          restore-keys: ${{ runner.os }}-konan
+
+      - name: Download MavenLocal
+        uses: actions/download-artifact@v7
+        with:
+          name: MavenLocal
+          path: ~/.m2/repository/io/github/kingg22/ktorgen/
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5.0.0
+        with:
+          cache-read-only: false
+          validate-wrappers: true
+
+      - name: Change wrapper permissions
+        working-directory: samples
+        run: chmod +x ./gradlew
+
+      - name: Upgrade yarn lock
+        if: matrix.ktorgen_samples_kotlin_version != null && !startsWith(matrix.ktorgen_samples_kotlin_version, '2.2.20')
+        working-directory: samples
+        run: ./gradlew kotlinUpgradeYarnLock
+        env:
+          ktorgen_samples_kotlin_version: ${{ matrix.ktorgen_samples_kotlin_version }}
+          ktorgen_samples_ktor_version: ${{ matrix.ktorgen_samples_ktor_version }}
+          ktorgen_samples_ksp_version: ${{ matrix.ktorgen_samples_ksp_version }}
+
+      - name: Build sample
+        working-directory: samples
+        run: ./gradlew build --stacktrace
+        env:
+          ktorgen_samples_kotlin_version: ${{ matrix.ktorgen_samples_kotlin_version }}
+          ktorgen_samples_ktor_version: ${{ matrix.ktorgen_samples_ktor_version }}
+          ktorgen_samples_ksp_version: ${{ matrix.ktorgen_samples_ksp_version }}
+
+      - name: Upload reports (if build failed)
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: reports
+          path: './**/build/reports/'
+
+  build-sample-manual:
+    if: |
+      github.event.inputs.ktor != '' &&
+      github.event.inputs.kotlin != '' &&
+      github.event.inputs.ksp != ''
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ktor: ${{ github.event.inputs.ktor }}
+            kotlin: ${{ github.event.inputs.kotlin }}
+            ksp: ${{ github.event.inputs.ksp }}
+
+    name: Build Samples with Ktor ${{ matrix.ktor }}, Kotlin ${{ matrix.kotlin }}, KSP ${{ matrix.ksp }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'jetbrains'
+          cache: 'gradle'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache konan
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.konan/dependencies
+          key: ${{ runner.os }}-konan
+          restore-keys: ${{ runner.os }}-konan
+
+      - name: Download MavenLocal
+        uses: actions/download-artifact@v7
+        with:
+          name: MavenLocal
+          path: ~/.m2/repository/io/github/kingg22/ktorgen/
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5.0.0
+        with:
+          cache-read-only: false
+          validate-wrappers: true
+
+      - name: Change wrapper permissions
+        working-directory: samples
+        run: chmod +x ./gradlew
+
+      - name: Upgrade yarn lock
+        if: matrix.ktorgen_samples_kotlin_version != null && !startsWith(matrix.ktorgen_samples_kotlin_version, '2.2.20')
+        working-directory: samples
+        run: ./gradlew kotlinUpgradeYarnLock
+        env:
+          ktorgen_samples_kotlin_version: ${{ matrix.ktorgen_samples_kotlin_version }}
+          ktorgen_samples_ktor_version: ${{ matrix.ktorgen_samples_ktor_version }}
+          ktorgen_samples_ksp_version: ${{ matrix.ktorgen_samples_ksp_version }}
+
+      - name: Build sample
+        working-directory: samples
+        run: ./gradlew build --stacktrace
+        env:
+          ktorgen_samples_kotlin_version: ${{ matrix.ktorgen_samples_kotlin_version }}
+          ktorgen_samples_ktor_version: ${{ matrix.ktorgen_samples_ktor_version }}
+          ktorgen_samples_ksp_version: ${{ matrix.ktorgen_samples_ksp_version }}
+
+      - name: Upload reports (if build failed)
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: reports
+          path: './**/build/reports/'
