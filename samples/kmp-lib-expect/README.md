@@ -1,6 +1,6 @@
 # Kotlin Multiplatform (with `expect` modality)
 
-This module contains the common code and use the `expect` modality of KtorGen to generate accessors.
+This module contains the common code and uses the `expect` modality of KtorGen to generate accessors.
 
 This feature is **experimental** and can break builds.
 
