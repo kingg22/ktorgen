@@ -3,8 +3,8 @@
 This is a subproject of KtorGen dedicated to showing samples code and integration tests.
 
 All samples don't fetch or interact with any external service (real APIs).
-Can contribute to KtorGen test coverage.
-The most *realistic* samples have tests with ktor client mocking.
+These samples contribute to KtorGen test coverage.
+The most *realistic* samples have tests with Ktor client mocking.
 
 ## Contributing
 
