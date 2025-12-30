@@ -119,5 +119,7 @@ internal data class KtorGenLogger(private val kspLogger: KSPLogger, private val 
         const val INVALID_VISIBILITY_MODIFIER =
             "Invalid visibility modifier, see https://kotlinlang.org/docs/visibility-modifiers.html"
         const val DOUBLE_SLASH_IN_URL_PATH = "Suspicious URL path: possible double '/' detected."
+        const val EXTERNAL_DECLARATION_NOT_ALLOWED =
+            "External declaration is not allowed, please remove it. See https://kotlinlang.org/docs/keyword-reference.html#modifier-keywords \n`external` is only to marks a declaration as implemented outside of Kotlin (accessible through JNI or in JavaScript)."
     }
 }

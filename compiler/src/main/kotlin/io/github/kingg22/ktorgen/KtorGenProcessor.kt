@@ -335,9 +335,12 @@ internal class KtorGenProcessor(
         val classDataWithMethods = annotatedFunctionsGroupedByClass.mapNotNull { (classDec) ->
             classDec?.let { declarationMap(it) }
         }
+        val processedQualifiedNames = classDataWithMethods
+            .map { it.qualifiedName }
+            .toSet()
 
         mapperPhase.addStep(
-            "Process all class data obtained by functions. Count: ${annotatedFunctionsGroupedByClass.size}",
+            "Process all class data obtained by functions. Count: ${annotatedFunctionsGroupedByClass.size}. Mapped: ${classDataWithMethods.size}.",
         )
 
         // 3. También obtenemos todas las clases anotadas con @KtorGen (aunque no tengan métodos)
@@ -346,26 +349,29 @@ internal class KtorGenProcessor(
 
         // 4. Filtramos aquellas clases que no están en `groupedByClass` → no tienen funciones válidas
         val classWithoutMethods = annotatedClasses
-            .filter { it !in annotatedFunctionsGroupedByClass.keys }
-            .also {
+            .filter { kClassDeclaration ->
+                val qName = kClassDeclaration.qualifiedName?.asString()
+                qName != null && qName !in processedQualifiedNames
+            }
+            .also { kClassDeclarations ->
                 mapperPhase.addStep(
-                    "After sum (functions + ktorGen interfaces (or its companion)) - already extracted, count: ${it.count()}",
+                    "After sum (functions + @KtorGen interfaces (or its companion)) - already extracted, count: ${kClassDeclarations.size}",
                 )
             }
             .mapNotNull { declarationMap(it) }
             .toList()
 
         mapperPhase.addStep(
-            "Processed all interfaces and companion with @KtorGen. Count: ${classDataWithMethods.size + classWithoutMethods.size}",
+            "Processed all interfaces and companion with @KtorGen. Count: ${classWithoutMethods.size}. The sum of both mapped: ${classDataWithMethods.size + classWithoutMethods.size}",
         )
 
         // 5. Unimos todas las clases a validar (las que tienen y no tienen funciones)
         val classDataSet = (classDataWithMethods + classWithoutMethods)
-            .distinctBy { it.interfaceName }
-            .also { mapperPhase.addStep("After filter declarations, have ${it.size}") }
+            .distinctBy { it.qualifiedName }
+            .also { mapperPhase.addStep("After filter declarations, have ${it.size} mapped declarations") }
             .filter { it.goingToGenerate }
             .toSet()
-        mapperPhase.addStep("Finally goingToGenerate ${classDataSet.size}")
+        mapperPhase.addStep("Finally going to generate: ${classDataSet.size} classes")
 
         if (classDataSet.isEmpty() && kmpExpectFunctions.isNotEmpty()) {
             mapperPhase.addWarning(
