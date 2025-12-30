@@ -4,6 +4,7 @@ package io.github.kingg22.ktorgen
 
 import androidx.room.compiler.processing.util.CompilationResultSubject
 import androidx.room.compiler.processing.util.runKspProcessorTest
+import androidx.room.compiler.processing.util.runProcessorTest
 import java.io.File
 import androidx.room.compiler.processing.util.Source as RoomSource
 import org.junit.jupiter.api.Assertions as JunitAssertions
@@ -22,13 +23,28 @@ fun runKtorGenProcessor(
     ),
     kotlincArguments: List<String> = emptyList(),
     onCompilationResult: (CompilationResultSubject) -> Unit,
-) = runKspProcessorTest(
-    sources = sources.toList(),
-    options = processorOptions,
-    symbolProcessorProviders = listOf(KtorGenSymbolProcessorProvider()),
-    kotlincArguments = listOf("-Wextra", "-Werror") + kotlincArguments,
-    onCompilationResult = onCompilationResult,
-)
+) {
+    if (sources.all { it is RoomSource.KotlinSource }) {
+        // Omit KAPT if all sources are Kotlin sources.
+        runKspProcessorTest(
+            sources = sources.toList(),
+            options = processorOptions,
+            symbolProcessorProviders = listOf(KtorGenSymbolProcessorProvider()),
+            kotlincArguments = listOf("-Wextra", "-Werror") + kotlincArguments,
+            onCompilationResult = onCompilationResult,
+        )
+    } else {
+        // Run with javac, kotlinc, kapt and ksp.
+        runProcessorTest(
+            sources = sources.toList(),
+            kotlincArguments = listOf("-Wextra", "-Werror") + kotlincArguments,
+            javacProcessors = emptyList(),
+            options = processorOptions,
+            symbolProcessorProviders = listOf(KtorGenSymbolProcessorProvider()),
+            onCompilationResult = onCompilationResult,
+        )
+    }
+}
 
 /** @return `this"""str"""` */
 inline infix fun String.stringTemplate(str: String) = this + stringTemplate(string = str)
