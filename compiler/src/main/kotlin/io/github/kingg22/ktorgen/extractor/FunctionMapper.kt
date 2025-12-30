@@ -11,6 +11,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ksp.toKModifier
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
+import io.github.kingg22.ktorgen.checkImplementation
 import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.http.Cookie
 import io.github.kingg22.ktorgen.http.FormUrlEncoded
@@ -37,6 +38,14 @@ internal class FunctionMapper : DeclarationFunctionMapper {
         val name = declaration.simpleName.asString()
         val deferredSymbols = mutableListOf<KSAnnotated>()
         return timer.work {
+            checkImplementation(!declaration.modifiers.contains(Modifier.EXPECT)) {
+                "Expect functions are not supported in this mapper. Declaration: $declaration"
+            }
+            timer.require(
+                !declaration.modifiers.contains(Modifier.EXTERNAL),
+                KtorGenLogger.EXTERNAL_DECLARATION_NOT_ALLOWED,
+                declaration,
+            )
             timer.addStep("Extracting the KtorGenFunction annotation")
             var options = extractKtorGenFunction(declaration) ?: FunctionGenerationOptions.DEFAULT
 
@@ -61,9 +70,7 @@ internal class FunctionMapper : DeclarationFunctionMapper {
             }
 
             val returnType = TypeData(type)
-            timer.addStep(
-                "Processed return type: ${returnType.parameterType.declaration.simpleName.asString()}",
-            )
+            timer.addStep("Processed return type: ${returnType.typeName}")
 
             val functionAnnotations = context(timer.createTask("Extract annotations")) {
                 getFunctionAnnotations(declaration, basePath)
@@ -105,7 +112,10 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 ktorGenAnnotations = functionAnnotations,
                 httpMethodAnnotation =
                 functionAnnotations.filterIsInstance<FunctionAnnotation.HttpMethodAnnotation>().first(),
-                modifierSet = modifiers.toSet(),
+                modifierSet = modifiers.filterNot {
+                    /* In java methods of interfaces are marked with abstract, in kotlin KSP don't mark as abstract instead use declaration.isAbstract */
+                    it == KModifier.ABSTRACT
+                }.toSet(),
                 ksFunctionDeclaration = declaration,
                 options = options,
             ) to emptyList()
