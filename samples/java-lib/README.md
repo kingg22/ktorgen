@@ -1,6 +1,6 @@
 # Java library example
 
-This module contains an example of a Java code "library"
+This module contains an example of a Java library
 
 THIS IS JUST AN EXAMPLE, is not recommended, but KSP works with java code.
 KSP needs to be applied with kotlin gradle plugin to work.
