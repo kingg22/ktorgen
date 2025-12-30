@@ -118,6 +118,8 @@ jobs:
     name: Build Samples with Ktor ${{ matrix.ktor }}, Kotlin ${{ matrix.kotlin }}, KSP ${{ matrix.ksp }}
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: read
     steps:
       - name: Check out the repo
         uses: actions/checkout@v6
@@ -156,21 +158,21 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Upgrade yarn lock
-        if: matrix.ktorgen_samples_kotlin_version != null && !startsWith(matrix.ktorgen_samples_kotlin_version, '2.2.20')
+        if: matrix.kotlin != null && !startsWith(matrix.kotlin, '2.2.20')
         working-directory: samples
         run: ./gradlew kotlinUpgradeYarnLock
         env:
-          ktorgen_samples_kotlin_version: ${{ matrix.ktorgen_samples_kotlin_version }}
-          ktorgen_samples_ktor_version: ${{ matrix.ktorgen_samples_ktor_version }}
-          ktorgen_samples_ksp_version: ${{ matrix.ktorgen_samples_ksp_version }}
+          ktorgen_samples_kotlin_version: ${{ matrix.kotlin }}
+          ktorgen_samples_ktor_version: ${{ matrix.ktor }}
+          ktorgen_samples_ksp_version: ${{ matrix.ksp }}
 
       - name: Build sample
         working-directory: samples
         run: ./gradlew build --stacktrace
         env:
-          ktorgen_samples_kotlin_version: ${{ matrix.ktorgen_samples_kotlin_version }}
-          ktorgen_samples_ktor_version: ${{ matrix.ktorgen_samples_ktor_version }}
-          ktorgen_samples_ksp_version: ${{ matrix.ktorgen_samples_ksp_version }}
+          ktorgen_samples_kotlin_version: ${{ matrix.kotlin }}
+          ktorgen_samples_ktor_version: ${{ matrix.ktor }}
+          ktorgen_samples_ksp_version: ${{ matrix.ksp }}
 
       - name: Upload reports (if build failed)
         uses: actions/upload-artifact@v6
@@ -196,6 +198,8 @@ jobs:
     name: Build Samples with Ktor ${{ matrix.ktor }}, Kotlin ${{ matrix.kotlin }}, KSP ${{ matrix.ksp }}
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: read
     steps:
       - name: Check out the repo
         uses: actions/checkout@v6
@@ -234,21 +238,21 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Upgrade yarn lock
-        if: matrix.ktorgen_samples_kotlin_version != null && !startsWith(matrix.ktorgen_samples_kotlin_version, '2.2.20')
+        if: matrix.kotlin != null && !startsWith(matrix.kotlin, '2.2.20')
         working-directory: samples
         run: ./gradlew kotlinUpgradeYarnLock
         env:
-          ktorgen_samples_kotlin_version: ${{ matrix.ktorgen_samples_kotlin_version }}
-          ktorgen_samples_ktor_version: ${{ matrix.ktorgen_samples_ktor_version }}
-          ktorgen_samples_ksp_version: ${{ matrix.ktorgen_samples_ksp_version }}
+          ktorgen_samples_kotlin_version: ${{ matrix.kotlin }}
+          ktorgen_samples_ktor_version: ${{ matrix.ktor }}
+          ktorgen_samples_ksp_version: ${{ matrix.ksp }}
 
       - name: Build sample
         working-directory: samples
         run: ./gradlew build --stacktrace
         env:
-          ktorgen_samples_kotlin_version: ${{ matrix.ktorgen_samples_kotlin_version }}
-          ktorgen_samples_ktor_version: ${{ matrix.ktorgen_samples_ktor_version }}
-          ktorgen_samples_ksp_version: ${{ matrix.ktorgen_samples_ksp_version }}
+          ktorgen_samples_kotlin_version: ${{ matrix.kotlin }}
+          ktorgen_samples_ktor_version: ${{ matrix.ktor }}
+          ktorgen_samples_ksp_version: ${{ matrix.ksp }}
 
       - name: Upload reports (if build failed)
         uses: actions/upload-artifact@v6
