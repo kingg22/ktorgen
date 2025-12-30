@@ -17,8 +17,8 @@ Or focus on the kotlin part and use KtorGen only for the kotlin part. Let java f
 
 ### Internal testing purposes
 
-This module test KtorGen can read java code and generate compliant code in Kotlin.
-Can't add tests to the main project because the testing framework (Room compiler testing) is not compatible with java-kotlin mixed projects.
+This module tests that KtorGen can read Java code and generate compliant Kotlin code.
+We can't add tests to the main project because the testing framework (Room compiler testing) isn't compatible with mixed Java–Kotlin projects.
 
 **THIS IS NOT A REAL USE CASE, DON'T RECOMMEND USING THIS.**
 
