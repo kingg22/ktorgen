@@ -8,7 +8,7 @@ pluginManagement {
 
 rootProject.name = "ktorgen-samples"
 
-boolean isCi = System.getenv()["CI"] == "true"
+boolean isCi = System.getenv("CI") == "true"
 
 def settingsLogger = logger
 
@@ -32,6 +32,10 @@ dependencyResolutionManagement {
     // Use Maven Central as the default repository (where Gradle will download dependencies) in all subprojects.
     repositories {
         mavenCentral()
+        if (isCi) {
+            settingsLogger.lifecycle("Including maven local to dependency resolution repositories")
+            mavenLocal()
+        }
         google()
     }
     versionCatalogs {
@@ -39,15 +43,20 @@ dependencyResolutionManagement {
             from(files("../gradle/libs.versions.toml"))
 
             // Compile sample project with different Kotlin version, if provided:
-            String kotlinVersionOverride = System.getenv()["ktorgen_samples_kotlin_version"]
-            String ktorClientCoreVersionOverride = System.getenv()["ktorgen_samples_ktor_version"]
+            String kotlinVersionOverride = System.getenv("ktorgen_samples_kotlin_version")
+            String ktorClientCoreVersionOverride = System.getenv("ktorgen_samples_ktor_version")
+            String kspVersionOverride = System.getenv("ktorgen_samples_ksp_version")
             if (kotlinVersionOverride != null && !kotlinVersionOverride.isBlank()) {
-                settingsLogger.lifecycle("Reemplacing Kotlin version: ${kotlinVersionOverride}")
+                settingsLogger.lifecycle("Replacing Kotlin version: ${kotlinVersionOverride}")
                 version("kotlin", kotlinVersionOverride)
             }
             if (ktorClientCoreVersionOverride != null && !ktorClientCoreVersionOverride.isBlank()) {
                 settingsLogger.lifecycle("Replacing Ktor Client Core version: ${ktorClientCoreVersionOverride}")
                 version("ktor", ktorClientCoreVersionOverride)
+            }
+            if (kspVersionOverride != null && !kspVersionOverride.isBlank()) {
+                settingsLogger.lifecycle("Replacing KSP version for plugin: ${kspVersionOverride}")
+                version("ksp-plugin", kspVersionOverride)
             }
         }
     }
