@@ -12,6 +12,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
  * Contain all information of source code to generate a class implementing the interface
  * @param interfaceName name of the interface that contains annotations
  * @param superClasses qualifiedNames of interface
+ * @param qualifiedName fully qualified name of the interface
  */
 class ClassData(
     val packageNameString: String,
@@ -29,7 +30,7 @@ class ClassData(
     val qualifiedName: String,
     options: ClassGenerationOptions,
 ) : ClassGenerationOptions(options) {
-    val httpClientProperty by lazy {
+    val httpClientProperty by lazy(LazyThreadSafetyMode.NONE) {
         properties.firstOrNull { it.type.resolve().toClassName() == HttpClientClassName }
     }
 }

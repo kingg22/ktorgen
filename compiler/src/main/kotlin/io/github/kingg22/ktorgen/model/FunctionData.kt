@@ -16,21 +16,23 @@ class FunctionData(
     val modifierSet: Set<KModifier>,
     options: FunctionGenerationOptions,
 ) : FunctionGenerationOptions(options) {
-    val urlTemplate by lazy { parseUrlTemplate(httpMethodAnnotation.path) }
-    val isBody by lazy { parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Body>() } }
-    val isFormUrl by lazy {
+    val urlTemplate by lazy(LazyThreadSafetyMode.NONE) { parseUrlTemplate(httpMethodAnnotation.path) }
+    val isBody by lazy(LazyThreadSafetyMode.NONE) {
+        parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Body>() }
+    }
+    val isFormUrl by lazy(LazyThreadSafetyMode.NONE) {
         hasAnnotation<FunctionAnnotation.FormUrlEncoded>() ||
             parameterDataList.any { param ->
                 param.hasAnnotation<ParameterAnnotation.Field>() || param.hasAnnotation<ParameterAnnotation.FieldMap>()
             }
     }
-    val isMultipart by lazy {
+    val isMultipart by lazy(LazyThreadSafetyMode.NONE) {
         hasAnnotation<FunctionAnnotation.Multipart>() ||
             parameterDataList.any { param ->
                 param.hasAnnotation<ParameterAnnotation.Part>() || param.hasAnnotation<ParameterAnnotation.PartMap>()
             }
     }
-    val isBodyInferred by lazy { listOf(isBody, isFormUrl, isMultipart).count { it } == 1 }
+    val isBodyInferred by lazy(LazyThreadSafetyMode.NONE) { listOf(isBody, isFormUrl, isMultipart).count { it } == 1 }
 
     inline fun <reified T : FunctionAnnotation> findAnnotationOrNull(): T? =
         this.ktorGenAnnotations.filterIsInstance<T>().firstOrNull()
