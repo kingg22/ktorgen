@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.ktlint)
 }
 
 group = "io.github.kingg22"
@@ -20,10 +21,9 @@ kotlin {
 
     // TODO add a android app to samples
     androidLibrary {
-        namespace = "$group.ktorgen.sample"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        packaging.resources.excludes.add("/META-INF/*")
+        namespace = "${group}.ktorgen.sample"
+        compileSdk = Integer.parseInt(libs.versions.android.compileSdk.get())
+        minSdk = Integer.parseInt(libs.versions.android.minSdk.get())
         compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
 
@@ -37,7 +37,6 @@ kotlin {
         binaries.library()
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
         nodejs()
@@ -80,7 +79,7 @@ kotlin {
         // indicate to KMP plugin compile the metadata of ksp
         kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
         dependencies {
-            implementation(projects.annotations)
+            implementation(libs.ktorgen.annotations)
             implementation(libs.ktor.client.core)
         }
     }
@@ -89,7 +88,7 @@ kotlin {
 dependencies {
     // ksp(projects.compiler) // a KMP project doesn't use this, only jvm or android kotlin projects
     // apply on common main because in there is my code
-    kspCommonMainMetadata(projects.compiler)
+    kspCommonMainMetadata(libs.ktorgen.compiler)
     /*
     // If I have more code with annotations on each target, apply on each target ksp
     add("kspJvm", projects.compiler)

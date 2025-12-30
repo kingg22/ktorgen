@@ -1,0 +1,60 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        google()
+    }
+}
+
+rootProject.name = "ktorgen-samples"
+
+boolean isCi = System.getenv()["CI"] == "true"
+
+def settingsLogger = logger
+
+if (!isCi) {
+    includeBuild("../.") {
+        settingsLogger.lifecycle("Replacing Ktorgen dependencies with local projects")
+        String publishGroup = "io.github.kingg22"
+        dependencySubstitution {
+            substitute(module("$publishGroup:ktorgen-annotations"))
+                .using(project(":annotations"))
+                .because("Developers can see local changes reflected in the sample project")
+            substitute(module("$publishGroup:ktorgen-compiler"))
+                .using(project(":compiler"))
+                .because("Developers can see local changes reflected in the sample project")
+        }
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    // Use Maven Central as the default repository (where Gradle will download dependencies) in all subprojects.
+    repositories {
+        mavenCentral()
+        google()
+    }
+    versionCatalogs {
+        create("libs") {
+            from(files("../gradle/libs.versions.toml"))
+
+            // Compile sample project with different Kotlin version, if provided:
+            String kotlinVersionOverride = System.getenv()["ktorgen_samples_kotlin_version"]
+            String ktorClientCoreVersionOverride = System.getenv()["ktorgen_samples_ktor_version"]
+            if (kotlinVersionOverride != null && !kotlinVersionOverride.isBlank()) {
+                settingsLogger.lifecycle("Reemplacing Kotlin version: ${kotlinVersionOverride}")
+                version("kotlin", kotlinVersionOverride)
+            }
+            if (ktorClientCoreVersionOverride != null && !ktorClientCoreVersionOverride.isBlank()) {
+                settingsLogger.lifecycle("Reemplacing Ktor Client Core version: ${ktorClientCoreVersionOverride}")
+                version("ktor", ktorClientCoreVersionOverride)
+            }
+        }
+    }
+}
+
+include(
+    ":kmp-lib",
+    ":kmp-lib-expect",
+    ":java-lib",
+)

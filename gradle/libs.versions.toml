@@ -65,6 +65,8 @@ junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher
 
 # samples
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktorgen-annotations = { group = "io.github.kingg22", name = "ktorgen-annotations", version.ref = "ktorgen-version" }
+ktorgen-compiler = { group = "io.github.kingg22", name = "ktorgen-compiler", version.ref = "ktorgen-version" }
 
 # Libraries can be bundled together for easier import
 [bundles]

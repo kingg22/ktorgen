@@ -131,6 +131,7 @@ platform-specific issues caused by [Optional expectation](https://kotlinlang.org
 See more in [GitHub Page](https://kingg22.github.io/ktorgen/)
 
 Open to contributions 🚀
+First usage needs to open in `samples` folder, the IDE will sync and compile automatically all.
 
 ## 📜 Disclaimer
 This repository is a fork of Ktorfit and Retrofit annotations, with my own changes and additions.

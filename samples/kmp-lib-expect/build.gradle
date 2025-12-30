@@ -1,10 +1,10 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.ktlint)
 }
 
 group = "io.github.kingg22"
@@ -19,10 +19,9 @@ kotlin {
     applyDefaultHierarchyTemplate()
 
     androidLibrary {
-        namespace = "$group.ktorgen.sample"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        packaging.resources.excludes += "/META-INF/*"
+        namespace = "${group}.ktorgen.sample"
+        compileSdk = Integer.parseInt(libs.versions.android.compileSdk.get())
+        minSdk = Integer.parseInt(libs.versions.android.minSdk.get())
         compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
     }
 
@@ -36,7 +35,6 @@ kotlin {
         binaries.library()
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
         nodejs()
@@ -75,10 +73,13 @@ kotlin {
     mingwX64()
     watchosDeviceArm64()
 
-    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
-    dependencies {
-        implementation(projects.annotations)
-        implementation(libs.ktor.client.core)
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation(libs.ktorgen.annotations)
+                implementation(libs.ktor.client.core)
+            }
+        }
     }
 }
 
@@ -87,23 +88,23 @@ dependencies {
 
     // don't apply on common main because we're going to generate on each platform. STILL FAILING
     // kspCommonMainMetadata(projects.compiler)
-    add("kspAndroid", projects.compiler)
-    add("kspJvm", projects.compiler)
-    add("kspJs", projects.compiler)
-    add("kspWasmJs", projects.compiler)
-    add("kspAndroidNativeX64", projects.compiler)
-    add("kspAndroidNativeX86", projects.compiler)
-    add("kspAndroidNativeArm32", projects.compiler)
-    add("kspAndroidNativeArm64", projects.compiler)
-    add("kspLinuxX64", projects.compiler)
-    add("kspLinuxArm64", projects.compiler)
-    add("kspMingwX64", projects.compiler)
-    add("kspIosX64", projects.compiler)
-    add("kspIosArm64", projects.compiler)
-    add("kspIosSimulatorArm64", projects.compiler)
-    add("kspTvosArm64", projects.compiler)
-    add("kspMacosArm64", projects.compiler)
-    add("kspMacosX64", projects.compiler)
+    add("kspAndroid", libs.ktorgen.compiler)
+    add("kspJvm", libs.ktorgen.compiler)
+    add("kspJs", libs.ktorgen.compiler)
+    add("kspWasmJs", libs.ktorgen.compiler)
+    add("kspAndroidNativeX64", libs.ktorgen.compiler)
+    add("kspAndroidNativeX86", libs.ktorgen.compiler)
+    add("kspAndroidNativeArm32", libs.ktorgen.compiler)
+    add("kspAndroidNativeArm64", libs.ktorgen.compiler)
+    add("kspLinuxX64", libs.ktorgen.compiler)
+    add("kspLinuxArm64", libs.ktorgen.compiler)
+    add("kspMingwX64", libs.ktorgen.compiler)
+    add("kspIosX64", libs.ktorgen.compiler)
+    add("kspIosArm64", libs.ktorgen.compiler)
+    add("kspIosSimulatorArm64", libs.ktorgen.compiler)
+    add("kspTvosArm64", libs.ktorgen.compiler)
+    add("kspMacosArm64", libs.ktorgen.compiler)
+    add("kspMacosX64", libs.ktorgen.compiler)
 }
 
 ksp {

@@ -1,0 +1,11 @@
+plugins {
+    id("java")
+    alias(libs.plugins.kotlinJvm)
+    alias(libs.plugins.ksp)
+}
+
+dependencies {
+    implementation(libs.ktorgen.annotations)
+    implementation(libs.ktor.client.core)
+    ksp(libs.ktorgen.compiler)
+}
