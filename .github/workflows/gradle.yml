@@ -96,7 +96,8 @@ jobs:
       run: ./gradlew checkLegacyAbi
 
     - name: Build samples
-      run: cd samples && ./gradlew build
+      run: ./gradlew build
+      working-directory: samples
       env:
         ktorgen_samples_local: true
 
