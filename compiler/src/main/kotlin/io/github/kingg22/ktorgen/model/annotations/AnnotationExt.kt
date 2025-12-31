@@ -1,5 +1,4 @@
 @file:JvmName("AnnotationExt")
-@file:JvmMultifileClass
 @file:OptIn(io.github.kingg22.ktorgen.core.KtorGenExperimental::class)
 
 package io.github.kingg22.ktorgen.model.annotations
@@ -35,6 +34,7 @@ fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
                 isParameter = true
                 timer.requireNotNull(parameterName, COOKIE_ON_FUNCTION_WITHOUT_VALUE)
             }
+
             else -> {
                 isParameter = false
                 cleanValue

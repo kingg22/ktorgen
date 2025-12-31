@@ -1,5 +1,4 @@
 @file:JvmName("Constants")
-@file:JvmMultifileClass
 
 package io.github.kingg22.ktorgen.model
 
