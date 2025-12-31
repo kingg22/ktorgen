@@ -84,6 +84,10 @@ internal data class KtorGenLogger(private val kspLogger: KSPLogger, private val 
         const val MULTIPLE_URL_FOUND = "Multiple @Url annotations found, only one is accepted. "
         const val URL_WITH_PATH_VALUE = "@Url parameter can only be used with empty path in Http Method. "
         const val URL_WITH_PATH_PARAMETER = "@Url parameter can't be used with @Path parameters. "
+        const val URL_FRAGMENT_IN_FUNCTION_IS_BLANK =
+            "@Fragment in function is required to have a value or remove it. See https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Fragment and the documentation of KtorGen https://kingg22.github.io/ktorgen/annotations/http.html#fragment"
+        const val MULTIPLE_URL_FRAGMENT =
+            "@Fragment can only be used once, found more than one parameter or function + parameter annotated. See https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Fragment and the documentation of KtorGen https://kingg22.github.io/ktorgen/annotations/http.html#fragment"
         const val PARAMETER_WITHOUT_ANNOTATION =
             "Parameter without annotation of usage is invalid. Please, indicate with annotation the reason or use HttpRequestBuilder. "
         const val PARAMETER_WITH_LOT_ANNOTATIONS =

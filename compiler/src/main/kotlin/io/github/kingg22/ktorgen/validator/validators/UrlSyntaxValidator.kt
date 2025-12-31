@@ -2,6 +2,7 @@ package io.github.kingg22.ktorgen.validator.validators
 
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.model.UrlPathRegex
+import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
@@ -60,6 +61,17 @@ internal class UrlSyntaxValidator : ValidatorStrategy {
 
                 if (function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Path>() }) {
                     addError(KtorGenLogger.URL_WITH_PATH_PARAMETER, function)
+                }
+            }
+
+            function.findAnnotationOrNull<FunctionAnnotation.Fragment>()?.let { fragment ->
+                if (fragment.value.isBlank()) addError(KtorGenLogger.URL_FRAGMENT_IN_FUNCTION_IS_BLANK, function)
+                if (function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Fragment>() }) {
+                    addError(KtorGenLogger.MULTIPLE_URL_FRAGMENT, function)
+                }
+            } ?: run {
+                if (function.parameterDataList.count { it.hasAnnotation<ParameterAnnotation.Fragment>() } > 1) {
+                    addError(KtorGenLogger.MULTIPLE_URL_FRAGMENT, function)
                 }
             }
         }
