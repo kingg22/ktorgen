@@ -1,14 +1,12 @@
 @file:JvmName("-Constants")
-@file:JvmMultifileClass
 
 package io.github.kingg22.ktorgen.core
 
-import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import kotlin.jvm.JvmSynthetic
 
 /**
- * Indicate a default value going to be generated,
+ * Indicate a default value going to be generated;
  * depends on where is used the value can be different,
  * see doc on property.
  *

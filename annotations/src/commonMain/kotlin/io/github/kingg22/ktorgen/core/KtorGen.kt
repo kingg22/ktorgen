@@ -55,7 +55,7 @@ annotation class KtorGen(
     val generate: Boolean = true,
 
     /**
-     * Set a base path (or URL) for the current interface, all generated functions going to init with this + it path.
+     * Set a base path (or URL) for the current interface, all generated functions going to init with this and it path.
      *
      * By default, Ktor Client handle base url for the `HttpClient`.
      *
@@ -109,7 +109,7 @@ annotation class KtorGen(
      *
      * The annotations need to have empty constructor like [@JvmSynthetic][kotlin.jvm.JvmSynthetic].
      * Annotations requires properties like [@JvmName][kotlin.jvm.JvmName] can't be used.
-     * In that case, declare manually a function with the generated class.
+     * In that case, manually declare a function with the generated class.
      *
      * For example, `[ExperimentalApi::class]`
      * @see KtorGenFunction.annotations
@@ -138,7 +138,7 @@ annotation class KtorGen(
      *
      * The annotations need to have empty constructor like [@JvmSynthetic][kotlin.jvm.JvmSynthetic].
      * Annotations requires properties like [@JvmName][kotlin.jvm.JvmName] can't be used.
-     * In that case, declare manually a function with the generated class.
+     * In that case, manually declare a function with the generated class.
      *
      * For example, `[JvmSynthetic::class]`
      */
@@ -151,7 +151,7 @@ annotation class KtorGen(
      *
      * Can be `public` or `internal`.
      * Is not valid: `private` and `protected`.
-     * By default, is visibility modifier of the interface.
+     * By default, there is a visibility modifier of the interface.
      *
      * Don't confuse the visibility of generated code with interface visibility.
      * The interface can't be `private`

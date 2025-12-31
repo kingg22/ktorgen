@@ -22,8 +22,6 @@ import org.intellij.lang.annotations.Language
  * // Generate comments?postId=3&postId=4
  * ```
  *
- * A `null` values are ignored
- *
  * @see <a href="https://ktor.io/docs/client-requests.html#query_parameters">Ktor Client Request - Query parameter</a>
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)

@@ -13,6 +13,7 @@ package io.github.kingg22.ktorgen.http
  * @Header("Accept", "application/json)
  * ```
  * @see Header
+ * @see HeaderParam
  * @see Header.Companion
  */
 @Deprecated(

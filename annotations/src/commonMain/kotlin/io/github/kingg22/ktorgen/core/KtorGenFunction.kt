@@ -51,7 +51,7 @@ annotation class KtorGenFunction(
      *
      * The annotations need to have empty constructor like [@JvmSynthetic][kotlin.jvm.JvmSynthetic].
      * Annotations requires properties like [@JvmName][kotlin.jvm.JvmName] can't be used.
-     * In that case, declare manually a function with the generated class.
+     * In that case, manually declare a function with the generated class.
      *
      * For example, `[JvmSynthetic::class]`
      */
@@ -59,7 +59,7 @@ annotation class KtorGenFunction(
     val annotations: Array<KClass<out Annotation>> = [],
 
     /**
-     * _[KtorGenExperimental]_ Opt-in annotations that should be propagated to generated method,
+     * _[KtorGenExperimental]_ Opt-in annotations, which should be propagated to generated method,
      * need be marked with [@RequiresOptIn][RequiresOptIn] or [@SubclassOptInRequired][SubclassOptInRequired],
      * otherwise the generated code will not compile because requirements of [@OptIn][OptIn].
      *

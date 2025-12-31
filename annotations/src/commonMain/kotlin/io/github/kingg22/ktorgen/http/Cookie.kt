@@ -49,7 +49,7 @@ import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
  * ```
  *
  * @property name Name of the cookie
- * @property value Value of the cookie (applied to **parameter**, is obtained of it, else is **function is required**)
+ * @property value Value of the cookie (applied to **parameter**, is obtained of it, else in **function is required**)
  *
  * @see Cookie.PairString
  * @see Cookie.Companion
