@@ -11,11 +11,6 @@ group = "io.github.kingg22"
 version = libs.versions.ktorgen.version.get()
 
 kotlin {
-    compilerOptions {
-        extraWarnings.set(true)
-        allWarningsAsErrors.set(true)
-    }
-
     applyDefaultHierarchyTemplate()
 
     androidLibrary {

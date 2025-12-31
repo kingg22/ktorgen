@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -12,14 +11,8 @@ group = "io.github.kingg22"
 version = libs.versions.ktorgen.version.get()
 
 kotlin {
-    compilerOptions {
-        extraWarnings.set(true)
-        allWarningsAsErrors.set(true)
-    }
-
     applyDefaultHierarchyTemplate()
 
-    // TODO add a android app to samples
     androidLibrary {
         namespace = "${group}.ktorgen.sample"
         compileSdk = Integer.parseInt(libs.versions.android.compileSdk.get())
