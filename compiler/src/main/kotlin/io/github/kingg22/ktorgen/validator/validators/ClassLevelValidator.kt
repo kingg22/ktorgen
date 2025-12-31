@@ -100,7 +100,7 @@ internal class ClassLevelValidator : ValidatorStrategy {
             }
 
             function.parameterDataList.forEach { parameter ->
-                if (parameter.ktorgenAnnotations.isEmpty() &&
+                if (parameter.ktorgenAnnotations.none() &&
                     parameter.isValidTakeFrom.not() &&
                     parameter.isHttpRequestBuilderLambda.not()
                 ) {
@@ -108,7 +108,7 @@ internal class ClassLevelValidator : ValidatorStrategy {
                 }
 
                 // mix annotations on parameter like @HeaderParam @Cookie @Body is not allowed
-                if (parameter.ktorgenAnnotations.filterNot { it.isRepeatable }.size > 1) {
+                if (parameter.ktorgenAnnotations.filterNot { it.isRepeatable }.count() > 1) {
                     addError(KtorGenLogger.PARAMETER_WITH_LOT_ANNOTATIONS, parameter)
                 }
 

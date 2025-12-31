@@ -179,7 +179,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
         name = param.nameString,
         type = param.typeData.typeName,
         modifiers = buildList { if (param.isVararg) add(VARARG) },
-    ).addAnnotations(param.nonKtorgenAnnotations)
+    ).addAnnotations(param.nonKtorgenAnnotations.toList())
         .applyIfNotNull(param.optInAnnotation) { addAnnotation(it) }
         .build()
 
