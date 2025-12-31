@@ -21,6 +21,7 @@ import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.Multipart
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.FunctionGenerationOptions
+import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
@@ -108,8 +109,8 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 name = name,
                 returnTypeData = returnType,
                 isSuspend = isSuspend,
-                parameterDataList = parameters,
-                ktorGenAnnotations = functionAnnotations,
+                parameterDataList = parameters.asSequence(),
+                ktorGenAnnotations = functionAnnotations.asSequence(),
                 httpMethodAnnotation =
                 functionAnnotations.filterIsInstance<FunctionAnnotation.HttpMethodAnnotation>().first(),
                 modifierSet = modifiers.filterNot {
@@ -170,16 +171,15 @@ internal class FunctionMapper : DeclarationFunctionMapper {
             }
 
             timer.addStep("Going to get Fragment")
-            function.getAnnotation<Fragment, Any>(manualExtraction = {
-                add(
-                    FunctionAnnotation.Fragment(
-                        it.getArgumentValueByName<String>("value").orEmpty(),
-                        it.getArgumentValueByName("encoded") ?: false,
-                    ),
+            function.getAnnotation(manualExtraction = {
+                FunctionAnnotation.Fragment(
+                    it.getArgumentValueByName<String>("value")?.replace(KTORGEN_DEFAULT_VALUE, "").orEmpty(),
+                    it.getArgumentValueByName("encoded") ?: false,
                 )
-                timer.addStep("Fragment found")
-            }) {
-                add(FunctionAnnotation.Fragment(it.value, it.encoded))
+            }) { fragment: Fragment ->
+                FunctionAnnotation.Fragment(fragment.value.replace(KTORGEN_DEFAULT_VALUE, ""), fragment.encoded)
+            }?.also {
+                add(it)
                 timer.addStep("Fragment found")
             }
 
