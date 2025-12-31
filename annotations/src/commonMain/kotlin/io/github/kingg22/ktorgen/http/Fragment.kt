@@ -1,7 +1,11 @@
 package io.github.kingg22.ktorgen.http
 
+import io.github.kingg22.ktorgen.core.KTORGEN_DEFAULT_NAME
+
 /**
  * Add a hash mark `#` introduces the optional fragment near the end of the URL.
+ *
+ * Applied to **parameter**, is obtained of it; else in **function is required**.
  *
  * _Generated code:_
  * ```kotlin
@@ -20,14 +24,15 @@ package io.github.kingg22.ktorgen.http
  * @see <a href="https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Fragment/Text_fragments">MDN - URI text fragments</a>
  */
 @Retention(AnnotationRetention.SOURCE)
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @MustBeDocumented
 annotation class Fragment(
     /**
      * A sequence of any characters.
      * The resource itself defines the exact format of the fragment.
+     * Default the value of the _function parameter_.
      */
-    val value: String,
+    val value: String = KTORGEN_DEFAULT_NAME,
     /** Specifies the value is already URL encoded. */
     val encoded: Boolean = false,
 )
