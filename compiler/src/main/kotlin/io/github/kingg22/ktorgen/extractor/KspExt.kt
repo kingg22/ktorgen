@@ -1,5 +1,4 @@
 @file:JvmName("KspExt")
-@file:JvmMultifileClass
 @file:OptIn(KspExperimental::class, ExperimentalContracts::class)
 
 package io.github.kingg22.ktorgen.extractor
@@ -31,7 +30,32 @@ inline fun <reified T> KSAnnotation.getArgumentValueByName(name: String): T? = t
     it.name?.asString() == name && it.value != null && it.value is T
 }?.value as? T
 
-// try-catch because default values is not working for KMP builds https://github.com/google/ksp/issues/2356
+// try-catch because default values are not working for KMP builds https://github.com/google/ksp/issues/2356
+
+/** Use the same filter of [getAnnotationsByType] */
+fun filterAnnotation(ksAnnotation: KSAnnotation, annotationKClass: KClass<out Annotation>) =
+    ksAnnotation.shortName.getShortName() == annotationKClass.simpleName &&
+        ksAnnotation.annotationType.resolve().declaration.qualifiedName?.asString() == annotationKClass.qualifiedName
+
+/**
+ * Catch those exceptions [NoSuchElementException], [KSTypeNotPresentException] and [KSTypesNotPresentException],
+ * because [an issue with default values](https://github.com/google/ksp/issues/2356)
+ */
+inline fun <T> catchKSPExceptions(fallback: () -> T, block: () -> T): T {
+    contract {
+        callsInPlace(fallback, InvocationKind.AT_MOST_ONCE)
+        callsInPlace(block, InvocationKind.AT_MOST_ONCE)
+    }
+    return try {
+        block()
+    } catch (_: NoSuchElementException) {
+        fallback()
+    } catch (_: KSTypeNotPresentException) {
+        fallback()
+    } catch (_: KSTypesNotPresentException) {
+        fallback()
+    }
+}
 
 /** Extract one annotation of type [A] and map to [R] if present. For more than one annotation use [getAllAnnotation] */
 inline fun <reified A : Annotation, R : Any> KSAnnotated.getAnnotation(
@@ -42,14 +66,10 @@ inline fun <reified A : Annotation, R : Any> KSAnnotated.getAnnotation(
         callsInPlace(manualExtraction, InvocationKind.AT_MOST_ONCE)
         callsInPlace(mapFromAnnotation, InvocationKind.AT_MOST_ONCE)
     }
-    return try {
+    return catchKSPExceptions(
+        fallback = { this.annotations.singleOrNull { filterAnnotation(it, A::class) }?.let(manualExtraction) },
+    ) {
         this.getAnnotationsByType<A>().singleOrNull()?.let(mapFromAnnotation)
-    } catch (_: NoSuchElementException) {
-        this.annotations.singleOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
-    } catch (_: KSTypeNotPresentException) {
-        this.annotations.singleOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
-    } catch (_: KSTypesNotPresentException) {
-        this.annotations.singleOrNull { it.shortName.getShortName() == A::class.simpleName!! }?.let(manualExtraction)
     }
 }
 
@@ -57,14 +77,10 @@ inline fun <reified A : Annotation, R : Any> KSAnnotated.getAnnotation(
 inline fun <reified A : Annotation, R : Any> KSAnnotated.getAllAnnotation(
     noinline manualExtraction: (KSAnnotation) -> R,
     noinline mapFromAnnotation: (A) -> R,
-): Sequence<R> = try {
+): Sequence<R> = catchKSPExceptions(
+    fallback = { this.annotations.filter { filterAnnotation(it, A::class) }.map(manualExtraction) },
+) {
     this.getAnnotationsByType<A>().map(mapFromAnnotation)
-} catch (_: NoSuchElementException) {
-    this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
-} catch (_: KSTypeNotPresentException) {
-    this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
-} catch (_: KSTypesNotPresentException) {
-    this.annotations.filter { it.shortName.getShortName() == A::class.simpleName!! }.map(manualExtraction)
 }
 
 private val ktorGenParametersNames = ktorGenAnnotations.mapNotNull(KClass<*>::simpleName)
