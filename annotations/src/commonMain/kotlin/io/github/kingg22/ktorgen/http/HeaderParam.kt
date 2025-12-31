@@ -24,8 +24,8 @@ import org.intellij.lang.annotations.Language
  *
  * By default, Headers do not overwrite each other:
  * all headers with the same name will be included in the request.
- * Except headers mentioned as _singleton_,
- * e.g. [Content-Type](https://www.rfc-editor.org/rfc/rfc9110.html#name-content-type)
+ * Except headers mentioned as _singleton_, e.g.
+ * [Content-Type](https://www.rfc-editor.org/rfc/rfc9110.html#name-content-type)
  *
  * @see Header
  * @see Header.Companion
@@ -40,5 +40,5 @@ import org.intellij.lang.annotations.Language
 annotation class HeaderParam(
     /** The header name */
     @Language("http-header-reference")
-    val name: String,
+    val value: String,
 )
