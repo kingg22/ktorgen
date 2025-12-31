@@ -8,8 +8,8 @@ class ParameterData(
     val nameString: String,
     val typeData: TypeData,
     val ksValueParameter: KSValueParameter,
-    val ktorgenAnnotations: List<ParameterAnnotation>,
-    val nonKtorgenAnnotations: Set<AnnotationSpec>,
+    val ktorgenAnnotations: Sequence<ParameterAnnotation>,
+    val nonKtorgenAnnotations: Sequence<AnnotationSpec>,
     val optInAnnotation: AnnotationSpec?,
     val isHttpRequestBuilderLambda: Boolean,
 ) {
