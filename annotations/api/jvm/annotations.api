@@ -467,7 +467,7 @@ public abstract interface annotation class io/github/kingg22/ktorgen/http/Header
 }
 
 public abstract interface annotation class io/github/kingg22/ktorgen/http/HeaderParam : java/lang/annotation/Annotation {
-	public abstract fun name ()Ljava/lang/String;
+	public abstract fun value ()Ljava/lang/String;
 }
 
 public abstract interface annotation class io/github/kingg22/ktorgen/http/HeaderParam$Container : java/lang/annotation/Annotation {

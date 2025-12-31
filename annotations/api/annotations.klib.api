@@ -184,7 +184,7 @@ open annotation class io.github.kingg22.ktorgen.http/FormUrlEncoded : kotlin/Ann
 }
 
 open annotation class io.github.kingg22.ktorgen.http/Fragment : kotlin/Annotation { // io.github.kingg22.ktorgen.http/Fragment|null[0]
-    constructor <init>(kotlin/String, kotlin/Boolean = ...) // io.github.kingg22.ktorgen.http/Fragment.<init>|<init>(kotlin.String;kotlin.Boolean){}[0]
+    constructor <init>(kotlin/String = ..., kotlin/Boolean = ...) // io.github.kingg22.ktorgen.http/Fragment.<init>|<init>(kotlin.String;kotlin.Boolean){}[0]
 
     final val encoded // io.github.kingg22.ktorgen.http/Fragment.encoded|{}encoded[0]
         final fun <get-encoded>(): kotlin/Boolean // io.github.kingg22.ktorgen.http/Fragment.encoded.<get-encoded>|<get-encoded>(){}[0]
@@ -606,8 +606,8 @@ open annotation class io.github.kingg22.ktorgen.http/HeaderMap : kotlin/Annotati
 open annotation class io.github.kingg22.ktorgen.http/HeaderParam : kotlin/Annotation { // io.github.kingg22.ktorgen.http/HeaderParam|null[0]
     constructor <init>(kotlin/String) // io.github.kingg22.ktorgen.http/HeaderParam.<init>|<init>(kotlin.String){}[0]
 
-    final val name // io.github.kingg22.ktorgen.http/HeaderParam.name|{}name[0]
-        final fun <get-name>(): kotlin/String // io.github.kingg22.ktorgen.http/HeaderParam.name.<get-name>|<get-name>(){}[0]
+    final val value // io.github.kingg22.ktorgen.http/HeaderParam.value|{}value[0]
+        final fun <get-value>(): kotlin/String // io.github.kingg22.ktorgen.http/HeaderParam.value.<get-value>|<get-value>(){}[0]
 }
 
 open annotation class io.github.kingg22.ktorgen.http/Headers : kotlin/Annotation { // io.github.kingg22.ktorgen.http/Headers|null[0]
