@@ -9,7 +9,7 @@ public interface Github {
     @GET("repos/{owner}/{repo}")
     @Header(name = "Accept", value = "application/json")
     @Header(name = Header.Accept, value = Header.ContentTypes.Application.Cbor)
-    Flow<String> getRepo(@Path String owner, @Path String repo, @HeaderParam(name = "Authorization") String token);
+    Flow<String> getRepo(@Path String owner, @Path String repo, @HeaderParam("Authorization") String token);
 
     @Cookie(
         name = "session_id",

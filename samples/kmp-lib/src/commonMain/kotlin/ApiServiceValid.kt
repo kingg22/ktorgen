@@ -42,7 +42,7 @@ interface ApiServiceValid {
     suspend fun updateUser(@Path("id") id: String, @Body user: IssueData): IssueData
 
     @DELETE("users/{id}")
-    suspend fun deleteUser(@Path("id") id: String, @HeaderParam(name = Header.Authorization) token: String)
+    suspend fun deleteUser(@Path("id") id: String, @HeaderParam(Header.Authorization) token: String)
 
     @PATCH("users/{id}/status")
     suspend fun updateStatus(@Path("id") id: String, @Body status: IssueData): IssueData
