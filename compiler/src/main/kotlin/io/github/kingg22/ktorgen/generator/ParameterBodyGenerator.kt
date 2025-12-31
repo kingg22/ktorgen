@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.*
 import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
 import io.github.kingg22.ktorgen.applyIf
 import io.github.kingg22.ktorgen.checkImplementation
+import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.HttpRequestBuilderTypeName
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
@@ -17,7 +18,7 @@ internal class ParameterBodyGenerator(
 ) {
 
     context(blockBuilder: CodeBlock.Builder)
-    fun addBuilderCall(parameterList: List<ParameterData>) = blockBuilder.apply {
+    fun addBuilderCall(parameterList: Sequence<ParameterData>) = blockBuilder.apply {
         parameterList.firstOrNull { it.isValidTakeFrom }?.let { parameterData ->
             addStatement(
                 "this.%L",
@@ -40,7 +41,7 @@ internal class ParameterBodyGenerator(
     }
 
     context(blockBuilder: CodeBlock.Builder)
-    fun addAttributes(parameterDataList: List<ParameterData>) = blockBuilder.apply {
+    fun addAttributes(parameterDataList: Sequence<ParameterData>) = blockBuilder.apply {
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.Tag>() }
             .forEach { param ->
@@ -65,20 +66,40 @@ internal class ParameterBodyGenerator(
     }
 
     context(blockBuilder: CodeBlock.Builder)
-    fun addQuery(params: List<ParameterData>) = blockBuilder.apply {
+    fun addQuery(params: Sequence<ParameterData>) = blockBuilder.apply {
         add(getQueryTextBlock(params))
         add(getQueryNameTextBlock(params))
         add(getQueryMapTextBlock(params))
     }
 
+    context(blockBuilder: CodeBlock.Builder)
+    fun addFragmentUrl(func: FunctionData) = blockBuilder.apply {
+        func.parameterDataList.singleOrNull { it.hasAnnotation<ParameterAnnotation.Fragment>() }?.let { param ->
+            val fragment = param.findAnnotation<ParameterAnnotation.Fragment>()
+            val isNullable = param.typeData.parameterType.isMarkedNullable
+            if (isNullable) {
+                beginControlFlow(LITERAL_NN_LET, param.nameString)
+            }
+            addStatement(
+                "this.%L = %L",
+                if (fragment.encoded) "encodedFragment" else "fragment",
+                if (isNullable) CodeBlock.of($$"\"$it\"") else CodeBlock.of("\"$${param.nameString}\""),
+            )
+            if (isNullable) endControlFlow()
+        }
+    }
+
     // -- header --
     context(blockBuilder: CodeBlock.Builder)
-    fun addHeaderParameter(parameterDataList: List<ParameterData>) = blockBuilder.apply {
+    fun addHeaderParameter(parameterDataList: Sequence<ParameterData>) = blockBuilder.apply {
+        var foundHeader = false
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.Header>() }
-            .takeIf { it.isNotEmpty() }
-            ?.also { beginControlFlow(THIS_HEADERS, KTOR_CLIENT_REQUEST_HEADER_FUNCTION) }
-            ?.forEach { parameterData ->
+            .forEachIndexed { index, parameterData ->
+                if (index == 0) {
+                    foundHeader = true
+                    beginControlFlow(THIS_HEADERS, KTOR_CLIENT_REQUEST_HEADER_FUNCTION)
+                }
                 val paramName = parameterData.nameString
 
                 val headers = parameterData.findAllAnnotations<ParameterAnnotation.Header>()
@@ -112,7 +133,8 @@ internal class ParameterBodyGenerator(
                         }
                     }
                 }
-            }?.also { endControlFlow() }
+            }
+        if (foundHeader) endControlFlow()
     }
 
     private fun CodeBlock.Builder.headerParameterListOrArray(
@@ -149,12 +171,15 @@ internal class ParameterBodyGenerator(
     }
 
     context(blockBuilder: CodeBlock.Builder)
-    fun addHeaderMap(parameterDataList: List<ParameterData>) = blockBuilder.apply {
+    fun addHeaderMap(parameterDataList: Sequence<ParameterData>) = blockBuilder.apply {
+        var foundHeader = false
         parameterDataList
             .filter { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
-            .takeIf { it.isNotEmpty() }
-            ?.also { beginControlFlow(THIS_HEADERS, KTOR_CLIENT_REQUEST_HEADER_FUNCTION) }
-            ?.forEach { parameterData ->
+            .forEachIndexed { index, parameterData ->
+                if (index == 0) {
+                    foundHeader = true
+                    beginControlFlow(THIS_HEADERS, KTOR_CLIENT_REQUEST_HEADER_FUNCTION)
+                }
                 val typeName = parameterData.typeData.typeName
                 val paramName = parameterData.nameString
 
@@ -180,7 +205,8 @@ internal class ParameterBodyGenerator(
                     isMap -> headerMapOrVarargMap(isVarargMap, paramAccess, valueIsString, valueIsNullable)
                     isPair -> headerPairOrVarargPair(isVarargPair, paramName, valueIsString, valueIsNullable)
                 }
-            }?.also { endControlFlow() }
+            }
+        if (foundHeader) endControlFlow()
     }
 
     @KtorGenWithoutCoverage // utility function must not throw an exception
@@ -253,7 +279,7 @@ internal class ParameterBodyGenerator(
     }
 
     // -- query --
-    private fun getQueryMapTextBlock(params: List<ParameterData>) = CodeBlock.builder().apply {
+    private fun getQueryMapTextBlock(params: Sequence<ParameterData>) = CodeBlock.builder().apply {
         params.filter { it.hasAnnotation<ParameterAnnotation.QueryMap>() }
             .forEach { parameterData ->
                 val queryMap = parameterData.findAnnotation<ParameterAnnotation.QueryMap>()
@@ -272,7 +298,7 @@ internal class ParameterBodyGenerator(
             }
     }.build()
 
-    private fun getQueryNameTextBlock(params: List<ParameterData>) = CodeBlock.builder().apply {
+    private fun getQueryNameTextBlock(params: Sequence<ParameterData>) = CodeBlock.builder().apply {
         params
             .filter { it.hasAnnotation<ParameterAnnotation.QueryName>() }
             .forEach { parameterData ->
@@ -304,7 +330,7 @@ internal class ParameterBodyGenerator(
             }
     }.build()
 
-    private fun getQueryTextBlock(params: List<ParameterData>) = CodeBlock.builder().apply {
+    private fun getQueryTextBlock(params: Sequence<ParameterData>) = CodeBlock.builder().apply {
         params
             .filter { it.hasAnnotation<ParameterAnnotation.Query>() }
             .forEach { parameterData ->
@@ -337,7 +363,7 @@ internal class ParameterBodyGenerator(
     }.build()
 
     // -- body --
-    fun getPartsCodeBlock(params: List<ParameterData>): CodeBlock {
+    fun getPartsCodeBlock(params: Sequence<ParameterData>): CodeBlock {
         val partCode = CodeBlock.builder()
 
         params.filter { it.hasAnnotation<ParameterAnnotation.Part>() }
@@ -426,7 +452,7 @@ internal class ParameterBodyGenerator(
         }.build()
     }
 
-    fun getFieldArgumentsCodeBlock(params: List<ParameterData>): CodeBlock {
+    fun getFieldArgumentsCodeBlock(params: Sequence<ParameterData>): CodeBlock {
         val fieldCode = CodeBlock.builder().apply {
             params.filter { it.hasAnnotation<ParameterAnnotation.Field>() }
                 .forEach { parameterData ->
