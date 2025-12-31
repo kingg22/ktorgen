@@ -22,6 +22,9 @@ sealed interface ParameterAnnotation {
     /** See [io.github.kingg22.ktorgen.http.QueryMap] */
     class QueryMap(val encoded: Boolean) : WithMapOrPairType
 
+    /** See [io.github.kingg22.ktorgen.http.Fragment] */
+    class Fragment(val encoded: Boolean) : ParameterAnnotation
+
     // -- header --
 
     /** See [io.github.kingg22.ktorgen.http.HeaderParam] */

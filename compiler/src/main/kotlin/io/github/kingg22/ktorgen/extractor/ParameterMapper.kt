@@ -42,8 +42,8 @@ internal class ParameterMapper : DeclarationParameterMapper {
                 ksValueParameter = declaration,
                 ktorgenAnnotations = collectParameterAnnotations(declaration).also {
                     timer.addStep("Processed annotations")
-                },
-                nonKtorgenAnnotations = annotations,
+                }.asSequence(),
+                nonKtorgenAnnotations = annotations.asSequence(),
                 optInAnnotation = optInAnnotation,
                 isHttpRequestBuilderLambda = isHttpRequestBuilderLambda(type).also {
                     timer.addStep("Processed is http builder lambda: $it")
@@ -148,10 +148,10 @@ internal class ParameterMapper : DeclarationParameterMapper {
         declaration.getAllAnnotation<HeaderParam, ParameterAnnotation.Header>(
             manualExtraction = {
                 ParameterAnnotation.Header(
-                    it.getArgumentValueByName<String>("name") ?: declaration.name.safeString(),
+                    it.getArgumentValueByName<String>("value") ?: declaration.name.safeString(),
                 )
             },
-        ) { ParameterAnnotation.Header(it.name) }.forEach { add(it) }
+        ) { ParameterAnnotation.Header(it.value) }.forEach { add(it) }
 
         declaration.getAnnotation<HeaderMap, ParameterAnnotation.HeaderMap>(
             manualExtraction = { _ -> ParameterAnnotation.HeaderMap },
@@ -178,6 +178,12 @@ internal class ParameterMapper : DeclarationParameterMapper {
             .toList()
             .takeIf { it.isNotEmpty() }
             ?.let { cookies -> add(ParameterAnnotation.Cookies(cookies)) }
+
+        declaration.getAnnotation(manualExtraction = { annotation ->
+            ParameterAnnotation.Fragment(annotation.getArgumentValueByName("encoded") ?: false)
+        }) { fragment: Fragment ->
+            ParameterAnnotation.Fragment(fragment.encoded)
+        }?.let { add(it) }
     }
 
     private fun isHttpRequestBuilderLambda(type: KSType): Boolean {
