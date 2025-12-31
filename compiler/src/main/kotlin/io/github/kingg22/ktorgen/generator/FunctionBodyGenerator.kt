@@ -275,8 +275,9 @@ internal class FunctionBodyGenerator(
     }
 
     private fun getFragmentTextBlock(func: FunctionData) = CodeBlock.builder().apply {
+        // Only ONE fragment per function is accepted
         func.findAnnotationOrNull<FunctionAnnotation.Fragment>()?.let {
             addStatement("this.%L = %P", if (it.encoded) "encodedFragment" else "fragment", it.value)
-        }
+        } ?: parameterGenerator.addFragmentUrl(func)
     }.build()
 }
