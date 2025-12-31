@@ -15,7 +15,7 @@ concurrency: preview-${{ github.ref }}
 
 jobs:
   preview_docs:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.head.repo.full_name == github.repository && false
     permissions:
       contents: write
       pull-requests: write
