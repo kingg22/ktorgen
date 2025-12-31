@@ -388,10 +388,12 @@ suspend fun postTo(@Url url: String, @Body data: Data): Response
 
 ---
 
-### [`@Fragment`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Fragment.kt) **
+### [`@Fragment`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Fragment.kt)
 
 Allows inserting fragments in URLs, useful for modular routing.
 Rarely needed but powerful in dynamic routing scenarios.
+
+Only one `@Fragment` is allowed per function.
 
 **Example 1** In function
 
@@ -401,10 +403,10 @@ Rarely needed but powerful in dynamic routing scenarios.
 suspend fun fetchDynamic(@Path id: String): Response
 ```
 
-**Example 2** In parameter **soon***
+**Example 2** In parameter
 
 ```kotlin
-@POST("collection/id") // don't include the fragment in url template
+@POST("collection/id") // don't include the fragment in the url template
 suspend fun postData(@Fragment name: String)
 ```
 
