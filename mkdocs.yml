@@ -65,9 +65,9 @@ nav:
           - Core: annotations/core.md
           - HTTP: annotations/http.md
       - Advanced:
-          - Options: options.md
-          - Request Customization: advanced.md
-          - Dokka External Reference: dokka_references.md
+          - Options: advanced/options.md
+          - Request Customization: advanced/request_customization.md
+          - Dokka External Reference: advanced/dokka_references.md
   - Issue Tracker: "https://github.com/kingg22/ktorgen/issues"
   - API Reference: api/index.html
 repo_name: ktorgen
