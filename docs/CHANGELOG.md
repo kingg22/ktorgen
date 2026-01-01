@@ -3,14 +3,28 @@
 ## [Unreleased]
 
 ### Added
+- Expand support of `@Fragment` to function parameters.
+- Add a compatibility table between KtorGen, Kotlin, KSP, and Ktor Client versions. This table is generated automatically.
+This is not a mandatory rule for usage of KtorGen.
 
 ### Changed
+- **BREAKING CHANGE**: The parameter of `@HeaderParam` was renamed from _name_ to _value_
+- Migrate from [_mkdocs shadcn theme_](https://asiffer.github.io/mkdocs-shadcn/) to
+[_mkdocs material theme_](https://squidfunk.github.io/mkdocs-material/) documentation website
+- [internal] Move samples to a separate build project
+- [internal] Use _Sequences_ instead of _Lists_ for intermediate collections
+- [internal] Use _LazyTheadSafe.None_ for lazy properties, the processor is single-threaded
 
 ### Deprecated
 
 ### Removed
+- Remove unnecessary `@file:JvmMultifileClass` annotation on some annotations files.
 
 ### Fixed
+- Correct handling of Sequences extracted from KSP symbols.
+- Fix incorrect filters between source symbols and reduce unnecessary mappings.
+- Prevent incorrect usage of `it` param on `this.url {}` block in generated code.
+- Exclude / Forbidden `abstract, external and expect` modifiers.
 
 ### Security
 
