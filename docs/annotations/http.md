@@ -1,35 +1,44 @@
 ## HTTP Annotations
 
-These annotations define how Ktorgen maps Kotlin interfaces and methods into **HTTP requests** for Ktor Client.
+These annotations define how **Ktorgen** maps Kotlin interfaces and methods into **HTTP requests** for **Ktor Client**.
 
-Ktorgen’s HTTP annotations are inspired by **Retrofit** and **Ktorfit**, providing a familiar developer experience while
-maintaining **KMP compatibility** and **type-safety**.
+Ktorgen’s HTTP annotations are inspired by **Retrofit** and **Ktorfit**, providing a familiar developer experience while maintaining:
+
+- **KMP compatibility**
+- **Type safety**
+- **Compile-time validation**
 
 ---
 
 ## HTTP Method Annotations
 
-These annotations describe the **type of HTTP request** the generated function will perform.
+HTTP method annotations describe the **type of HTTP request** the generated function will perform.
+
+---
 
 ### [`@HTTP`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/HTTP.kt)
 
-Generic annotation for defining a custom HTTP method.
+Generic annotation for defining a **custom HTTP method**.
 Can be used instead of specific method annotations (`@GET`, `@POST`, etc.).
 
-| Parameter | Type      | Description                                                                                                                                           | Default        |
-|-----------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|
-| `method`  | `String`  | The HTTP method name (e.g. `"TRACE"`).                                                                                                                | **Required**** |
-| `path`    | `String`  | Endpoint path relative to [`@KtorGen.basePath`](core.md#description) or [Ktor default request](https://ktor.io/docs/client-default-request.html#url). | `""`           |
-| `hasBody` | `Boolean` | Whether this method allows a request body.                                                                                                            | `false`        |
+**Parameters**
 
-**Example 1 – Custom Method**
+| Name      | Type      | Description                                                                                                                                           | Default      |
+|-----------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| `method`  | `String`  | The HTTP method name (e.g. `"TRACE"`).                                                                                                                | **Required** |
+| `path`    | `String`  | Endpoint path relative to [`@KtorGen.basePath`](core.md#description) or [Ktor default request](https://ktor.io/docs/client-default-request.html#url). | `""`         |
+| `hasBody` | `Boolean` | Whether this method allows a request body.                                                                                                            | `false`      |
+
+#### Examples
+
+**Custom method**
 
 ```kotlin
 @HTTP(method = "PROPFIND", path = "meta", hasBody = false)
 suspend fun getMetadata(): Metadata
-```
+````
 
-**Example 2 – Body with Nonstandard Verb**
+**Body with non-standard verb**
 
 ```kotlin
 @HTTP(method = "LINK", path = "relations", hasBody = true)
@@ -38,23 +47,37 @@ suspend fun linkUser(@Body data: RelationBody): Result
 
 ---
 
-### [`@GET`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/GET.kt), [`@POST`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/POST.kt), [`@PUT`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/PUT.kt), [`@PATCH`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/PATCH.kt), [`@DELETE`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/DELETE.kt), [`@HEAD`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/HEAD.kt), [`@OPTIONS`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/OPTIONS.kt)
+### Standard HTTP Methods
 
 Shortcut annotations for common HTTP methods.
-They are equivalent to using `@HTTP(method = "GET", path = "...")`.
+Equivalent to using `@HTTP(method = "...", path = "...", hasBody = ...)`.
 
-| Parameter | Type     | Description                           | Default |
-|-----------|----------|---------------------------------------|---------|
-| `path`    | `String` | Relative path appended to `basePath`. | `""`    |
+Supported annotations:
 
-**Example 1 – Basic**
+* [`@GET`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/GET.kt)
+* [`@POST`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/POST.kt)
+* [`@PUT`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/PUT.kt)
+* [`@PATCH`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/PATCH.kt)
+* [`@DELETE`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/DELETE.kt)
+* [`@HEAD`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/HEAD.kt)
+* [`@OPTIONS`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/OPTIONS.kt)
+
+**Parameters**
+
+| Name   | Type     | Description                           | Default |
+|--------|----------|---------------------------------------|---------|
+| `path` | `String` | Relative path appended to `basePath`. | `""`    |
+
+#### Examples
+
+**Basic GET**
 
 ```kotlin
 @GET("users/{id}")
 suspend fun getUser(@Path id: Long): User
 ```
 
-**Example 2 – POST with Body**
+**POST with body**
 
 ```kotlin
 @POST("users/new")
@@ -63,27 +86,29 @@ suspend fun createUser(@Body user: UserCreateRequest): Response<User>
 
 ---
 
-## Encoding Annotations
+## Request Encoding Annotations
 
-These define how request data is encoded when sent to the server.
+These annotations define **how request data is encoded** before being sent to the server.
+
+---
 
 ### [`@FormUrlEncoded`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/FormUrlEncoded.kt)
 
-Marks a function whose request body will be sent using `application/x-www-form-urlencoded`.
+Marks a request body as `application/x-www-form-urlencoded`.
 
-Combine with [`@Field` or `@FieldMap`](http.md#field-and-fieldmap) in parameters, see below more details.
+* Usually combined with [`@Field` or `@FieldMap`](#field-fieldmap)
+* This annotation can be **omitted**, as it is inferred automatically when those parameters are present
 
-KtorGen offers omit this annotation, is deduced of parameters with `@Field` and `@FieldMap` ;)
-
-**Example 1**
+#### Examples
 
 ```kotlin
 @FormUrlEncoded
 @POST("login")
-suspend fun login(@Field("user") user: String, @Field("pass") password: String): Token
+suspend fun login(
+  @Field("user") user: String,
+  @Field("pass") password: String
+): Token
 ```
-
-**Example 2**
 
 ```kotlin
 @FormUrlEncoded
@@ -95,13 +120,12 @@ suspend fun register(@FieldMap data: Map<String, String>): ApiResponse
 
 ### [`@Multipart`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Multipart.kt)
 
-Mark a function whose request will use multipart encoding.
+Marks a request as `multipart/form-data`.
 
-Combine with [`@Part` or `@PartMap`](http.md#part-and-partmap), see below more details.
+* Combined with [`@Part` or `@PartMap`](#part-partmap)
+* Can also be **omitted**, as it is inferred from parameters
 
-Can omit this annotation, is deduced of parameters with `@Part` or `@PartMap` ;)
-
-**Example 1**
+#### Examples
 
 ```kotlin
 @Multipart
@@ -109,62 +133,72 @@ Can omit this annotation, is deduced of parameters with `@Part` or `@PartMap` ;)
 suspend fun uploadFile(@Part file: ByteArray): UploadResponse
 ```
 
-**Example 2**
-
 ```kotlin
 @Multipart
 @POST("profile")
-suspend fun updateProfile(@Part("avatar") image: File, @Part("bio") bio: String): Profile
+suspend fun updateProfile(
+  @Part("avatar") image: File,
+  @Part("bio") bio: String
+): Profile
 ```
 
 ---
 
 ## Parameter Annotations
 
+Parameter annotations describe how individual function parameters are mapped into the HTTP request.
+
+---
+
 ### [`@Body`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Body.kt)
 
-Indicates the parameter is the **request body**.
+Marks a parameter as the **request body**.
 
-Only one `@Body` parameter is allowed per function.
+**Rules**
 
-Is **incompatible** with [`@FormUrlEncoded`](http.md#formurlencoded), [`@Multipart`](http.md#multipart).
+* Only one `@Body` is allowed per function
+* Incompatible with:
+    * `@FormUrlEncoded`
+    * `@Multipart`
 
-**Example 1**
+#### Examples
 
 ```kotlin
-@Header("Content-Type", "application/xml")
 @POST("users")
 suspend fun create(@Body user: User): ApiResponse
 ```
 
-**Example 2**
-
 ```kotlin
-@Header("Content-Type", "application/json")
 @PUT("users/{id}")
-suspend fun update(@Path id: Long, @Body update: UserUpdate): ApiResponse
+suspend fun update(
+  @Path id: Long,
+  @Body update: UserUpdate
+): ApiResponse
 ```
 
 ---
 
 ### [`@Path`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Path.kt)
 
-Substitutes a path segment in the URL.
-Names must match placeholders in the endpoint path.
+Replaces placeholders inside the request path.
 
-| Parameter | Type      | Description                                                                                    | Default                   |
-|-----------|-----------|------------------------------------------------------------------------------------------------|---------------------------|
-| `value`   | `String`  | Placeholder name (without `{}`).                                                               | The name of the parameter |
-| `encoded` | `Boolean` | Specifies whether the argument value to the annotated method parameter is already URL encoded. | `false`                   |
+**Rules**
 
-**Example 1**
+* Names must match placeholders in the endpoint path.
+
+**Parameters**
+
+| Name      | Type      | Description                               | Default        |
+|-----------|-----------|-------------------------------------------|----------------|
+| `value`   | `String`  | Placeholder name (without `{}`).          | Parameter name |
+| `encoded` | `Boolean` | Whether the value is already URL-encoded. | `false`        |
+
+#### Examples
 
 ```kotlin
 @GET("users/{id}")
 suspend fun get(@Path id: Int): User
 ```
-
-**Example 2**
 
 ```kotlin
 @DELETE("users/{id}")
@@ -173,27 +207,29 @@ suspend fun delete(@Path("id") userId: Long)
 
 ---
 
-### [`@Query`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Query.kt) and `@QueryMap` [(_source_)](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/QueryMap.kt)
+### [`@Query`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Query.kt) / [`@QueryMap`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/QueryMap.kt)
 
 Appends query parameters to the URL.
-`@QueryMap` allows passing multiple entries from a map.
-- Null values are omitted.
-- Can be a `List<String>` but null values are filtered.
-- For `Map` the key can't be nullable.
 
-| Parameter | Type      | Description                                            | Default                   |
-|-----------|-----------|--------------------------------------------------------|---------------------------|
-| `value`   | `String`  | Query name.                                            | The name of the parameter |
-| `encoded` | `Boolean` | If `true`, the parameter is assumed to be pre-encoded. | `false`                   |
+**Rules**
 
-**Example 1**
+* `null` values are omitted
+* Lists are supported
+* Map keys cannot be null
+
+**Parameters**
+
+| Name      | Type      | Description                          | Default        |
+|-----------|-----------|--------------------------------------|----------------|
+| `value`   | `String`  | Query parameter name                 | Parameter name |
+| `encoded` | `Boolean` | Whether the value is already encoded | `false`        |
+
+#### Examples
 
 ```kotlin
 @GET("search")
 suspend fun search(@Query("q") query: String): List<Result>
 ```
-
-**Example 2**
 
 ```kotlin
 @GET("filter")
@@ -204,97 +240,80 @@ suspend fun filter(@QueryMap params: Map<String, String>): ApiResponse
 
 ### [`@QueryName`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/QueryName.kt)
 
-Adds a query parameter **without value**, common for boolean flags.
+Adds a **query parameter without value**, commonly used as flags.
 
 | Parameter | Type      | Description                                            | Default                   |
 |-----------|-----------|--------------------------------------------------------|---------------------------|
 | `encoded` | `Boolean` | If `true`, the parameter is assumed to be pre-encoded. | `false`                   |
 
-**Example 1**
+#### Examples
 
 ```kotlin
 @GET("users")
 suspend fun all(@QueryName("active") active: Boolean = true): List<User>
 ```
 
-**Example 2**
-
 ```kotlin
 @GET("posts")
-suspend fun includeDrafts(@QueryName includeDrafts: Boolean = false): List<Post>
+suspend fun includeDrafts(
+  @QueryName includeDrafts: Boolean = false
+): List<Post>
 ```
+
+---
+
+## Header Annotations
+
+Headers in Ktorgen are **type-safe**, **repeatable**, and validated at compile time.
+
+Can a use a [list of most used header names](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Header.kt#L54)
+defined in `Header.Companion`. Extracted from [Http Headers Ktor](https://github.com/ktorio/ktor/blob/main/ktor-http/common/src/io/ktor/http/HttpHeaders.kt)
+
+Contain common types of header `Content-Type` subdivide in objects as `Type/Subtype`. Extracted of [ContentTypes Ktor](https://github.com/ktorio/ktor/blob/main/ktor-http/common/src/io/ktor/http/ContentTypes.kt)
+
+Contain commonly used `Accept-Encoding` values. Extracted of [AcceptEncoding Ktor](https://github.com/ktorio/ktor/blob/main/ktor-http/common/src/io/ktor/http/header/AcceptEncoding.kt)
+
+See [Http Headers MDN]("https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers) for more information.
 
 ---
 
 ### [`@Header`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Header.kt)
 
-Headers are now **type-safe** and **repeatable**.
-This replaces Retrofit’s `@Headers` and `@Header`.
+Defines a **static header** at compile time.
 
-#### Migration Example
+**Parameters**
 
-Before:
+| Name    | Type     | Description  |
+|---------|----------|--------------|
+| `name`  | `String` | Header name  |
+| `value` | `String` | Header value |
 
-```kotlin
-@Headers("Content-Type: application/json", "Accept: application/json")
-suspend fun request(@Header("Authentication") token: String): String
-```
-
-After:
+#### Example
 
 ```kotlin
 @Header("Content-Type", "application/json")
-@Header("Accept", "application/json")
-suspend fun request(@HeaderParam("Authentication") token: String): String
+@Header(Header.Accept, Header.ContentType.Aplication.Json)
+suspend fun request(): String
 ```
 
-#### `@Header`
-
-Static header defined at compile time.
-Can appear multiple times on the same function.
-
-| Parameter | Type     | Description   | Default  |
-|-----------|----------|---------------|----------|
-| `name`    | `String` | Header name.  | Required |
-| `value`   | `String` | Header value. | Required |
-
-**Example 1**
-
-```kotlin
-@Header("Accept", "application/json")
-@Header("Cache-Control", "no-cache")
-@GET("profile")
-suspend fun profile(): Profile
-```
-
-**Example 2**
-
-```kotlin
-@Header("User-Agent", "KtorgenClient/1.0")
-@GET("meta")
-suspend fun getMeta(): Meta
-```
+---
 
 ### [`@HeaderParam`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/HeaderParam.kt)
 
-Dynamic header set at runtime via parameter.
+Defines a **dynamic header** provided at runtime.
 
 | Parameter | Type     | Description  |
 |-----------|----------|--------------|
 | `value`   | `String` | Header name. |
 
-**Example 1**
+### Examples
 
 ```kotlin
 @GET("users")
-suspend fun list(@HeaderParam("Authorization") token: String): List<User>
-```
-
-**Example 2**
-
-```kotlin
-@POST("upload")
-suspend fun upload(@HeaderParam("X-Api-Key") apiKey: String, @Body data: UploadData): Response
+suspend fun list(
+  @HeaderParam("Authorization") token: String,
+  @HeaderParam(Header.AcceptLanguage) lang: String
+): List<User>
 ```
 
 ---
@@ -303,52 +322,46 @@ suspend fun upload(@HeaderParam("X-Api-Key") apiKey: String, @Body data: UploadD
 
 Adds multiple headers dynamically from a map.
 
-**Example 1**
+#### Examples
 
 ```kotlin
 @GET("secure")
 suspend fun auth(@HeaderMap headers: Map<String, String>): Token
 ```
 
-**Example 2**
+---
 
-```kotlin
-@POST("data")
-suspend fun send(@HeaderMap extraHeaders: Map<String, String>, @Body content: Any): Result
-```
+## Form & Multipart Parameters
 
 ---
 
-### [`@Field`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Field.kt) and [`@FieldMap`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/FieldMap.kt)
+### [`@Field`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Field.kt) / [`@FieldMap`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/FieldMap.kt)
 
-Used inside [`@FormUrlEncoded`](http.md#formurlencoded) methods to send key-value pairs.
+Used inside [`@FormUrlEncoded`](#formurlencoded) request to send key-value pairs.
 
-**Example 1**
+#### Example
 
 ```kotlin
 @FormUrlEncoded
 @POST("auth")
-suspend fun login(@Field("username") user: String, @Field("password") pass: String)
-```
-
-**Example 2**
-
-```kotlin
-@FormUrlEncoded
-@POST("create")
-suspend fun create(@FieldMap fields: Map<String, String>)
+suspend fun login(
+  @Field("username") user: String,
+  @Field("password") pass: String
+)
 ```
 
 ---
 
-### [`@Part`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Part.kt) and [`@PartMap`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/PartMap.kt)
+### [`@Part`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Part.kt) / [`@PartMap`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/PartMap.kt)
 
-Used inside [`@Multipart`](http.md#multipart) requests to send files or multiple parts.
+Used inside [`@Multipart`](#multipart) requests to send files or multiple parts.
+
+**Important**
 
 If the type is [PartData](https://api.ktor.io/ktor-http/io.ktor.http.content/-part-data/index.html)
 the value will be used directly with its content type.
 
-**Example 1**
+#### Example
 
 ```kotlin
 @Multipart
@@ -356,46 +369,49 @@ the value will be used directly with its content type.
 suspend fun upload(@Part("file") file: File)
 ```
 
-**Example 2**
+---
 
-```kotlin
-@Multipart
-@POST("update")
-suspend fun updateProfile(@PartMap parts: Map<String, Any>)
-```
+## URL & Fragment Annotations
 
 ---
 
 ### [`@Url`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Url.kt)
 
-Replaces the full request URL at runtime, ignoring the `basePath`.
+Replaces the **entire request URL**, ignoring `basePath`.
 
-Include a path in [`@KtorGen`](core.md#ktorgen) or in [HTTP](http.md#http-annotations) method annotations produce an error.
+Can be a type of:
 
-**Example 1**
+* `String`
+* [Ktor `Url`](https://api.ktor.io/ktor-http/io.ktor.http/-url/index.html)
+* [Ktor `UrlBuilder`](https://api.ktor.io/ktor-http/io.ktor.http/-u-r-l-builder/index.html)
+
+More details, see [Url.takeFrom](https://api.ktor.io/ktor-http/io.ktor.http/take-from.html)
+
+**Rules**:
+
+* Cannot be used together with a path [HTTP method annotations](http.md#http-method-annotations).
+* Cannot be used together with [`@Query`, `@QueryMap`](#query-querymap), [`@Path`](#path)
+* Only one `@Url` is allowed per function.
+
+#### Examples
 
 ```kotlin
 @GET
 suspend fun fromFullUrl(@Url url: String): ApiResponse
 ```
 
-**Example 2**
-
-```kotlin
-@POST
-suspend fun postTo(@Url url: String, @Body data: Data): Response
-```
-
 ---
 
 ### [`@Fragment`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Fragment.kt)
 
-Allows inserting fragments in URLs, useful for modular routing.
-Rarely needed but powerful in dynamic routing scenarios.
+Injects URL fragments dynamically.
 
-Only one `@Fragment` is allowed per function.
+**Rules**
 
-**Example 1** In function
+* Only one fragment per function
+* `null` values are ommited
+
+#### Examples
 
 ```kotlin
 @GET("/users/{id}")
@@ -403,24 +419,22 @@ Only one `@Fragment` is allowed per function.
 suspend fun fetchDynamic(@Path id: String): Response
 ```
 
-**Example 2** In parameter
-
 ```kotlin
-@POST("collection/id") // don't include the fragment in the url template
-suspend fun postData(@Fragment name: String)
+@GET("/users/{id}")
+suspend fun fetchDynamic(@Path id: String, @Fragment collection: String): Response
 ```
+
+---
+
+## Cookie Annotation
 
 ---
 
 ### [`@Cookie`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Cookie.kt)
 
-Add a cookie to the request.
+Adds cookies to the request.
 
-**Important:**
-If the Ktor **Cookie plugin** is installed, any cookies added through this annotation are ignored at runtime.
-For more information, refer to the official [Ktor Client Request - Cookies](https://ktor.io/docs/client-requests.html#cookies) documentation.
-
-This annotation mirrors the behavior of [`HttpMessageBuilder.cookie`](https://api.ktor.io/ktor-client/ktor-client-core/io.ktor.client.request/cookie.html),
+This annotation mirrors the behavior of [`HttpMessageBuilder.cookie`](https://api.ktor.io/ktor-client-core/io.ktor.client.request/cookie.html),
 but includes some adaptations due to annotation limitations:
 
 - `null` values are not allowed.
@@ -429,121 +443,111 @@ but includes some adaptations due to annotation limitations:
   - `domain = ""` and `path = ""` → no value assigned.
 - `extensions` is defined as an array of `PairString` for type safety when mapping cookie extensions.
 
-### Example
+**Important**
 
-**Example 1**
+If the Ktor **Cookie plugin** is installed, cookies defined here are ignored at runtime.
+For more information, refer to the official [Ktor Client Request - Cookies](https://ktor.io/docs/client-requests.html#cookies) documentation.
 
-```kotlin
-@GET("session")
-@Cookie("session_id", "123456")
-suspend fun getSession(): Session
-```
+**Rules**:
 
-**Example 2**
+* The value of the cookie is required in the function target.
 
-```kotlin
-@GET("user")
-suspend fun getUser(@Cookie("session_id") id: String): User
-```
-
-**Example 3**
+#### Example
 
 ```kotlin
 @Cookie(
   name = "session_id",
-  value = "abc123", // required if not declared as a parameter
+  value = "abc123",
   maxAge = 3600,
-  expiresTimestamp = 1735689600000, // 01/01/2025 00:00:00 GMT
   secure = true,
   httpOnly = true,
   extensions = [Cookie.PairString("SameSite", "Strict")],
 )
 @GET
-suspend fun myRequest(@Cookie("yummy_cookie") flavor: String): SecureResponse
+suspend fun myRequest(
+  @Cookie("yummy_cookie") flavor: String
+): SecureResponse
 ```
-
-Generated code:
-```kotlin
-this.cookie(
-    name = """session_id""",
-    value = """abc123""",
-    maxAge = 3_600,
-    expires = GMTDate(timestamp = 1_735_689_600_000),
-    domain = null, // empty string is null
-    path = null, // empty string is null
-    secure = true,
-    httpOnly = true,
-    extensions = mapOf("""SameSite""" to """Strict"""),
-)
-this.cookie(
-    name = """yummy_cookie""",
-    value = """$flavor""",
-    maxAge = 0,
-    expires = null,
-    domain = null,
-    path = null,
-    secure = false,
-    httpOnly = false,
-    extensions = emptyMap(),
-)
-```
-
----
-
-### [~~`@Streaming`~~ Deprecated*](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Streaming.kt)
-
-Allow receiving the raw response.
-
-If you want the raw `HttpResponse` use that as return type, Ktor Client handle it, or `ByteReadChannel`, `ByteArray`, `String`, etc.
-
-See [return types documentation](../return_types.md).
 
 ---
 
 ## Tag Annotation
 
+---
+
 ### [`@Tag`](https://github.com/kingg22/ktorgen/blob/main/annotations/src/commonMain/kotlin/io/github/kingg22/ktorgen/http/Tag.kt)
 
-Adds metadata to requests, useful for client interceptors, logging or [plugins of Ktor client](https://ktor.io/docs/client-custom-plugins.html#call-state)
+Adds metadata to requests, useful for interceptors, logging, or [custom plugins](https://ktor.io/docs/client-custom-plugins.html#call-state)
 as [AttributeKey](https://api.ktor.io/ktor-utils/io.ktor.util/-attribute-key/index.html).
 
-Null value is omitted.
+**Rules**
 
-**Example 1**
+* `null` values are ommited.
 
-```kotlin
-@GET("items")
-suspend fun getItems(@Tag logging: String?): List<Item>
-```
-
-**Example 2**
+#### Example
 
 ```kotlin
 @POST("upload")
-suspend fun upload(@Body file: File, @Tag("UploadInterceptor") interceptor: String)
+suspend fun upload(
+  @Body file: File,
+  @Tag("UploadInterceptor") interceptor: String,
+  @Tag tag: String?
+)
 ```
 
-Code generated
+---
+
+## Deprecated Annotations
+
+---
+
+### ~~`@Streaming`~~
+
+Deprecated.
+
+Use return types like:
+
+* `HttpResponse`
+* `ByteReadChannel`
+* `ByteArray`
+* `String`
+
+See [**Return Types**](../return_types.md) documentation for more information.
+
+---
+
+### ~~`@Headers`~~
+
+Deprecated.
+This is only for easy migration from other libraries, using **this doesn't generate code**
+
+From
 ```kotlin
-httpClient.request {
-   this.attributes.put(AttributeKey("UploadInterceptor"), interceptor)
-}
+@Headers("Content-Type: application/json", "Accept: application/json")
 ```
+to
+```kotlin
+@Header(Header.ContentType, Header.ContentTypes.Application.Json)
+@Header("Accept", "application/json)
+```
+
+See [**Header annotations**](#header-annotations) for more information.
 
 ---
 
 ## Summary
 
-Ktorgen’s HTTP annotations follow the same semantics as Retrofit’s but are:
+Ktorgen’s HTTP annotations:
 
-- **KMP-compatible**
-- **Repeatable and type-safe**
-- **Designed for direct Ktor Client integration**
+* Follow Retrofit semantics
+* Are **KMP-compatible**
+* Are **type-safe and repeatable**
+* Integrate directly with **Ktor Client**
 
-Replace all Retrofit imports with:
+To migrate from Retrofit:
 
 ```kotlin
 import io.github.kingg22.ktorgen.http.*
 ```
 
-adapt your headers and your migration is complete.
+And you're done 🚀
