@@ -10,7 +10,8 @@ This is not a mandatory rule for usage of KtorGen.
 ### Changed
 - **BREAKING CHANGE**: The parameter of `@HeaderParam` was renamed from _name_ to _value_
 - Migrate from [_mkdocs shadcn theme_](https://asiffer.github.io/mkdocs-shadcn/) to
-[_mkdocs material theme_](https://squidfunk.github.io/mkdocs-material/) documentation website
+[_mkdocs material theme_](https://squidfunk.github.io/mkdocs-material/) documentation website.
+- Migrate to [Zensical](https://zensical.org/) the documentation website.
 - [internal] Move samples to a separate build project
 - [internal] Use _Sequences_ instead of _Lists_ for intermediate collections
 - [internal] Use _LazyTheadSafe.None_ for lazy properties, the processor is single-threaded
