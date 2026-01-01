@@ -1,10 +1,18 @@
-## Options of processor
+# Options of processor
 
-* Error checking type: _ktorgen_check_type_
+## Error checking type
+
+**name**: _ktorgen_check_type_
+
+**value type**: Int
+
+**values**:
 
   * 0: Disable error checking
   * 1: Raise all warnings and errors
-  * 2: Convert errors into warnings (default)
+  * 2: Convert errors into warnings (**default**)
+
+### Example
 
 ```kotlin
 ksp {
@@ -13,8 +21,14 @@ ksp {
 }
 ```
 
-* Print Stacktrace on Exceptions: _ktorgen_print_stacktrace_on_exception_
-  * **Boolean**
+## Print Stacktrace on Exceptions
+
+**name**: _ktorgen_print_stacktrace_on_exception_
+
+**value type**: Boolean (**default**: false)
+
+### Example
+
 ```kotlin
 ksp {
     // to help in debug errors,
@@ -23,4 +37,4 @@ ksp {
 }
 ```
 
-* _More option soon..._
+_More option soon..._
