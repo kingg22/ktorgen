@@ -1,22 +1,66 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 site_name: KtorGen documentation
 site_description: "Documentation of KtorGen annotations and KSP processor"
 site_author: "Kingg22 <https://github.com/kingg22>"
 theme:
-  name: shadcn
-  show_datetime: true
-  topbar_sections: true
-  icon: api/images/logo-icon.svg
-  pygments_style: github-dark
+  name: material
+  logo: api/images/logo-icon.svg
+  favicon: api/images/logo-icon.svg
+  language: en
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.instant.preview
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.select
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: black
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: white
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+# TODO add language selection support
+#extra:
+#  alternate:
+#    - name: English
+#      link: /en/
+#      lang: en
 extra_css:
-  - styles.css
+  - styles/colors.css
 nav:
   - Home: index.md
+  - Installation: configuration.md
+  - Changelog: CHANGELOG.md
+  - Known issues: known_issues.md
   - Guides:
-      - Installation: configuration.md
-      - Changelog: CHANGELOG.md
       - Return Types: return_types.md
       - Samples: demo_code.md
-      - Known issues: known_issues.md
       - Annotations:
           - Core: annotations/core.md
           - HTTP: annotations/http.md
@@ -25,8 +69,7 @@ nav:
           - Request Customization: advanced.md
           - Dokka External Reference: dokka_references.md
   - Issue Tracker: "https://github.com/kingg22/ktorgen/issues"
-  - API Reference:
-      - Overview: api/index.html
+  - API Reference: api/index.html
 repo_name: ktorgen
 repo_url: "https://github.com/kingg22/ktorgen"
 site_dir: build/mkdocs
@@ -34,6 +77,14 @@ strict: true
 site_url: "https://kingg22.github.io/ktorgen/"
 use_directory_urls: false
 markdown_extensions:
-  - codehilite
+  - pymdownx.highlight:
+      use_pygments: true
+      pygments_lang_class: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
 plugins:
   - search
+  - offline
