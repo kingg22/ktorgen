@@ -29,3 +29,5 @@ To do that, you can use the `ktorgen_samples_ktor_version` and `ktorgen_samples_
 
 ## Real migrations
 _List of real migrations here:_
+
+- [deezer-client-kt](https://github.com/kingg22/deezer-client-kt/commit/98e7ccc360dc62861c6e9030650f681a99cddceb) by [@kingg22](https://github.com/kingg22)
