@@ -67,8 +67,8 @@ jobs:
       - name: Install the mkdocs project
         run: uv sync --locked
 
-      - name: Build documentation with mkdocs
-        run: uv run mkdocs build
+      - name: Build documentation
+        run: uv run zensical build --clean
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
