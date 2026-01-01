@@ -1,4 +1,4 @@
-## Return Types and Request Customization
+# Return Types and Request Customization
 
 Ktorgen currently supports [**suspend functions**](https://kotlinlang.org/docs/async-programming.html#coroutines) and [**Coroutines Flow**](https://kotlinlang.org/docs/flow.html) as valid return types.
 Each generated call is backed by a real [HttpClient](https://api.ktor.io/ktor-client-core/io.ktor.client/-http-client/index.html) request,
@@ -19,7 +19,7 @@ and therefore all functions must be either `suspend` or return a `Flow` stream t
 ### ⚠️ Unsupported Features
 - Generic types in functions are not allowed.
 - Context parameters are not supported yet.
-- Return a **prepared request** supported soon**
+- Return a **prepared request** support soon**
 
 ## Examples
 

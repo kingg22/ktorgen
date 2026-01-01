@@ -2,7 +2,7 @@
 hide:
   - navigation
 ---
-### ❗ Unresolved References
+## ❗ Unresolved References
 
 If you encounter errors like:
 
@@ -15,6 +15,6 @@ If you encounter errors like:
 > `@JvmOverloads` and similar JVM annotations are only supported in `commonMain`, `jvmMain`, or `androidMain`.
 > If you apply them in multiplatform configurations per source target, non-JVM targets will fail to compile due to missing expect/actual declarations.
 
-### ⚠️ Amper support
+## ⚠️ Amper support
 
 > Current is not possible, work in progress*

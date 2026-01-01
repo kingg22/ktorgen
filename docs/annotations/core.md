@@ -1,4 +1,4 @@
-## Core Annotations
+# Core Annotations
 
 This section documents the **core annotations** used to define options and how the compiler interprets them.
 These annotations control how Ktorgen scans interfaces, generates client factories, and connects them to Ktor’s HTTP client.

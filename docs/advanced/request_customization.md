@@ -1,7 +1,8 @@
+# 🛠 Request Customization
 
-## 🛠 Request Customization
+## Supported customization types
 
-You can customize the outgoing request using one of three supported parameters:
+You can customize the outgoing request using one of these supported parameters:
 
 | Parameter type                  | Scope               | Description                                                                                                                                                      |
 |---------------------------------|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -9,6 +10,8 @@ You can customize the outgoing request using one of three supported parameters:
 | `HttpRequestBuilder`            | Mutable object      | Passes a preconfigured [HttpRequestBuilder](https://api.ktor.io/3.2.x/ktor-client-core/io.ktor.client.request/-http-request-builder/index.html) instance.        |
 | `HttpRequest`                   | Immutable reference | Uses an already built [HttpRequest](https://api.ktor.io/3.2.x/ktor-client-core/io.ktor.client.request/-http-request/index.html) for advanced scenarios.          |
 | `HttpRequestData`               | Immutable reference | Uses an already built [HttpRequestData](https://api.ktor.io/3.2.x/ktor-client-core/io.ktor.client.request/-http-request-data/index.html) for advanced scenarios. |
+
+### Examples
 
 **Example – Inline customization**
 

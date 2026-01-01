@@ -2,7 +2,7 @@
 hide:
   - navigation
 ---
-## Configuration
+# Configuration
 
 This document explains how to configure **Ktorgen** in your project using **Gradle**, both for **JVM/Android** and **Kotlin Multiplatform (KMP)** targets.
 The goal is to ensure the KSP (Kotlin Symbol Processing) plugin correctly generates client code from your annotations, regardless of the target platform.

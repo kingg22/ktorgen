@@ -1,4 +1,4 @@
-## HTTP Annotations
+# HTTP Annotations
 
 These annotations define how **Ktorgen** maps Kotlin interfaces and methods into **HTTP requests** for **Ktor Client**.
 
@@ -36,7 +36,7 @@ Can be used instead of specific method annotations (`@GET`, `@POST`, etc.).
 ```kotlin
 @HTTP(method = "PROPFIND", path = "meta", hasBody = false)
 suspend fun getMetadata(): Metadata
-````
+```
 
 **Body with non-standard verb**
 
@@ -50,6 +50,7 @@ suspend fun linkUser(@Body data: RelationBody): Result
 ### Standard HTTP Methods
 
 Shortcut annotations for common HTTP methods.
+
 Equivalent to using `@HTTP(method = "...", path = "...", hasBody = ...)`.
 
 Supported annotations:
