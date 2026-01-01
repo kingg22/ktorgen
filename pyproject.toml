@@ -5,7 +5,5 @@ description = "Only docs for KtorGen"
 requires-python = ">=3.13"
 dependencies = [
     "mkdocs>=1.6.1",
-    "mkdocs-shadcn>=0.9.7",
-    "pygments>=2.19.2",
-    "pymdown-extensions>=10.16.1",
+    "mkdocs-material>=9.7.1",
 ]
