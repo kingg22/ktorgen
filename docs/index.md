@@ -1,10 +1,14 @@
+---
+hide:
+  - navigation
+---
 # Welcome to KtorGen
 
 For API documentation visit [dokka site](./api/index.html).
 
 ## Design Philosophy
 
-Ktorgen is intentionally designed to stay **simple**, **debuggable**, and **close to Ktor Client semantics**.
+Ktorgen is intentionally designed to stay **simple**, **debuggable**, and **close to [Ktor Client](https://ktor.io/docs/welcome.html) semantics**.
 
 - Do **not** replace complex logic that should be implemented in Ktor’s request/response pipeline.
 - Avoid adding converters, interceptors, or complex behaviors inside generated functions or runtime APIs.
@@ -15,7 +19,8 @@ please open an issue on the [GitHub repository](https://github.com/kingg22/ktorg
 describing your use case.
 
 ## 📜 Disclaimer
-This repository is a fork of Ktorfit and Retrofit annotations, with my own changes and additions.
+This repository is a fork of [Ktorfit](https://foso.github.io/Ktorfit/) and [Retrofit](https://square.github.io/retrofit/) annotations,
+with my own changes and additions.
 It is not affiliated with Ktor, JetBrains, Kotlin, Ktorfit, or Retrofit.
 Credits to their respective authors.
 

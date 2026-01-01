@@ -1,3 +1,7 @@
+---
+hide:
+  - navigation
+---
 ### ❗ Unresolved References
 
 If you encounter errors like:

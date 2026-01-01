@@ -330,7 +330,7 @@ annotation class Generated
 Serves as a **marker** indicating that a file or class was generated automatically by the compiler.
 Used internally by Ktorgen and for developer awareness (e.g., IDE highlighting or lint exclusions).
 
-### Example (Generated Output)
+### Example
 
 ```kotlin
 // in file level
@@ -354,7 +354,7 @@ public class _WeatherApiImpl public constructor(
 ### Notes
 
 - Do not use this annotation manually.
-- Future versions may include metadata such as generator version, option to don't include it, custom annotation.
+- Future versions may include metadata such as the generator version, option to don't include it, custom annotation, etc.
 
 ---
 

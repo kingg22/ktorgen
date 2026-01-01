@@ -1,3 +1,7 @@
+---
+hide:
+  - navigation
+---
 ## Configuration
 
 This document explains how to configure **Ktorgen** in your project using **Gradle**, both for **JVM/Android** and **Kotlin Multiplatform (KMP)** targets.
@@ -117,9 +121,10 @@ tasks.named("runKtlintCheckOverCommonMainSourceSet") {
 #### Notes
 
 - This ensures code generated from `commonMain` annotations is visible to all platform targets.
-- Required until **Kotlin 2.3.0** finalizes the new API for registering generated sources.
-  See: [Kotlin EAP — New API for Generated Sources](https://kotlinlang.org/docs/whatsnew-eap.html#new-api-for-registering-generated-sources-in-gradle-projects)
-  - In Kotlin >= 2.3.0 you must use `generatedKotlin.srcDir("...")`. See [KSP use Generated Kotlin API for Kotlin 2.3.0-beta2](https://github.com/google/ksp/pull/2699)
+- Required until **Kotlin 2.3.0** finalizes and stabilizes the new API for registering generated sources.
+  See: [New API for Generated Sources](https://kotlinlang.org/docs/gradle-configure-project.html#register-generated-sources)
+
+    * In Kotlin >= 2.3.0-Beta2 you must use `generatedKotlin.srcDir("...")`.
 
 ---
 

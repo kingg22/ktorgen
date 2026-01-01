@@ -16,10 +16,12 @@ and therefore all functions must be either `suspend` or return a `Flow` stream t
 | `Flow<Result<T>>` | Variant flow of [Result](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-result/) wrapper using `try/catch` inside the generated code.                           |
 
 
-### Note:
+### ⚠️ Unsupported Features
 - Generic types in functions are not allowed.
 - Context parameters are not supported yet.
-- **Prepared request** supported soon**
+- Return a **prepared request** supported soon**
+
+## Examples
 
 **Example – Using suspend function**
 
