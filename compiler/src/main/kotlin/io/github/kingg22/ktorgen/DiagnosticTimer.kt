@@ -149,7 +149,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             checkImplementation(rootStarted && isStarted()) { "Step $name not started yet" }
             checkImplementation(!isFinish()) { "Step $name already finish" }
             endNanos = System.nanoTime()
-            if (!children.all { it.isCompleted() }) {
+            if (children.any { it.isInProgress() }) {
                 onDebugLog(
                     "A children step of $name is not completed. " +
                         "Children status: " +
@@ -180,7 +180,6 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             try {
                 // cancel in order of hierarchy
                 (root.retrieveAllChildrenStep() + root)
-                    .filter { it.isStarted() }
                     .filter { it.isInProgress() }
                     .forEach { it.finish() }
             } catch (e: KtorGenFatalError) {
@@ -200,8 +199,10 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             return "$ms ms"
         }
 
-        private fun retrieveAllChildrenStep(): List<DiagnosticSender> =
-            this.children.flatMap { it.retrieveAllChildrenStep() } + this.children
+        private fun retrieveAllChildrenStep(): Sequence<DiagnosticSender> = sequence {
+            yieldAll(children.flatMap { it.retrieveAllChildrenStep() })
+            yieldAll(children)
+        }
 
         private fun Double.roundTo(numFractionDigits: Int): Double {
             val factor = 10.0.pow(numFractionDigits.toDouble())
