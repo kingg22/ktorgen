@@ -118,6 +118,9 @@ dokka {
             remoteLineSuffix.set("#L")
         }
     }
+    pluginsConfiguration.html {
+        customAssets.from(new File(rootDir, "docs/img/logo-icon.svg"))
+    }
 }
 
 tasks.check {

@@ -4,8 +4,8 @@ site_description: "Documentation of KtorGen annotations and KSP processor"
 site_author: "Kingg22 <https://github.com/kingg22>"
 theme:
   name: material
-  logo: api/images/logo-icon.svg
-  favicon: api/images/logo-icon.svg
+  logo: img/logo-icon.svg
+  favicon: img/logo-icon.svg
   language: en
   features:
     - navigation.instant
