@@ -7,37 +7,44 @@ import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.ParameterData
 
-/** This a container of errors and warnings, not couple the validation strategies with diagnostic sender */
-class ValidationResult() {
-    private val errors: MutableList<FatalError> = mutableListOf()
-    private val warnings: MutableList<Warning> = mutableListOf()
-
-    val errorCount get() = errors.size
-
-    constructor(block: ValidationResult.() -> Unit) : this() {
-        block(this)
-    }
-
+interface ValidationResult {
     fun addError(message: String, classData: ClassData) = addError(message, classData.ksClassDeclaration)
     fun addError(message: String, functionData: FunctionData) = addError(message, functionData.ksFunctionDeclaration)
     fun addError(message: String, parameterData: ParameterData) = addError(message, parameterData.ksValueParameter)
-    fun addError(message: String, symbol: KSNode? = null) {
-        errors.add(FatalError(message.removePrefix(KtorGenLogger.KTOR_GEN), symbol))
-    }
+    fun addError(message: String, symbol: KSNode? = null)
 
     fun addWarning(message: String, classData: ClassData) = addWarning(message, classData.ksClassDeclaration)
     fun addWarning(message: String, functionData: FunctionData) =
         addWarning(message, functionData.ksFunctionDeclaration)
     fun addWarning(message: String, parameterData: ParameterData) = addWarning(message, parameterData.ksValueParameter)
-    fun addWarning(message: String, symbol: KSNode? = null) {
-        warnings.add(Warning(message.removePrefix(KtorGenLogger.KTOR_GEN), symbol))
+    fun addWarning(message: String, symbol: KSNode? = null)
+}
+
+/** This a container of errors and warnings, not couple the validation strategies with diagnostic sender */
+class ValidationResultImpl(private val sender: DiagnosticSender) : ValidationResult {
+    /*
+    @get:VisibleForTesting
+    val errors: MutableList<FatalError> = mutableListOf()
+
+    @get:VisibleForTesting
+    val warnings: MutableList<Warning> = mutableListOf()
+     */
+    var errorCount: Int = 0
+        private set
+
+    override fun addError(message: String, symbol: KSNode?) {
+        errorCount++
+        sender.addError(message.removePrefix(KtorGenLogger.KTOR_GEN), symbol)
     }
 
-    fun dump(logger: DiagnosticSender) {
-        errors.forEach { logger.addError(it.message, it.symbol) }
-        warnings.forEach { logger.addWarning(it.message, it.symbol) }
+    override fun addWarning(message: String, symbol: KSNode?) {
+        sender.addWarning(message.removePrefix(KtorGenLogger.KTOR_GEN), symbol)
     }
+/*
+    @VisibleForTesting
+    class FatalError(val message: String, val symbol: KSNode?)
 
-    private class FatalError(val message: String, val symbol: KSNode?)
-    private class Warning(val message: String, val symbol: KSNode?)
+    @VisibleForTesting
+    class Warning(val message: String, val symbol: KSNode?)
+ */
 }
