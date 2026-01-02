@@ -131,6 +131,7 @@ jobs:
             MATRIX="$DEFAULT_MATRIX"
           fi
 
+          MATRIX=$(echo "$MATRIX" | jq -c .)
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
   build-samples-matrix:
