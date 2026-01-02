@@ -1,6 +1,9 @@
 name: KtorGen Compatibility Matrix
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       ktor:
@@ -181,22 +184,11 @@ jobs:
         working-directory: samples
         run: chmod +x ./gradlew
 
-      - name: Upgrade yarn lock
-        if: matrix.kotlin != null && !startsWith(matrix.kotlin, '2.2.20')
-        working-directory: samples
-        run: ./gradlew kotlinUpgradeYarnLock
-        env:
-          ktorgen_samples_local: ${{ github.event.inputs.local }}
-          ktorgen_samples_ktorgen_version: ${{ github.event.inputs.ktorgen }}
-          ktorgen_samples_kotlin_version: ${{ matrix.kotlin }}
-          ktorgen_samples_ktor_version: ${{ matrix.ktor }}
-          ktorgen_samples_ksp_version: ${{ matrix.ksp }}
-
       - name: Build sample
         working-directory: samples
-        run: ./gradlew build --stacktrace
+        run: ./gradlew clean kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock build --stacktrace --warning-mode summary
         env:
-          ktorgen_samples_local: ${{ github.event.inputs.local }}
+          ktorgen_samples_local: ${{ github.event.inputs.local || 'true' }}
           ktorgen_samples_ktorgen_version: ${{ github.event.inputs.ktorgen }}
           ktorgen_samples_kotlin_version: ${{ matrix.kotlin }}
           ktorgen_samples_ktor_version: ${{ matrix.ktor }}
