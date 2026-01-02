@@ -29,8 +29,8 @@ internal class ValidatorPipeline(private val validators: Set<ValidatorStrategy>)
         val totalErrors = validators.sumOf { validator ->
             val sender = diagnosticSender(validator.name)
             sender.work {
-                val result = validator.validate(context)
-                result.dump(sender)
+                val result = ValidationResultImpl(sender)
+                validator.validate(result, context)
                 result.errorCount
             }
         }
@@ -41,5 +41,9 @@ internal class ValidatorPipeline(private val validators: Set<ValidatorStrategy>)
             onFatalError()
             null
         }
+    }
+
+    private fun ValidatorStrategy.validate(result: ValidationResult, context: ValidationContext) {
+        result.validate(context)
     }
 }
