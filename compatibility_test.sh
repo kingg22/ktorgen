@@ -18,9 +18,9 @@ run_case() {
         ktorgen_samples_ktor_version=$3 \
         ./gradlew clean kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock build --stacktrace --warning-mode summary
     then
-      echo "Success compilation."
+      echo ">>>>>>>>>>>>>> Success compilation."
     else
-      echo "Failure build" >&2
+      echo "<<<<<<<<<<<<<< Failure build" >&2
       exit 1
     fi
 }
@@ -30,10 +30,17 @@ echo "Compatibility Matrix Testing for KtorGen"
 cd samples &> /dev/null && pwd
 
 # run_case 2.3.0 2.3.4 3.3.3 # Success
+# run_case 2.3.0 2.3.3 3.3.2 # Success
+# run_case 2.3.0 2.3.2 3.3.1 # Success
 # run_case 2.2.21 2.2.21-2.0.4 3.2.3 # Success
+# run_case 2.2.21 2.3.1 3.3.0 # Success
 # run_case 2.2.20 2.2.20-2.0.4 3.2.0 # Success
 # run_case 2.2.20 2.2.20-2.0.4 3.1.3 # Success
+# run_case 2.2.20 2.2.20-2.0.3 3.3.0 # Success
+# run_case 2.2.20 2.2.20-2.0.2 3.2.2 # Success
+# run_case 2.2.20 2.3.0 3.0.0 # Success
 
+# run_case 2.2.21 2.3.1 2.3.13 # Failed, Ktor Client doesn't support wasm / js target yet
 # Failed. Kotlin libraries (ktorgen-annotations -> kotlin-stdlib) was compiled with kotlin = "2.2.20"
 # run_case 2.2.0 2.2.0-2.0.2 3.2.0
 # run_case 2.1.20 2.1.20-1.0.32 3.0.0
