@@ -8,7 +8,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class WildcardParameterValidator : ValidatorStrategy {
     override val name: String = "Wildcard Parameter"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         context.functions
             .filter {
                 it.goingToGenerate && it.ksFunctionDeclaration.typeParameters.isNotEmpty()

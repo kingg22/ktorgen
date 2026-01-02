@@ -12,7 +12,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class ClassLevelValidator : ValidatorStrategy {
     override val name: String = "Class Level"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         val interfaceDeclaration = context.classData
 
         val classVisibility = context.classData.classVisibilityModifier

@@ -9,7 +9,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class QueryValidator : ValidatorStrategy {
     override val name: String = "URL Query"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         for (function in context.functions.filter { it.goingToGenerate }) {
             function.parameterDataList.filter {
                 it.hasAnnotation<ParameterAnnotation.QueryMap>()

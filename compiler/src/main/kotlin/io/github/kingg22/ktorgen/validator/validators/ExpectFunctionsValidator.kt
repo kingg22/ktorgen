@@ -8,7 +8,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class ExpectFunctionsValidator : ValidatorStrategy {
     override val name: String = "Expect Functions"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         context.expectFunctions.filter { !it.modifiers.contains(Modifier.EXPECT) }.forEach { function ->
             addError(
                 "A function annotated with @KtorGenFunctionKmp must be 'expect' in common source set",

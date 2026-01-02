@@ -10,11 +10,11 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class HeadReturnNothingValidator : ValidatorStrategy {
     override val name: String = "HTTP method 'Head'"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
-        context.functions.filter {
-            it.goingToGenerate &&
-                it.httpMethodAnnotation.httpMethod == HttpMethod.Head &&
-                it.returnTypeData.typeName != UNIT
+    override fun ValidationResult.validate(context: ValidationContext) {
+        context.functions.filter { function ->
+            function.goingToGenerate &&
+                function.httpMethodAnnotation.httpMethod == HttpMethod.Head &&
+                function.returnTypeData.typeName != UNIT
         }.forEach { function ->
             addError(KtorGenLogger.HTTP_METHOD_HEAD_NOT_RETURN_BODY, function)
         }

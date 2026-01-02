@@ -9,7 +9,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class PathParameterValidator : ValidatorStrategy {
     override val name: String = "URL Path parameters"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         for (function in context.functions.filter { it.goingToGenerate }) {
             val (template, placeholders) = function.urlTemplate
             if (function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Path>() } &&

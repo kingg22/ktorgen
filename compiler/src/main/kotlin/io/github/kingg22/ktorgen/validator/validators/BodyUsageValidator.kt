@@ -9,7 +9,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class BodyUsageValidator : ValidatorStrategy {
     override val name: String = "Body Usage"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         for (function in context.functions.filter { it.goingToGenerate }) {
             val isBody = function.isBody
             val isFormUrl = function.isFormUrl

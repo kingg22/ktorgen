@@ -13,7 +13,7 @@ import io.github.kingg22.ktorgen.http.Header.Companion.ContentType as CONTENT_TY
 internal class HeadersValidator : ValidatorStrategy {
     override val name: String = "Headers"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         for (function in context.functions.filter { it.goingToGenerate }) {
             var haveHeadersMap = function.parameterDataList.any { it.hasAnnotation<ParameterAnnotation.HeaderMap>() }
             val headersFunction =

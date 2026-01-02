@@ -9,7 +9,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class CookieValidator : ValidatorStrategy {
     override val name: String = "Cookies"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         context.functions
             .filter { it.goingToGenerate }
             .flatMap { func -> func.parameterDataList.filter { it.hasAnnotation<ParameterAnnotation.Cookies>() } }

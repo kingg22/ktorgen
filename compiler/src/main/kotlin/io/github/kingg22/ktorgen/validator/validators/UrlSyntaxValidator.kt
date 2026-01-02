@@ -11,7 +11,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class UrlSyntaxValidator : ValidatorStrategy {
     override val name: String = "Url Syntax"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         for (function in context.functions.filter { it.goingToGenerate }) {
             val pathValue = function.httpMethodAnnotation.path.replace(UrlPathRegex, "valid")
             // prevent false positive when have path template, but in runtime can throw exception Url function

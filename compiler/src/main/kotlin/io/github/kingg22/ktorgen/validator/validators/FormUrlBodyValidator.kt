@@ -11,7 +11,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class FormUrlBodyValidator : ValidatorStrategy {
     override val name: String = "Form Url Encoded Body"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         for (function in context.functions.filter { it.goingToGenerate }) {
             var isFormUrlEncoded = function.hasAnnotation<FunctionAnnotation.FormUrlEncoded>()
             if (

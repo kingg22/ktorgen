@@ -8,7 +8,7 @@ import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 internal class SuspendOrFlowValidator : ValidatorStrategy {
     override val name: String = "Return Type"
 
-    override fun validate(context: ValidationContext) = ValidationResult {
+    override fun ValidationResult.validate(context: ValidationContext) {
         for (function in context.functions.filter { it.goingToGenerate }) {
             val returnTypeName = function.returnTypeData.parameterType.declaration.qualifiedName ?: run {
                 addError("Return type is not defined", function)
