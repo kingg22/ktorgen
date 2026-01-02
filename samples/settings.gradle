@@ -44,9 +44,14 @@ dependencyResolutionManagement {
             from(files("../gradle/libs.versions.toml"))
 
             // Compile sample project with different Kotlin version, if provided:
+            String ktorgenVersionOverride = System.getenv("ktorgen_samples_ktorgen_version")
             String kotlinVersionOverride = System.getenv("ktorgen_samples_kotlin_version")
             String ktorClientCoreVersionOverride = System.getenv("ktorgen_samples_ktor_version")
             String kspVersionOverride = System.getenv("ktorgen_samples_ksp_version")
+            if (ktorgenVersionOverride != null && !ktorgenVersionOverride.isBlank()) {
+                settingsLogger.lifecycle("Replacing KtorGen version: ${ktorgenVersionOverride}")
+                version("ktorgen-version", ktorgenVersionOverride)
+            }
             if (kotlinVersionOverride != null && !kotlinVersionOverride.isBlank()) {
                 settingsLogger.lifecycle("Replacing Kotlin version: ${kotlinVersionOverride}")
                 version("kotlin", kotlinVersionOverride)
