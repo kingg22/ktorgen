@@ -19,7 +19,7 @@ jetbrains-changelog = "2.5.0"
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
 # https://docs.junit.org/current/release-notes/index.html#release-notes
-junit-bom = "5.14.1" # wait until Gradle support junit 6 is not resolved yet
+junit-bom = "5.14.2" # wait until Gradle support junit 6 is not resolved yet
 # https://github.com/google/truth/releases
 google-truth = "1.4.5"
 # https://github.com/JetBrains/kotlin/releases
