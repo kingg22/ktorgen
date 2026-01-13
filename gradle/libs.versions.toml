@@ -12,30 +12,39 @@ android-minSdk = "21"
 
 # https://mvnrepository.com/artifact/androidx.room/room-compiler-processing-testing
 androidx-room-compiler-testing = "2.8.4"
+
 # https://github.com/Kotlin/dokka/releases
 dokka = "2.1.0"
+
 # https://github.com/JetBrains/gradle-changelog-plugin/releases
 jetbrains-changelog = "2.5.0"
+
 # https://github.com/JetBrains/java-annotations/releases
 jetbrains-jvm-annotations = "26.0.2"
-# https://docs.junit.org/current/release-notes/index.html#release-notes
-junit-bom = "5.14.1" # wait until Gradle support junit 6 is not resolved yet
+
 # https://github.com/google/truth/releases
 google-truth = "1.4.5"
+
 # https://github.com/JetBrains/kotlin/releases
 # match according to androidx https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L55
 kotlin = "2.2.20"
+
 # https://github.com/square/kotlinpoet/releases
 kotlin-poet = "2.2.0"
+
 # https://github.com/Kotlin/kotlinx-kover/releases
 kover = "0.9.4"
+
 # https://github.com/google/ksp/releases
 ksp-api = "2.2.20-2.0.4"
 ksp-plugin = "2.3.4"
+
 # https://github.com/pinterest/ktlint/releases
 ktlint-pinterest = "1.7.1"
+
 # https://github.com/jlleitschuh/ktlint-gradle/releases
 ktlint-plugin = "14.0.1"
+
 # https://github.com/ktorio/ktor/releases
 ktor = "3.3.1" # don't update until kotlin 2.2.21 because wasm needs matchs stdlib version
 
@@ -58,10 +67,7 @@ ktor-http = { group = "io.ktor", name = "ktor-http", version = "3.2.0" }
 # test compiler
 androidx-room-compiler-testing = { group = "androidx.room", name = "room-compiler-processing-testing", version.ref = "androidx-room-compiler-testing" }
 google-truth = { group = "com.google.truth", name = "truth", version.ref = "google-truth" }
-junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit-bom" }
-junit-parametrized = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
-junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter" }
-junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
 
 # samples
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
