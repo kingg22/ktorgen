@@ -54,7 +54,7 @@ ktorgen-version = "0.6.1-SNAPSHOT"
 sonarqube = "7.2.2.6593"
 
 # https://github.com/vanniktech/gradle-maven-publish-plugin/releases
-maven-publish = "0.35.0"
+maven-publish = "0.36.0"
 
 [libraries]
 # annotation
