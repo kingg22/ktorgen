@@ -57,7 +57,7 @@ internal data class KtorGenLogger(private val kspLogger: KSPLogger, private val 
         const val FUNCTION_OR_PARAMETERS_TYPES_MUST_NOT_INCLUDE_TYPE_VARIABLE_OR_WILDCARD =
             "Function or parameters types must not include a type variable or wildcard: "
         const val SUSPEND_FUNCTION_OR_FLOW =
-            "The function should be 'suspend' or return a coroutines Flow<T>, but it returns "
+            "The function should be 'suspend' or return a HttpStatement / HttpRequestBuilder / coroutines Flow<T> / Result<Http...>, but it returns "
         const val ABSTRACT_FUNCTION_IGNORED = "An abstract function with @KtorGenFunction(generate=false) is invalid. "
         const val FORM_ENCODED_MUST_CONTAIN_AT_LEAST_ONE_FIELD =
             "@FormUrlEncoded must contain at least one @Field or @FieldMap. "
