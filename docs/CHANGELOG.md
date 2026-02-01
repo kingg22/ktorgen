@@ -3,9 +3,12 @@
 ## [Unreleased]
 
 ### Added
-- Expand support of `@Fragment` to function parameters.
+- Add support for `HttpStatement` and `HttpRequestBuilder` as return types for a function.
+- Allow **non-suspending functions** to be used for `HttpStatement` and `HttpRequestBuilder` return types.
 - Add a compatibility table between KtorGen, Kotlin, KSP, and Ktor Client versions. This table is generated automatically.
-This is not a mandatory rule for usage of KtorGen.
+  This is not a mandatory rule for usage of KtorGen.
+- Expand support of `@Fragment` to function parameters.
+- Add suppress warnings related to namings; this reduces the warnings produced by the IDE when viewing the generated code.
 
 ### Changed
 - **BREAKING CHANGE**: The parameter of `@HeaderParam` was renamed from _name_ to _value_
