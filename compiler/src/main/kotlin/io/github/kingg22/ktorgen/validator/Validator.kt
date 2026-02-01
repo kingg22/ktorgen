@@ -20,7 +20,7 @@ fun interface Validator {
                 ClassLevelValidator(),
                 ExpectFunctionsValidator(),
                 WildcardParameterValidator(),
-                SuspendOrFlowValidator(),
+                ReturnTypeValidator(),
                 PathParameterValidator(),
                 QueryValidator(),
                 UrlSyntaxValidator(),
