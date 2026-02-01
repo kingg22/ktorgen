@@ -105,7 +105,7 @@ jobs:
         shell: bash
         run: |
           DEFAULT_MATRIX='[
-            {"ktor":"3.3.3","kotlin":"2.3.0","ksp":"2.3.4"}
+            {"ktor":"3.4.0","kotlin":"2.3.0","ksp":"2.3.5"}
           ]'
 
           # Check if any input was provided
