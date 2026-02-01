@@ -101,6 +101,9 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
                 .addMember("%S", "RemoveSingleExpressionStringTemplate")
                 .addMember("%S", "ktlint")
                 .addMember("%S", "detekt:all")
+                .addMember("%S", "LocalVariableName")
+                .addMember("%S", "PropertyName")
+                .addMember("%S", "ClassName")
                 .build(),
         ).addAnnotation(GeneratedAnnotation)
             .indent("    ") // use 4 spaces https://pinterest.github.io/ktlint/latest/rules/standard/#indentation
