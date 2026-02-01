@@ -293,4 +293,275 @@ class ReturnTypeTest {
             generated.contains("this.emit(Result.failure(_exception))")
         }
     }
+
+    // -- non-suspend + HttpRequestBuilder --
+    @Test
+    fun nonSuspendHttpRequestBuilderGeneratesBuilderApply() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+            package com.example.api
+
+            import io.github.kingg22.ktorgen.core.KtorGen
+            import io.github.kingg22.ktorgen.http.GET
+            import io.ktor.client.request.HttpRequestBuilder
+
+            @KtorGen
+            interface TestService {
+                @GET("/posts")
+                fun test(): HttpRequestBuilder
+            }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { result ->
+            result.hasNoWarnings()
+            result.hasErrorCount(0)
+
+            val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+
+            generated.contains("override fun test(): HttpRequestBuilder")
+            generated.contains("HttpRequestBuilder().apply")
+            generated.contains("this.url {")
+            generated.doesNotContain(".body<")
+            generated.doesNotContain("flow {")
+        }
+    }
+
+    // -- suspend + HttpRequestBuilder --
+    @Test
+    fun suspendHttpRequestBuilderGeneratesBuilderApply() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+            package com.example.api
+
+            import io.github.kingg22.ktorgen.core.KtorGen
+            import io.github.kingg22.ktorgen.http.DELETE
+            import io.ktor.client.request.HttpRequestBuilder
+
+            @KtorGen
+            interface TestService {
+                @DELETE("/posts")
+                suspend fun delete(): HttpRequestBuilder
+            }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { result ->
+            result.hasNoWarnings()
+            result.hasErrorCount(0)
+
+            val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+
+            generated.contains("override suspend fun delete(): HttpRequestBuilder")
+            generated.contains("HttpRequestBuilder().apply")
+            generated.doesNotContain(".body<")
+            generated.doesNotContain("HttpStatement")
+        }
+    }
+
+    // -- non-suspend + HttpStatement --
+    @Test
+    fun nonSuspendHttpStatementGeneratesStatementWithBuilder() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+            package com.example.api
+
+            import io.github.kingg22.ktorgen.core.KtorGen
+            import io.github.kingg22.ktorgen.http.POST
+            import io.ktor.client.statement.HttpStatement
+
+            @KtorGen
+            interface TestService {
+                @POST("/login")
+                fun login(): HttpStatement
+            }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { result ->
+            result.hasNoWarnings()
+            result.hasErrorCount(0)
+
+            val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+
+            generated.contains("override fun login(): HttpStatement")
+            generated.contains("val _requestBuilder = HttpRequestBuilder().apply")
+            generated.contains("return HttpStatement(_requestBuilder")
+            generated.doesNotContain(".body<")
+            generated.doesNotContain("flow {")
+        }
+    }
+
+    // -- suspend + HttpStatement --
+    @Test
+    fun suspendHttpStatementGeneratesStatementWithBuilder() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+            package com.example.api
+
+            import io.github.kingg22.ktorgen.core.KtorGen
+            import io.github.kingg22.ktorgen.http.POST
+            import io.ktor.client.statement.HttpStatement
+
+            @KtorGen
+            interface TestService {
+                @POST("/upload")
+                suspend fun upload(): HttpStatement
+            }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { result ->
+            result.hasNoWarnings()
+            result.hasErrorCount(0)
+
+            val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+
+            generated.contains("override suspend fun upload(): HttpStatement")
+            generated.contains("val _requestBuilder = HttpRequestBuilder().apply")
+            generated.contains("return HttpStatement(_requestBuilder")
+            generated.doesNotContain(".body<")
+            generated.doesNotContain("Result")
+        }
+    }
+
+    // -- suspend + Result<HttpRequestBuilder> --
+    @Test
+    fun suspendResultHttpRequestBuilderGeneratesTryCatchBuilder() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+            package com.example.api
+
+            import io.github.kingg22.ktorgen.core.KtorGen
+            import io.github.kingg22.ktorgen.http.GET
+            import io.ktor.client.request.HttpRequestBuilder
+
+            @KtorGen
+            interface TestService {
+                @GET("/posts")
+                suspend fun test(): Result<HttpRequestBuilder>
+            }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { result ->
+            result.hasNoWarnings()
+            result.hasErrorCount(0)
+
+            val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+
+            generated.contains("override suspend fun test(): Result<HttpRequestBuilder>")
+            generated.contains("try {")
+            generated.contains("HttpRequestBuilder().apply")
+            generated.contains("Result.success")
+            generated.contains("catch (_exception: Exception)")
+            generated.contains("ensureActive()")
+            generated.contains("Result.failure(_exception)")
+            generated.doesNotContain(".body<")
+            generated.doesNotContain("HttpStatement")
+        }
+    }
+
+    // -- non-suspend + Result<HttpRequestBuilder> --
+    @Test
+    fun nonSuspendResultHttpRequestBuilderGeneratesTryCatchBuilder() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+            package com.example.api
+
+            import io.github.kingg22.ktorgen.core.KtorGen
+            import io.github.kingg22.ktorgen.http.GET
+            import io.ktor.client.request.HttpRequestBuilder
+
+            @KtorGen
+            interface TestService {
+                @GET("/posts")
+                fun test(): Result<HttpRequestBuilder>
+            }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { result ->
+            result.hasNoWarnings()
+            result.hasErrorCount(0)
+
+            val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+
+            generated.contains("override fun test(): Result<HttpRequestBuilder>")
+            generated.contains("catch (_exception: Exception)")
+            generated.doesNotContain("ensureActive()")
+        }
+    }
+
+    // -- suspend + Result<HttpStatement> --
+    @Test
+    fun suspendResultHttpStatementGeneratesTryCatchStatement() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+            package com.example.api
+
+            import io.github.kingg22.ktorgen.core.KtorGen
+            import io.github.kingg22.ktorgen.http.POST
+            import io.ktor.client.statement.HttpStatement
+
+            @KtorGen
+            interface TestService {
+                @POST("/login")
+                suspend fun login(): Result<HttpStatement>
+            }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { result ->
+            result.hasNoWarnings()
+            result.hasErrorCount(0)
+
+            val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+
+            generated.contains("override suspend fun login(): Result<HttpStatement>")
+            generated.contains("val _requestBuilder = HttpRequestBuilder().apply")
+            generated.contains("Result.success(HttpStatement")
+            generated.contains("catch (_exception: Exception)")
+            generated.contains("ensureActive()")
+            generated.doesNotContain(".body<")
+        }
+    }
+
+    @Test
+    fun nonSuspendResultHttpStatementGeneratesTryCatchStatement() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+            package com.example.api
+
+            import io.github.kingg22.ktorgen.core.KtorGen
+            import io.github.kingg22.ktorgen.http.POST
+            import io.ktor.client.statement.HttpStatement
+
+            @KtorGen
+            interface TestService {
+                @POST("/login")
+                fun login(): Result<HttpStatement>
+            }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { result ->
+            result.hasNoWarnings()
+            result.hasErrorCount(0)
+
+            val generated = result.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+
+            generated.contains("override fun login(): Result<HttpStatement>")
+            generated.contains("catch (_exception: Exception)")
+            generated.doesNotContain("ensureActive()")
+        }
+    }
 }
