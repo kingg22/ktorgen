@@ -7,6 +7,8 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.UNIT
 import io.github.kingg22.ktorgen.applyIf
 import io.github.kingg22.ktorgen.model.FunctionData
+import io.github.kingg22.ktorgen.model.HttpRequestBuilderTypeName
+import io.github.kingg22.ktorgen.model.HttpStatementClassName
 import io.github.kingg22.ktorgen.model.RESULT_CLASS
 import io.github.kingg22.ktorgen.model.annotations.CookieValues
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
@@ -14,6 +16,8 @@ import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 import io.github.kingg22.ktorgen.model.isFlowType
+import io.github.kingg22.ktorgen.model.isHttpRequestBuilderType
+import io.github.kingg22.ktorgen.model.isHttpStatementType
 import io.github.kingg22.ktorgen.model.isResultType
 import io.github.kingg22.ktorgen.model.unwrapFlow
 import io.github.kingg22.ktorgen.model.unwrapFlowResult
@@ -29,11 +33,70 @@ internal class FunctionBodyGenerator(
 
         return when {
             isFlow && returnType.unwrapFlow().isResultType() -> generateFlowResultBody(returnType, func)
+
             isFlow -> generateFlowBody(returnType, func)
+
+            returnType.isResultType() &&
+                returnType.unwrapResult().isHttpRequestBuilderType -> generateResultBuilderBody(func)
+
+            returnType.isResultType() &&
+                returnType.unwrapResult().isHttpStatementType -> generateResultHttpStatementBody(func)
+
             returnType.isResultType() -> generateResultBody(returnType, func)
+
+            returnType.isHttpRequestBuilderType -> generateBuilderBody(func)
+
+            returnType.isHttpStatementType -> generateHttpStatementBody(func)
+
             else -> generateSimpleBody(returnType, func)
         }
     }
+
+    private fun generateResultBuilderBody(func: FunctionData): CodeBlock = CodeBlock.builder().apply {
+        beginControlFlow("return try")
+        beginControlFlow("%T().apply", HttpRequestBuilderTypeName)
+            .buildRequest(func)
+        endControlFlow()
+        addStatement(".let { _b -> %T.success(_b) }", RESULT_CLASS)
+        nextControlFlow("catch (_exception: %T)", KOTLIN_EXCEPTION_CLASS)
+            .applyIf(func.isSuspend) {
+                addStatement("%M().%M()", COROUTINES_CURRENT_CONTEXT, COROUTINES_CONTEXT_ENSURE_ACTIVE)
+            }
+            .addStatement("%T.failure(_exception)", RESULT_CLASS)
+        endControlFlow()
+    }.build()
+
+    private fun generateBuilderBody(func: FunctionData): CodeBlock = CodeBlock.builder().apply {
+        beginControlFlow("return %T().apply", HttpRequestBuilderTypeName)
+            .buildRequest(func)
+        endControlFlow()
+    }.build()
+
+    private fun generateResultHttpStatementBody(func: FunctionData): CodeBlock = CodeBlock.builder().apply {
+        beginControlFlow("return try")
+        beginControlFlow("val _requestBuilder = %T().apply", HttpRequestBuilderTypeName)
+            .buildRequest(func)
+        endControlFlow()
+        addStatement(
+            "%T.success(%T(_requestBuilder, %M))",
+            RESULT_CLASS,
+            HttpStatementClassName,
+            httpClient,
+        )
+        nextControlFlow("catch (_exception: %T)", KOTLIN_EXCEPTION_CLASS)
+            .applyIf(func.isSuspend) {
+                addStatement("%M().%M()", COROUTINES_CURRENT_CONTEXT, COROUTINES_CONTEXT_ENSURE_ACTIVE)
+            }
+            .addStatement("%T.failure(_exception)", RESULT_CLASS)
+        endControlFlow()
+    }.build()
+
+    private fun generateHttpStatementBody(func: FunctionData) = CodeBlock.builder().apply {
+        beginControlFlow("val _requestBuilder = %T().apply", HttpRequestBuilderTypeName)
+            .buildRequest(func)
+        endControlFlow()
+        addStatement("return %T(_requestBuilder, %M)", HttpStatementClassName, httpClient)
+    }.build()
 
     private fun generateFlowResultBody(type: ParameterizedTypeName, func: FunctionData) = CodeBlock.builder().apply {
         beginControlFlow("return %M", FLOW_MEMBER)
@@ -85,6 +148,7 @@ internal class FunctionBodyGenerator(
         endControlFlow()
     }.build()
 
+    /** This generation is terminal and relays on the body method */
     private fun generateSimpleBody(returnType: TypeName, func: FunctionData): CodeBlock = CodeBlock.builder().apply {
         val isUnit = returnType == UNIT
         if (!isUnit) add("return ")
@@ -92,8 +156,15 @@ internal class FunctionBodyGenerator(
         if (!isUnit) add(".%M()", BODY_FUNCTION)
     }.build()
 
+    /** This generation takes the HttpClient property and calls a request */
     private fun CodeBlock.Builder.addRequest(func: FunctionData) = apply {
         beginControlFlow("%M.%M", httpClient, KTOR_REQUEST_FUNCTION)
+            .buildRequest(func)
+        endControlFlow()
+    }
+
+    /** This generation needs a HttpRequestBuilder receiver */
+    private fun CodeBlock.Builder.buildRequest(func: FunctionData) = apply {
         parameterGenerator.addBuilderCall(func.parameterDataList)
             .addHttpMethod(func)
             .addUrl(func)
@@ -101,7 +172,6 @@ internal class FunctionBodyGenerator(
             .addCookies(func)
             .addBody(func)
         parameterGenerator.addAttributes(func.parameterDataList)
-        endControlFlow()
     }
 
     // -- core parts --
