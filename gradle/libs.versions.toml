@@ -33,7 +33,7 @@ kotlin = "2.2.20"
 kotlin-poet = "2.2.0"
 
 # https://github.com/Kotlin/kotlinx-kover/releases
-kover = "0.9.4"
+kover = "0.9.5"
 
 # https://github.com/google/ksp/releases
 ksp-api = "2.2.20-2.0.4"
