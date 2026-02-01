@@ -26,5 +26,7 @@ val HttpRequestBuilderTypeName = ClassName(KTOR_CLIENT_REQUEST_PACKAGE, "HttpReq
 private val HttpRequestTypeName = ClassName(KTOR_CLIENT_REQUEST_PACKAGE, "HttpRequest")
 private val HttpRequestDataTypeName = ClassName(KTOR_CLIENT_REQUEST_PACKAGE, "HttpRequestData")
 
-// see https://api.ktor.io/ktor-client/ktor-client-core/io.ktor.client.request/-http-request-builder/index.html?query=class%20HttpRequestBuilder%20:%20HttpMessageBuilder#-1196439924%2FFunctions%2F-1897681819
+// see https://api.ktor.io/ktor-client-core/io.ktor.client.request/-http-request-builder/index.html#699865360%2FFunctions%2F1100408939
 val VALID_HTTP_REQUEST_TAKE_FROM = setOf(HttpRequestBuilderTypeName, HttpRequestTypeName, HttpRequestDataTypeName)
+
+val HttpStatementClassName = ClassName("io.ktor.client.statement", "HttpStatement")

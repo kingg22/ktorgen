@@ -4,6 +4,8 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
+import io.github.kingg22.ktorgen.model.isHttpRequestBuilderType
+import io.github.kingg22.ktorgen.model.isHttpStatementType
 
 class FunctionData(
     val name: String,
@@ -33,6 +35,10 @@ class FunctionData(
             }
     }
     val isBodyInferred by lazy(LazyThreadSafetyMode.NONE) { listOf(isBody, isFormUrl, isMultipart).count { it } == 1 }
+    val isHttpRequestBuilderReturns
+        inline get() = returnTypeData.typeName.isHttpRequestBuilderType
+    val isHttpStatementReturns
+        inline get() = returnTypeData.typeName.isHttpStatementType
 
     inline fun <reified T : FunctionAnnotation> findAnnotationOrNull(): T? =
         this.ktorGenAnnotations.filterIsInstance<T>().firstOrNull()

@@ -44,3 +44,7 @@ fun ParameterizedTypeName.unwrapFlowResult(): TypeName {
     checkImplementation(inner.isResultType()) { "unwrapFlowResult() requiere un Flow<Result<...>>" }
     return inner.typeArguments.first()
 }
+
+val TypeName.isHttpRequestBuilderType get() = this == HttpRequestBuilderTypeName
+
+val TypeName.isHttpStatementType get() = this == HttpStatementClassName
