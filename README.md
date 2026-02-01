@@ -112,9 +112,9 @@ Passing your own Ktor HttpClient to the implementations, like this: `fun UserRou
 Real-life migration example: [deezer-client-kt](https://github.com/kingg22/deezer-client-kt/commit/98e7ccc360dc62861c6e9030650f681a99cddceb)
 
 ### Roadmap 🚀
-- [ ] Add a matrix compatibility test on CI (_Kotlin versions, KSP versions, Ktor Client versions_) to know the range of compatibility.
+- [X] Add a matrix compatibility test on CI (_Kotlin versions, KSP versions, Ktor Client versions_) to know the range of compatibility.
 - [ ] Improve support for the default behavior of KSP in KMP projects.
-- [ ] Add better sample projects.
+- [X] Add better sample projects.
 - [ ] Improve the internal state of the processor to avoid unnecessary state-sharing between rounds.
 Includes: logging, tracing, validation, deferred symbols, etc.
 - [ ] Add more options to customize the generated code. Includes: generated annotations, custom KDoc, etc.
