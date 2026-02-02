@@ -8,9 +8,9 @@ import kotlin.contracts.contract
 internal inline fun <R> DiagnosticSender.work(block: () -> R): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     return try {
-        if (!isStarted()) start()
+        if (!isStarted) start()
         val result = block()
-        if (isInProgress()) finish()
+        if (isInProgress) finish()
         result
     } catch (e: KtorGenFatalError) {
         throw e

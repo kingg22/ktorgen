@@ -4,10 +4,10 @@ import com.google.devtools.ksp.symbol.KSNode
 
 @KtorGenWithoutCoverage // Kover include default values to cover, but that is not necessary, the impl class is covered
 interface DiagnosticSender {
-    fun isStarted(): Boolean
-    fun isFinish(): Boolean
-    fun isInProgress() = isStarted() && !isFinish()
-    fun isCompleted() = isStarted() && isFinish()
+    val isStarted: Boolean
+    val isFinish: Boolean
+    val isInProgress get() = isStarted && !isFinish
+    val isCompleted get() = isStarted && isFinish
     fun hasErrors(): Boolean
     fun hasWarnings(): Boolean
     fun hasErrorsOrWarnings() = hasErrors() || hasWarnings()
