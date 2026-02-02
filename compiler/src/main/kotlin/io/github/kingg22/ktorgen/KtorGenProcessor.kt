@@ -14,7 +14,6 @@ import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ksp.writeTo
-import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Errors
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
@@ -37,8 +36,11 @@ internal class KtorGenProcessor(
     private val env: SymbolProcessorEnvironment,
     private val logger: KtorGenLogger,
     private val ktorGenOptions: KtorGenOptions,
+    private val timer: DiagnosticTimer = DiagnosticTimer("KtorGen Annotations Processor"),
+    private val mapper: DeclarationMapper = DeclarationMapper.DEFAULT,
+    private val validator: Validator = Validator.DEFAULT,
+    private val generator: KtorGenGenerator = KtorGenGenerator.DEFAULT,
 ) : SymbolProcessor {
-    private val timer = DiagnosticTimer("KtorGen Annotations Processor", logger::logging)
     private var roundCount = 0
     private var fatalError = false
     private val deferredSymbols = mutableListOf<DeferredSymbolRef>()
@@ -86,7 +88,7 @@ internal class KtorGenProcessor(
             validationPhase.start()
 
             val validClassData = fullClassList.mapNotNull { classData ->
-                Validator.DEFAULT.validate(classData, ktorGenOptions, { validationPhase.createTask(it) }) {
+                validator.validate(classData, ktorGenOptions, { validationPhase.createTask(it) }) {
                     fatalError = true
                 }
             }
@@ -149,7 +151,7 @@ internal class KtorGenProcessor(
                 )
             }
 
-            if (!timer.isFinish()) timer.finish()
+            if (!timer.isFinish) timer.finish()
             message = timer.buildReport()
         } catch (e: Exception) {
             logger.warn("Failed in diagnostic report with exception.", null)
@@ -164,7 +166,7 @@ internal class KtorGenProcessor(
     context(_: DiagnosticSender)
     private fun generateKsp(classData: ClassData, codeGenerator: CodeGenerator, resolver: Resolver) {
         val (partDataKtor, listType, arrayType) = resolveTypes(resolver)
-        KtorGenGenerator.DEFAULT.generate(classData, partDataKtor, listType, arrayType).forEach { fileSpec ->
+        generator.generate(classData, partDataKtor, listType, arrayType).forEach { fileSpec ->
             fileSpec.writeTo(codeGenerator, false)
         }
     }
@@ -322,9 +324,9 @@ internal class KtorGenProcessor(
             kmpExpectFunctions.addAll(remaining)
 
             val (classData, symbols) = context(
-                mapperPhase.createTask(DeclarationMapper.DEFAULT.getLoggerNameFor(classDec)),
+                mapperPhase.createTask(mapper.getLoggerNameFor(classDec)),
             ) {
-                DeclarationMapper.DEFAULT.mapToModel(classDec, matching)
+                mapper.mapToModel(classDec, matching)
             }
 
             onDeferredSymbols(classDec, symbols)
