@@ -8,42 +8,13 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 
 // Inspired on Paris Processor timer https://github.com/airbnb/paris/blob/d8b5edbc56253bcdd0d0c57930d2e91113dd0f37/paris-processor/src/main/java/com/airbnb/paris/processor/Timer.kt
-@Suppress("kotlin:S6514") // Can't use delegation because Step is inner class
-internal class DiagnosticTimer(name: String, private val onDebugLog: (String) -> Unit) : DiagnosticSender {
-    private val root = Step(name, StepType.ROOT)
-    private val rootStarted
-        inline get() = root.isStarted()
+@ConsistentCopyVisibility // no copyable
+internal data class DiagnosticTimer private constructor(private val root: Step) : DiagnosticSender by root {
+    constructor(name: String) : this(Step(name, StepType.ROOT))
 
     override fun start() {
-        checkImplementation(!rootStarted) { "DiagnosticTimer on root already started" }
+        checkImplementation(!root.isStarted) { "DiagnosticTimer on root already started" }
         root.start()
-    }
-
-    override fun isStarted(): Boolean = root.isStarted()
-
-    /** Finish the root timer */
-    override fun finish() = root.finish()
-    override fun createTask(name: String): DiagnosticSender = root.createTask(name)
-    override fun addStep(message: String, symbol: KSNode?) = root.addStep(message, symbol)
-    override fun addWarning(message: String, symbol: KSNode?) = root.addWarning(message, symbol)
-    override fun addError(message: String, symbol: KSNode?) = root.addError(message, symbol)
-    override fun die(message: String, symbol: KSNode?, cause: Exception?) = root.die(message, symbol, cause)
-    override fun isFinish() = root.isFinish()
-    override fun hasErrors(): Boolean = root.hasErrors()
-    override fun hasWarnings(): Boolean = root.hasWarnings()
-
-    @KtorGenWithoutCoverage
-    override fun toString(): String = root.toString()
-
-    @KtorGenWithoutCoverage
-    override fun equals(other: Any?): Boolean =
-        other is DiagnosticTimer && other.root == root && other.onDebugLog == onDebugLog
-
-    @KtorGenWithoutCoverage
-    override fun hashCode(): Int {
-        var result = root.hashCode()
-        result = 31 * result + onDebugLog.hashCode()
-        return result
     }
 
     /** Factory for inner phases */
@@ -114,41 +85,57 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
         messages.any(filter) ||
             children.any { it.containsMessagesRecursively(filter) }
 
-    private inner class Step(val name: String, val type: StepType) : DiagnosticSender {
+    private class Step(val name: String, val type: StepType, val parent: Step? = null) : DiagnosticSender {
         private var startNanos: Long = 0
         private var endNanos: Long = 0
         val messages = mutableListOf<DiagnosticMessage>()
         val children = mutableListOf<Step>()
 
-        constructor(name: String, type: StepType, parent: Step) : this(name, type) {
-            parent.children.add(this)
+        init {
+            checkImplementation(parent == null || this != parent) { "Invalid parent for step '$name." }
+            if (parent != null) {
+                checkImplementation(parent.isInProgress) {
+                    "Parent step '${parent.name}' of '$name' not in progress and try to add a child step"
+                }
+                parent.children.add(this)
+            }
         }
 
         @KtorGenWithoutCoverage // This method is useful while debugging, is not necessary in runtime, I guess
         override fun toString() = (
-            "$type $name " +
-                "(${if (isCompleted()) formattedDuration() else "Start at: $startNanos, not finished yet"}). " +
-                "${messages.size} messages, ${children.size} children.\n" +
+            "$type $name (${if (isCompleted) formattedDuration() else "Start at: $startNanos, not finished yet"}). \n" +
+                "Parent: ${parent?.name ?: "null"}, ${messages.size} messages, ${children.size} children.\n" +
                 "Messages: [${messages.joinToString().trim()}]\n" +
                 "Children: [${children.joinToString().trim()}]"
             ).trim()
 
-        override fun isStarted() = startNanos != 0L
-        override fun isFinish() = endNanos != 0L
+        override val isStarted get() = startNanos != 0L
+        override val isFinish get() = endNanos != 0L
         override fun hasErrors(): Boolean =
             messages.any { it.type == MessageType.ERROR } || children.any { it.hasErrors() }
         override fun hasWarnings(): Boolean =
             messages.any { it.type == MessageType.WARNING } || children.any { it.hasWarnings() }
 
         override fun start() {
-            checkImplementation((this == root || rootStarted) && !isStarted()) { "Step $name already started" }
+            checkImplementation(!isStarted) { "Step '$name' already started" }
+            if (parent != null) {
+                checkImplementation(parent.isInProgress) {
+                    "Parent step '${parent.name}' of '$name' not in progress and try to start a child step"
+                }
+            }
             startNanos = System.nanoTime()
         }
 
         override fun finish() {
-            checkImplementation(rootStarted && isStarted()) { "Step $name not started yet" }
-            checkImplementation(!isFinish()) { "Step $name already finish" }
+            checkImplementation(isStarted) { "Step '$name' not started yet and try to finish" }
+            checkImplementation(!isFinish) { "Step '$name' already finish" }
+            if (parent != null) {
+                checkImplementation(parent.isInProgress) {
+                    "Parent step '${parent.name}' of '$name' not in progress and try to finish a child step"
+                }
+            }
             endNanos = System.nanoTime()
+            /*
             if (children.any { it.isInProgress() }) {
                 onDebugLog(
                     "A children step of $name is not completed. " +
@@ -157,6 +144,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
                         "This is an implementation errors.",
                 )
             }
+             */
         }
 
         override fun createTask(name: String): DiagnosticSender = Step(name, StepType.TASK, this)
@@ -174,13 +162,17 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
         }
 
         override fun die(message: String, symbol: KSNode?, cause: Exception?): Nothing {
-            messages.add(DiagnosticMessage(MessageType.ERROR, message.trim(), symbol))
             var suppressException: Throwable? = null
 
             try {
+                messages.add(DiagnosticMessage(MessageType.ERROR, message.trim(), symbol))
                 // cancel in order of hierarchy
-                (root.retrieveAllChildrenStep() + root)
-                    .filter { it.isInProgress() }
+                if (parent == null) {
+                    this.retrieveAllChildrenStep() + this
+                } else {
+                    parent.retrieveAllChildrenStep() + parent
+                }
+                    .filter { it.isInProgress }
                     .forEach { it.finish() }
             } catch (e: KtorGenFatalError) {
                 // rethrow if is caught here
@@ -188,7 +180,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
             } catch (e: Throwable) {
                 suppressException = e
             }
-            val exception = KtorGenFatalError(buildErrorsAndWarningsMessage(), cause)
+            val exception = KtorGenFatalError(message, cause)
             suppressException?.let { exception.addSuppressed(suppressException) }
             throw exception
         }
@@ -216,6 +208,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
 
             other as Step
 
+            if (parent != other.parent) return false
             if (startNanos != other.startNanos) return false
             if (endNanos != other.endNanos) return false
             if (name != other.name) return false
@@ -229,6 +222,7 @@ internal class DiagnosticTimer(name: String, private val onDebugLog: (String) ->
         @KtorGenWithoutCoverage
         override fun hashCode(): Int {
             var result = startNanos.hashCode()
+            result = 31 * result + parent.hashCode()
             result = 31 * result + endNanos.hashCode()
             result = 31 * result + name.hashCode()
             result = 31 * result + type.hashCode()
