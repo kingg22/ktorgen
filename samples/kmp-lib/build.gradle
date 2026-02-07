@@ -106,11 +106,11 @@ ksp {
 }
 
 tasks.named("runKtlintCheckOverCommonMainSourceSet") {
-    dependsOn("kspCommonMainKotlinMetadata")
+    dependsOn(tasks.kspCommonMainKotlinMetadata)
 }
 
 // Workaround kotlin multiplatform with ksp
 tasks.matching { it.name != "kspCommonMainKotlinMetadata" && it.name.startsWith("ksp") }
     .configureEach {
-        dependsOn("kspCommonMainKotlinMetadata")
+        dependsOn(tasks.kspCommonMainKotlinMetadata)
     }

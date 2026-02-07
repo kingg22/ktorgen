@@ -82,7 +82,7 @@ dependencies {
     // ksp(projects.compiler) // KMP project don't use this, only jvm or android kotlin projects
 
     // don't apply on common main because we're going to generate on each platform. STILL FAILING
-    // kspCommonMainMetadata(projects.compiler)
+    kspCommonMainMetadata(libs.ktorgen.compiler)
     add("kspAndroid", libs.ktorgen.compiler)
     add("kspJvm", libs.ktorgen.compiler)
     add("kspJs", libs.ktorgen.compiler)
