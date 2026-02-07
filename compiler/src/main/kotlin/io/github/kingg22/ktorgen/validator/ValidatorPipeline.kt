@@ -30,7 +30,7 @@ internal class ValidatorPipeline(private val validators: Set<ValidatorStrategy>)
             val sender = diagnosticSender(validator.name)
             sender.work {
                 val result = ValidationResultImpl(sender)
-                with (validator) {
+                with(validator) {
                     result.validate(context)
                 }
                 result.errorCount
