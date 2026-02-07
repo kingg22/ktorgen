@@ -43,11 +43,13 @@ internal class KtorGenProcessor(
 ) : SymbolProcessor {
     private var roundCount = 0
     private var fatalError = false
+    private var noOpMode = false
     private val deferredSymbols = mutableListOf<DeferredSymbolRef>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         roundCount++
         if (roundCount == 1) onFirstRound()
+        if (noOpMode) return emptyList()
 
         try {
             val (fullClassList, kmpExpectFunctions) = extractAndMapDeclaration(
@@ -75,6 +77,16 @@ internal class KtorGenProcessor(
                     }
                 },
             )
+            if (env.platforms.size > 1 &&
+                (kmpExpectFunctions.isNotEmpty() || fullClassList.any { it.expectFunctions.any() })
+            ) {
+                timer.addStep(
+                    "Skipping round '$roundCount', expect @KtorGenFunctionKmp found but is not allowed generate 'common' code on multiplatform project.",
+                )
+                noOpMode = true
+                deferredSymbols.clear()
+                return emptyList()
+            }
             if (roundCount > 1) cleanDeferredSymbolsWith(fullClassList)
 
             timer.addStep("After filter ignored interfaces, have ${fullClassList.size} to validate")
@@ -271,6 +283,12 @@ internal class KtorGenProcessor(
 
     private fun onFirstRound() {
         timer.start()
+        timer.addStep(
+            "Starting first round.\n" +
+                "KtorGen options: [$ktorGenOptions], Kotlin Compiler Version: ${env.compilerVersion} " +
+                "(language: ${env.kotlinVersion}, api: ${env.apiVersion}), KSP Version: ${env.kspVersion}, " +
+                "Platforms: [${env.platforms.joinToString { it.platformName } }]",
+        )
     }
 
     private fun cleanDeferredSymbolsWith(validClasses: Set<ClassData>) {
