@@ -29,7 +29,8 @@ echo "Compatibility Matrix Testing for KtorGen"
 
 cd samples &> /dev/null && pwd
 
-run_case 2.3.0 2.3.5 3.4.0
+# run_case 2.3.10 2.3.5 3.4.0 # Success
+# run_case 2.3.0 2.3.5 3.4.0 # Success
 # run_case 2.3.0 2.3.4 3.3.3 # Success
 # run_case 2.3.0 2.3.3 3.3.2 # Success
 # run_case 2.3.0 2.3.2 3.3.1 # Success
