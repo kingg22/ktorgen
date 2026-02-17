@@ -7,7 +7,6 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
-import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
@@ -36,7 +35,7 @@ internal class KtorGenProcessor(
     private val env: SymbolProcessorEnvironment,
     private val logger: KtorGenLogger,
     private val ktorGenOptions: KtorGenOptions,
-    private val timer: DiagnosticTimer = DiagnosticTimer("KtorGen Annotations Processor"),
+    private val timer: DiagnosticSender.DiagnosticHolder = DiagnosticTimer("KtorGen Annotations Processor"),
     private val mapper: DeclarationMapper = DeclarationMapper.DEFAULT,
     private val validator: Validator = Validator.DEFAULT,
     private val generator: KtorGenGenerator = KtorGenGenerator.DEFAULT,
@@ -96,7 +95,7 @@ internal class KtorGenProcessor(
                 return finishProcessWithDeferredSymbols(resolver)
             }
 
-            val validationPhase = timer.createPhase("Validation for round $roundCount")
+            val validationPhase = timer.createTask("Validation for round $roundCount")
             validationPhase.start()
 
             val validClassData = fullClassList.mapNotNull { classData ->
@@ -119,7 +118,7 @@ internal class KtorGenProcessor(
 
             // 6. Generamos el código
             for (classData in validClassData) {
-                context(timer.createPhase("Code Generation for ${classData.interfaceName} and round $roundCount")) {
+                context(timer.createTask("Code Generation for ${classData.interfaceName} and round $roundCount")) {
                     generateKsp(classData, env.codeGenerator, resolver)
                 }
             }
@@ -169,6 +168,7 @@ internal class KtorGenProcessor(
             logger.warn("Failed in diagnostic report with exception.", null)
             logger.exception(e)
         } finally {
+            deferredSymbols.clear()
             if (message != null) logger.info(message, null)
             super.finish()
         }
@@ -240,22 +240,22 @@ internal class KtorGenProcessor(
             .filterIsInstance<KSClassDeclaration>()
             .mapNotNull { decl ->
                 when (decl.classKind) {
-                    ClassKind.INTERFACE -> decl
+                    INTERFACE -> decl
 
-                    ClassKind.OBJECT, ClassKind.CLASS -> if (decl.isCompanionObject) {
+                    OBJECT, CLASS -> if (decl.isCompanionObject) {
                         decl.parentDeclaration as? KSClassDeclaration
                     } else {
                         logger.error(KtorGenLogger.KTOR_GEN_TYPE_NOT_ALLOWED, decl)
                         null
                     }
 
-                    ClassKind.ENUM_CLASS, ClassKind.ENUM_ENTRY, ClassKind.ANNOTATION_CLASS -> {
+                    ENUM_CLASS, ENUM_ENTRY, ANNOTATION_CLASS -> {
                         logger.error(KtorGenLogger.KTOR_GEN_TYPE_NOT_ALLOWED, decl)
                         null
                     }
                 }
             }
-            .filter { it.classKind == ClassKind.INTERFACE }
+            .filter { it.classKind == INTERFACE }
 
     private fun getAnnotatedFunctions(resolver: Resolver): Sequence<KSFunctionDeclaration> {
         val getAnnotated = resolver.getSymbolsWithAnnotation(GET::class.qualifiedName!!)
@@ -304,7 +304,7 @@ internal class KtorGenProcessor(
         onDeferredSymbols: (KSClassDeclaration, List<KSAnnotated>) -> Unit,
     ): ClassDataWithKmpExpectFunctions {
         // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
-        val mapperPhase = timer.createPhase("Extraction and Mapper, round $roundCount")
+        val mapperPhase = timer.createTask("Extraction and Mapper, round $roundCount")
         mapperPhase.start()
 
         val annotatedFunctionsGroupedByClass = getAnnotatedFunctions(resolver)

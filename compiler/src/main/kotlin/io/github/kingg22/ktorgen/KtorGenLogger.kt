@@ -2,9 +2,6 @@ package io.github.kingg22.ktorgen
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSNode
-import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Errors
-import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Off
-import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType.Warnings
 
 internal data class KtorGenLogger(private val kspLogger: KSPLogger, private val options: KtorGenOptions) :
     KSPLogger by kspLogger {
