@@ -16,51 +16,17 @@ plugins {
 
 group = "io.github.kingg22"
 version = libs.versions.ktorgen.version.get()
-def libs = libs
 
-subprojects {
-    apply(plugin: libs.plugins.ktlint.get().pluginId)
-    apply(plugin: libs.plugins.sonarqube.get().pluginId)
-
-    group = "io.github.kingg22"
-
-    ktlint {
-        version.set(libs.versions.ktlint.pinterest)
+sonar {
+    properties {
+        property("sonar.projectKey", "kingg22_ktorgen")
+        property("sonar.organization", "kingg22")
+        property("sonar.projectName", "ktorgen")
+        property("sonar.projectVersion", libs.versions.ktorgen.version.get())
+        property("sonar.gradle.scanAll", true)
+        property("sonar.scanner.skipJreProvisioning", true)
+        property("sonar.scanner.javaExePath", "${System.getProperty("java.home")}/bin/java")
     }
-
-    sonar {
-        // ignora completamente estos módulos
-        if (project.name != "annotations" && project.name != "compiler") {
-            isSkipProject = true
-        }
-
-        properties {
-            // evita incluir coverage de módulos que no tienen tests
-            if (project.name == "annotations") {
-                property("sonar.sources", "src/commonMain")
-                property("sonar.coverage.exclusions", "**/*")
-            }
-
-            if (project.name == "compiler") {
-                property("sonar.sources", "src/main")
-                property("sonar.tests", "src/test")
-                property(
-                    "sonar.coverage.jacoco.xmlReportPaths",
-                    project.layout.buildDirectory.file("reports/kover/report.xml").get().asFile.absolutePath,
-                )
-            }
-        }
-    }
-}
-
-sonar.properties {
-    property("sonar.projectKey", "kingg22_ktorgen")
-    property("sonar.organization", "kingg22")
-    property("sonar.projectName", "ktorgen")
-    property("sonar.projectVersion", libs.versions.ktorgen.version.get())
-    property("sonar.gradle.scanAll", false) // Conflict with submodules config
-    property("sonar.scanner.skipJreProvisioning", true)
-    property("sonar.scanner.javaExePath", "${System.getProperty("java.home")}/bin/java")
 }
 
 tasks.sonar {

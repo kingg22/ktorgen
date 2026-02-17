@@ -8,6 +8,7 @@ import org.sonarqube.gradle.SonarTask
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.kotlinxKover)
+    alias(libs.plugins.ktlint)
     alias(libs.plugins.mavenPublish)
 }
 
@@ -60,7 +61,14 @@ kover {
         filters.excludes {
             annotatedBy("${group}.ktorgen.KtorGenWithoutCoverage")
         }
+        xml {
+            xmlFile.set(layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml"))
+        }
     }
+}
+
+ktlint {
+    version.set(libs.versions.ktlint.pinterest)
 }
 
 tasks.test {

@@ -82,7 +82,7 @@ jobs:
 
     # With configuration cache parallel, the KMP plugin fails with ConcurrentModificationException
     - name: Sonar analyze
-      run: ./gradlew :compiler:koverXmlReport sonar --info --no-configuration-cache -Dsonar.verbose=true
+      run: ./gradlew sonar --info --no-configuration-cache -Dsonar.verbose=true
       if: >
         ${{
           github.actor != 'app/renovate' &&
