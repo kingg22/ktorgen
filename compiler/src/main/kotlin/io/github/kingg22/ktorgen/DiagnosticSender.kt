@@ -40,6 +40,9 @@ interface DiagnosticSender {
 
     /** A concrete sender can hold and produce reports */
     interface DiagnosticHolder : DiagnosticSender {
+        @Deprecated("Use createTask instead", ReplaceWith("createTask(name)"))
+        fun createPhase(name: String): DiagnosticSender
+
         /** Generate report of all messages, this mark as finish the root timer */
         fun buildReport(): String
 

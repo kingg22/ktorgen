@@ -22,6 +22,9 @@ internal data class ChronoDiagnostic private constructor(private val root: Step)
 
     constructor(name: String) : this(Step(name, 0, null, mutableListOf()))
 
+    @Deprecated("Use createTask instead", replaceWith = ReplaceWith("createTask(name)"))
+    override fun createPhase(name: String): DiagnosticSender = root.createTask(name)
+
     /** Generate all the report in mode verbose, this not mark as finish the root timer */
     override fun buildReport(): String = buildString {
         appendLine("┌─ ${root.name} [${root.formattedDuration()}] ${if (root.hasErrors()) "❌" else "✓"}")

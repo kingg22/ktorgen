@@ -31,6 +31,7 @@ import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_PART_DATA
 import io.github.kingg22.ktorgen.validator.Validator
 
+@Suppress("DEPRECATION")
 internal class KtorGenProcessor(
     private val env: SymbolProcessorEnvironment,
     private val logger: KtorGenLogger,
@@ -95,7 +96,7 @@ internal class KtorGenProcessor(
                 return finishProcessWithDeferredSymbols(resolver)
             }
 
-            val validationPhase = timer.createTask("Validation for round $roundCount")
+            val validationPhase = timer.createPhase("Validation for round $roundCount")
             validationPhase.start()
 
             val validClassData = fullClassList.mapNotNull { classData ->
@@ -118,7 +119,7 @@ internal class KtorGenProcessor(
 
             // 6. Generamos el código
             for (classData in validClassData) {
-                context(timer.createTask("Code Generation for ${classData.interfaceName} and round $roundCount")) {
+                context(timer.createPhase("Code Generation for ${classData.interfaceName} and round $roundCount")) {
                     generateKsp(classData, env.codeGenerator, resolver)
                 }
             }
@@ -304,7 +305,7 @@ internal class KtorGenProcessor(
         onDeferredSymbols: (KSClassDeclaration, List<KSAnnotated>) -> Unit,
     ): ClassDataWithKmpExpectFunctions {
         // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
-        val mapperPhase = timer.createTask("Extraction and Mapper, round $roundCount")
+        val mapperPhase = timer.createPhase("Extraction and Mapper, round $roundCount")
         mapperPhase.start()
 
         val annotatedFunctionsGroupedByClass = getAnnotatedFunctions(resolver)

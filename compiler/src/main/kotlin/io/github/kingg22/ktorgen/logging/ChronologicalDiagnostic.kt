@@ -19,6 +19,9 @@ internal data class ChronologicalDiagnostic private constructor(private val root
     DiagnosticSender.DiagnosticHolder {
     constructor(name: String) : this(Step(name, ROOT, null, 0, mutableListOf()))
 
+    @Deprecated("Use createTask instead", replaceWith = ReplaceWith("createTask(name)"))
+    override fun createPhase(name: String): DiagnosticSender = root.createPhase(name)
+
     /** Generate all the report in mode verbose */
     override fun buildReport(): String = buildString {
         appendFilteredMessagesChronologically { true }

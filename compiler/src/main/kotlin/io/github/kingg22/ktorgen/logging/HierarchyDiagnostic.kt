@@ -18,6 +18,10 @@ internal data class HierarchyDiagnostic private constructor(private val root: St
     DiagnosticSender.DiagnosticHolder {
     constructor(name: String) : this(Step(name, ROOT))
 
+    /** Factory for inner phases */
+    @Deprecated("Use createTask instead", replaceWith = ReplaceWith("createTask(name)"))
+    override fun createPhase(name: String): DiagnosticSender = Step(name, PHASE, root)
+
     /** Generate all the report in mode verbose */
     override fun buildReport(): String = buildString { printStep(root, "") }
 
