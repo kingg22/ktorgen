@@ -38,10 +38,10 @@ jobs:
           key: ${{ runner.os }}-konan
           restore-keys: ${{ runner.os }}-konan
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'jetbrains'
           cache: 'gradle'
         env:
