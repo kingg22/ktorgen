@@ -3,6 +3,23 @@
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+### Dependencies
+
+## [0.7.0-RC] - 2026-02-17
+
+### Added
+
 - Add support for `HttpStatement` and `HttpRequestBuilder` as return types for a function.
 - Allow **non-suspending functions** to be used for `HttpStatement` and `HttpRequestBuilder` return types.
 - Add a compatibility table between KtorGen, Kotlin, KSP, and Ktor Client versions. This table is generated automatically.
@@ -11,26 +28,45 @@
 - Add suppress warnings related to namings; this reduces the warnings produced by the IDE when viewing the generated code.
 
 ### Changed
+
 - **BREAKING CHANGE**: The parameter of `@HeaderParam` was renamed from _name_ to _value_
 - Migrate from [_mkdocs shadcn theme_](https://asiffer.github.io/mkdocs-shadcn/) to
 [_mkdocs material theme_](https://squidfunk.github.io/mkdocs-material/) documentation website.
 - Migrate to [Zensical](https://zensical.org/) the documentation website.
-- [internal] Move samples to a separate build project
-- [internal] Use _Sequences_ instead of _Lists_ for intermediate collections
-- [internal] Use _LazyTheadSafe.None_ for lazy properties, the processor is single-threaded
-
-### Deprecated
+- [internal] Move samples to a separate build project (Composite Build)
+- [internal] Use `Sequences` instead of `List` for intermediate collections
+- [internal] Use `LazyTheadSafe.None` for lazy properties, the processor is single-threaded
 
 ### Removed
+
 - Remove unnecessary `@file:JvmMultifileClass` annotation on some annotations files.
 
 ### Fixed
+
 - Correct handling of Sequences extracted from KSP symbols.
 - Fix incorrect filters between source symbols and reduce unnecessary mappings.
 - Prevent incorrect usage of `it` param on `this.url {}` block in generated code.
 - Exclude / Forbidden `abstract, external and expect` modifiers.
 
-### Security
+### Dependencies
+
+- [internal] chore(deps): update dependency org.sonarqube to v7.2.2.6593 by @renovate[bot]
+- [internal] chore(deps): update astral-sh/setup-uv action to v7.2.0 by @renovate[bot]
+- [internal] chore(deps): update agp to v9 (major) by @renovate[bot]
+- [internal] chore(deps): update dependency com.vanniktech.maven.publish to v0.36.0 by @renovate[bot]
+- [internal] fix(deps): update dependency zensical to v0.0.17 by @renovate[bot]
+- [internal] chore(deps): update gradle to v9.3.0 by @renovate[bot]
+- [internal] chore(deps): update dependency org.jetbrains.kotlinx.kover to v0.9.5 by @renovate[bot]
+- [internal] chore(deps): update gradle to v9.3.1 by @renovate[bot]
+- [internal] chore(deps): update gradle/actions action to v5.0.1 by @renovate[bot]
+- [internal] chore(deps): update astral-sh/setup-uv action to v7.2.1 by @renovate[bot]
+- [internal] fix(deps): update dependency zensical to v0.0.20 by @renovate[bot]
+- [internal] chore(deps): update dependency org.jetbrains.kotlinx.kover to v0.9.6 by @renovate[bot]
+- [internal] fix(deps): update dependency zensical to v0.0.21 by @renovate[bot]
+- [internal] chore(deps): update agp to v9.0.1 by @renovate[bot]
+- [internal] chore(deps): update dependency org.jetbrains.kotlinx.kover to v0.9.7 by @renovate[bot]
+- [internal] chore(deps): update astral-sh/setup-uv action to v7.3.0 by @renovate[bot]
+- [internal] fix(deps): update dependency zensical to v0.0.23 by @renovate[bot]
 
 ## [0.6.0] - 2025-12-17
 
@@ -155,7 +191,8 @@ E.g. `sealed interface Foo` will generate `public class _FooImpl : Foo`. Instead
 
 - No direct security patches, but build pipelines now use **explicit action SHAs** and version-locked dependencies for safety.
 
-[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.7.0-RC...HEAD
+[0.7.0-RC]: https://github.com/kingg22/ktorgen/compare/0.6.0...0.7.0-RC
 [0.6.0]: https://github.com/kingg22/ktorgen/compare/0.5.1...0.6.0
 [0.6.0-RC]: https://github.com/kingg22/ktorgen/compare/0.5.1...0.6.0-RC
 [0.5.1]: https://github.com/kingg22/ktorgen/compare/0.5.1-RC...0.5.1

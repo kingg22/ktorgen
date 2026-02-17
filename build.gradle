@@ -80,7 +80,7 @@ changelog {
     // keepUnreleasedSection = true
     // header = provider { "[${version.get()}] - ${date()}" }
     // unreleasedTerm = "[Unreleased]"
-    // groups = listOf("Added", "Changed", "Deprecated", "Removed", "Fixed", "Security")
+    groups = ["Added", "Changed", "Deprecated", "Removed", "Fixed", "Security", "Dependencies"]
     // combinePreReleases = true
     versionPrefix.set("")
     repositoryUrl.set("https://github.com/kingg22/ktorgen")
