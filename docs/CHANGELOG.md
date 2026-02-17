@@ -16,7 +16,7 @@
 
 ### Dependencies
 
-## [0.7.0-RC] - 2026-02-17
+## [0.7.0] - 2026-02-17
 
 ### Added
 
@@ -191,7 +191,8 @@ E.g. `sealed interface Foo` will generate `public class _FooImpl : Foo`. Instead
 
 - No direct security patches, but build pipelines now use **explicit action SHAs** and version-locked dependencies for safety.
 
-[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.7.0-RC...HEAD
+[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/kingg22/ktorgen/compare/0.7.0-RC...0.7.0
 [0.7.0-RC]: https://github.com/kingg22/ktorgen/compare/0.6.0...0.7.0-RC
 [0.6.0]: https://github.com/kingg22/ktorgen/compare/0.5.1...0.6.0
 [0.6.0-RC]: https://github.com/kingg22/ktorgen/compare/0.5.1...0.6.0-RC
