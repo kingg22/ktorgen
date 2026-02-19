@@ -1,20 +1,23 @@
 package io.github.kingg22.ktorgen.sample
 
-import io.github.kingg22.ktorgen.core.KtorGen
-import io.github.kingg22.ktorgen.core.KtorGenFunction
+import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
+import io.github.kingg22.ktorgen.core.KtorGenVisibility
+import io.github.kingg22.ktorgen.core.KtorGenVisibilityControl
 import io.github.kingg22.ktorgen.http.*
 import kotlin.jvm.JvmSynthetic
 
-@KtorGen(
-    classVisibilityModifier = "private",
-    functionAnnotations = [JvmSynthetic::class],
+@OptIn(KtorGenExperimental::class)
+@KtorGenVisibilityControl(classVisibilityModifier = KtorGenVisibility.PRIVATE)
+@KtorGenAnnotationPropagation(
+    factoryFunctionAnnotations = [JvmSynthetic::class],
     optInAnnotations = [ExperimentalApi::class],
 )
 @ExperimentalApi
 internal interface MultiRoundApi {
     @POST
     @Header("Content-Type", "application/json")
-    @KtorGenFunction(annotations = [JvmSynthetic::class])
+    @KtorGenAnnotationPropagation(annotations = [JvmSynthetic::class])
     @JvmSynthetic
     suspend fun getAlbumDiscography(
         @Body jsonBody: String,
@@ -26,7 +29,7 @@ internal interface MultiRoundApi {
 
     @POST
     @Header("Content-Type", "application/json")
-    @KtorGenFunction(annotations = [JvmSynthetic::class])
+    @KtorGenAnnotationPropagation(annotations = [JvmSynthetic::class])
     suspend fun getAlbumData(
         @Body jsonBody: String,
         @Query("api_token") apiToken: String = "",

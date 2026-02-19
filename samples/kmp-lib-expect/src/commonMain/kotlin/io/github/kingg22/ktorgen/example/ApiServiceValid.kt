@@ -1,8 +1,12 @@
 package io.github.kingg22.ktorgen.example
 
-import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenCompanionExtFactory
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
-import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
+import io.github.kingg22.ktorgen.core.KtorGenHttpClientExtFactory
+import io.github.kingg22.ktorgen.core.KtorGenKmpFactory
+import io.github.kingg22.ktorgen.core.KtorGenTopLevelFactory
+import io.github.kingg22.ktorgen.core.KtorGenVisibility
+import io.github.kingg22.ktorgen.core.KtorGenVisibilityControl
 import io.github.kingg22.ktorgen.example.model.IssueData
 import io.github.kingg22.ktorgen.http.*
 import io.ktor.client.*
@@ -11,15 +15,14 @@ import io.ktor.http.content.*
 import kotlinx.coroutines.flow.Flow
 
 @OptIn(KtorGenExperimental::class)
-@KtorGenFunctionKmp
+@KtorGenKmpFactory
 expect fun ApiServiceValid(httpClient: HttpClient, otraCosa: Boolean, valorCambiante: Boolean): ApiServiceValid
 
-@KtorGen(
-    generateTopLevelFunction = true,
-    generateCompanionExtFunction = true,
-    generateHttpClientExtension = true,
-    classVisibilityModifier = "private",
-)
+@OptIn(KtorGenExperimental::class)
+@KtorGenTopLevelFactory
+@KtorGenCompanionExtFactory
+@KtorGenHttpClientExtFactory
+@KtorGenVisibilityControl(classVisibilityModifier = KtorGenVisibility.PRIVATE)
 interface ApiServiceValid {
     val httpClient: HttpClient
     val otraCosa: Boolean

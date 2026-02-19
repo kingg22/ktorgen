@@ -1,6 +1,7 @@
 package io.github.kingg22.ktorgen.sample
 
 import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenCompanionExtFactory
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.sample.model.IssueData
 import io.ktor.http.content.PartData
@@ -32,6 +33,7 @@ interface ApiServiceWithWarnings {
     @POST("/redundant")
     suspend fun endpointWithCookieVararg(@Cookie(Cookie.Auth) @Cookie(Cookie.Csrf) vararg token: String): IssueData
 
-    @KtorGen("ApiWarnings", basePath = "github/", generateCompanionExtFunction = true)
+    @KtorGen("ApiWarnings", basePath = "github/")
+    @KtorGenCompanionExtFactory
     companion object
 }

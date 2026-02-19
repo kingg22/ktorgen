@@ -1,15 +1,20 @@
 package io.github.kingg22.ktorgen.sample
 
 import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenCompanionExtFactory
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
+import io.github.kingg22.ktorgen.core.KtorGenHttpClientExtFactory
+import io.github.kingg22.ktorgen.core.KtorGenTopLevelFactory
+import io.github.kingg22.ktorgen.core.KtorGenVisibility
+import io.github.kingg22.ktorgen.core.KtorGenVisibilityControl
 import io.ktor.client.HttpClient
 
-@KtorGen(
-    "AnApi",
-    visibilityModifier = "internal",
-    generateTopLevelFunction = true,
-    generateCompanionExtFunction = true,
-    generateHttpClientExtension = true,
-)
+@OptIn(KtorGenExperimental::class)
+@KtorGen("AnApi")
+@KtorGenVisibilityControl(visibilityModifier = KtorGenVisibility.INTERNAL)
+@KtorGenTopLevelFactory
+@KtorGenCompanionExtFactory
+@KtorGenHttpClientExtFactory
 interface InternalApi {
     val httpClient: HttpClient
 

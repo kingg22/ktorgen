@@ -1,6 +1,7 @@
 package io.github.kingg22.ktorgen.sample
 
-import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
+import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.http.GET
 import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.HeaderParam
@@ -8,7 +9,8 @@ import io.github.kingg22.ktorgen.http.Path
 import io.ktor.client.request.HttpRequestBuilder
 import kotlin.jvm.JvmSynthetic
 
-@KtorGen(optInAnnotations = [ExperimentalApi::class])
+@OptIn(KtorGenExperimental::class)
+@KtorGenAnnotationPropagation(optInAnnotations = [ExperimentalApi::class])
 @ExperimentalApi
 internal interface DemoGithub : ApiServiceValid {
     @GET("repos/{owner}/{repo}")

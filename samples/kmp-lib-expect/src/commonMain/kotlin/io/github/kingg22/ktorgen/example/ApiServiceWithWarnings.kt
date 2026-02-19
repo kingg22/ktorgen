@@ -1,8 +1,9 @@
 package io.github.kingg22.ktorgen.example
 
 import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenCompanionExtFactory
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
-import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
+import io.github.kingg22.ktorgen.core.KtorGenKmpFactory
 import io.github.kingg22.ktorgen.example.model.IssueData
 import io.github.kingg22.ktorgen.http.Body
 import io.github.kingg22.ktorgen.http.Cookie
@@ -16,7 +17,7 @@ import io.ktor.client.HttpClient
 import io.ktor.http.content.*
 
 @OptIn(KtorGenExperimental::class)
-@KtorGenFunctionKmp
+@KtorGenKmpFactory
 expect fun ApiServiceWithWarnings(httpClient: HttpClient): ApiServiceWithWarnings
 
 interface ApiServiceWithWarnings {
@@ -49,8 +50,7 @@ interface ApiServiceWithWarnings {
     @KtorGen(
         name = "ApiWarnings",
         basePath = "github/",
-        generateTopLevelFunction = false,
-        generateCompanionExtFunction = true,
     )
+    @KtorGenCompanionExtFactory
     companion object
 }
