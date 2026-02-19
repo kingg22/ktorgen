@@ -249,8 +249,8 @@ internal data class ChronologicalDiagnostic private constructor(private val root
 
             // Collect all from root
             fun collect(step: Step) {
-                steps.add(step)
                 step.children.forEach { collect(it) }
+                steps.add(step)
             }
 
             current?.let { collect(it) }
