@@ -15,7 +15,6 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ksp.writeTo
 import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenFunction
-import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
 import io.github.kingg22.ktorgen.extractor.DeclarationMapper
 import io.github.kingg22.ktorgen.generator.KotlinpoetGenerator
 import io.github.kingg22.ktorgen.generator.KtorGenGenerator
@@ -163,7 +162,7 @@ internal class KtorGenProcessor(
                 )
             }
 
-            if (!timer.isFinish) timer.finish()
+            if (timer.isInProgress) timer.finish()
             message = timer.buildReport()
         } catch (e: Exception) {
             logger.warn("Failed in diagnostic report with exception.", null)
@@ -315,9 +314,18 @@ internal class KtorGenProcessor(
             "Retrieve all functions with annotations. Count: ${annotatedFunctionsGroupedByClass.size}",
         )
 
-        val kmpExpectFunctions = resolver.getSymbolsWithAnnotation(KtorGenFunctionKmp::class.qualifiedName!!)
-            .filterIsInstance<KSFunctionDeclaration>()
-            .toMutableList()
+        /** [io.github.kingg22.ktorgen.core.KtorGenKmpFactory] expect functions only exists in common source */
+        val kmpExpectFunctions =
+            @OptIn(KspExperimental::class)
+            if (ktorGenOptions.experimental &&
+                resolver.getKotlinClassByName("io.github.kingg22.ktorgen.core.KtorGenKmpFactory") != null
+            ) {
+                resolver.getSymbolsWithAnnotation("io.github.kingg22.ktorgen.core.KtorGenKmpFactory")
+                    .filterIsInstance<KSFunctionDeclaration>()
+                    .toMutableList()
+            } else {
+                mutableListOf()
+            }
 
         mapperPhase.addStep("Retrieve all KtorGenFunctionKmp. Count: ${kmpExpectFunctions.size}")
 
@@ -390,7 +398,7 @@ internal class KtorGenProcessor(
         val classDataSet = (classDataWithMethods + classWithoutMethods)
             .distinctBy { it.qualifiedName }
             .also { mapperPhase.addStep("After filter declarations, have ${it.size} mapped declarations") }
-            .filter { it.goingToGenerate }
+            .filter { it.options.goingToGenerate }
             .toSet()
         mapperPhase.addStep("Finally going to generate: ${classDataSet.size} classes")
 
