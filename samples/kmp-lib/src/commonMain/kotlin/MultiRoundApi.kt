@@ -2,6 +2,7 @@ package io.github.kingg22.ktorgen.sample
 
 import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
+import io.github.kingg22.ktorgen.core.KtorGenTopLevelFactory
 import io.github.kingg22.ktorgen.core.KtorGenVisibility
 import io.github.kingg22.ktorgen.core.KtorGenVisibilityControl
 import io.github.kingg22.ktorgen.http.*
@@ -9,6 +10,7 @@ import kotlin.jvm.JvmSynthetic
 
 @OptIn(KtorGenExperimental::class)
 @KtorGenVisibilityControl(classVisibilityModifier = KtorGenVisibility.PRIVATE)
+@KtorGenTopLevelFactory
 @KtorGenAnnotationPropagation(
     factoryFunctionAnnotations = [JvmSynthetic::class],
     optInAnnotations = [ExperimentalApi::class],
