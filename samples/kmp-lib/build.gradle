@@ -101,8 +101,9 @@ dependencies {
 
 ksp {
     // pass argument to compiler
-    arg("ktorgen_check_type", "0")
-    arg("ktorgen_print_stacktrace_on_exception", "false")
+    arg("ktorgen.strict", "0")
+    arg("ktorgen.print_stacktrace", "false")
+    arg("ktorgen.experimental", "true")
 }
 
 tasks.named("runKtlintCheckOverCommonMainSourceSet") {
