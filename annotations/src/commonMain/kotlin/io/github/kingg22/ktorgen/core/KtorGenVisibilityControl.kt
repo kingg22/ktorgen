@@ -2,6 +2,9 @@ package io.github.kingg22.ktorgen.core
 
 /**
  * Visibility modifier for generated code. Use with [@KtorGenVisibilityControl()][KtorGenVisibilityControl]
+ *
+ * _[KtorGenExperimental]_ The `private` visibility modifier is not supported in all targets and have more restrictions.
+ *
  * @see <a href="https://kotlinlang.org/docs/visibility-modifiers.html#packages">Kotlin Visibility Modifiers</a>
  */
 enum class KtorGenVisibility {
