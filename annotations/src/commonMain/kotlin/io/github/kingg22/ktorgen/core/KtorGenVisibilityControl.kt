@@ -65,5 +65,5 @@ annotation class KtorGenVisibilityControl(
      * Can be `public` or `internal`.
      * By default, is the same behavior as [visibilityModifier].
      */
-    val functionVisibilityModifier: KtorGenVisibility = KtorGenVisibility.DEFAULT,
+    val factoryFunctionVisibilityModifier: KtorGenVisibility = KtorGenVisibility.DEFAULT,
 )
