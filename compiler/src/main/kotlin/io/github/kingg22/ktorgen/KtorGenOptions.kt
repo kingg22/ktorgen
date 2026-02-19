@@ -1,11 +1,20 @@
 package io.github.kingg22.ktorgen
 
-data class KtorGenOptions(val errorsLoggingType: ErrorsLoggingType, val isPrintStackTraceOnException: Boolean) {
+private const val STRICK_CHECK_TYPE = "ktorgen.strict"
+private const val PRINT_STACKTRACE_ON_EXCEPTION = "ktorgen.print_stacktrace"
+private const val EXPERIMENTAL = "ktorgen.experimental"
+
+data class KtorGenOptions(
+    val errorsLoggingType: ErrorsLoggingType,
+    val isPrintStackTraceOnException: Boolean,
+    val experimental: Boolean,
+) {
     constructor(
         options: Map<String, String>,
     ) : this(
         errorsLoggingType = options[STRICK_CHECK_TYPE]?.toIntOrNull().let { ErrorsLoggingType.fromInt(it) },
         isPrintStackTraceOnException = options[PRINT_STACKTRACE_ON_EXCEPTION]?.toBoolean() ?: false,
+        experimental = options[EXPERIMENTAL]?.toBoolean() ?: false,
     )
 
     enum class ErrorsLoggingType(val intValue: Int) {
@@ -26,7 +35,7 @@ data class KtorGenOptions(val errorsLoggingType: ErrorsLoggingType, val isPrintS
     }
 
     companion object {
-        const val STRICK_CHECK_TYPE = "ktorgen_check_type"
-        const val PRINT_STACKTRACE_ON_EXCEPTION = "ktorgen_print_stacktrace_on_exception"
+        @JvmStatic
+        fun strickCheckTypeToPair(value: ErrorsLoggingType) = STRICK_CHECK_TYPE to value.intValue.toString()
     }
 }
