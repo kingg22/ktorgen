@@ -1,5 +1,7 @@
 package io.github.kingg22.ktorgen
 
+import io.github.kingg22.ktorgen.KtorGenOptions.Companion.strickCheckTypeToPair
+import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
 /** Test class only for [@KtorGen][io.github.kingg22.ktorgen.core.KtorGen] */
 class KtorGenTest {
@@ -227,9 +229,7 @@ class KtorGenTest {
 
         runKtorGenProcessor(
             source,
-            processorOptions = mapOf(
-                KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Warnings.intValue.toString(),
-            ),
+            processorOptions = mapOf(strickCheckTypeToPair(ErrorsLoggingType.Warnings)),
         ) { compilationResultSubject ->
             compilationResultSubject.hasErrorCount(0)
             compilationResultSubject.hasWarningCount(1)
@@ -259,9 +259,7 @@ class KtorGenTest {
 
         runKtorGenProcessor(
             source,
-            processorOptions = mapOf(
-                KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Warnings.intValue.toString(),
-            ),
+            processorOptions = mapOf(strickCheckTypeToPair(ErrorsLoggingType.Warnings)),
         ) { compilationResultSubject ->
             compilationResultSubject.hasErrorCount(0)
             compilationResultSubject.hasWarningCount(0)

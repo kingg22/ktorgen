@@ -5,6 +5,8 @@ package io.github.kingg22.ktorgen
 import androidx.room.compiler.processing.util.CompilationResultSubject
 import androidx.room.compiler.processing.util.runKspProcessorTest
 import androidx.room.compiler.processing.util.runProcessorTest
+import io.github.kingg22.ktorgen.KtorGenOptions.Companion.strickCheckTypeToPair
+import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType
 import java.io.File
 import androidx.room.compiler.processing.util.Source as RoomSource
 import org.junit.jupiter.api.Assertions as JunitAssertions
@@ -18,9 +20,7 @@ import org.junit.jupiter.api.Test as JupiterTest
  */
 fun runKtorGenProcessor(
     vararg sources: Source,
-    processorOptions: Map<String, String> = mapOf(
-        KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Errors.intValue.toString(),
-    ),
+    processorOptions: Map<String, String> = mapOf(strickCheckTypeToPair(ErrorsLoggingType.Errors)),
     kotlincArguments: List<String> = emptyList(),
     onCompilationResult: (CompilationResultSubject) -> Unit,
 ) {
