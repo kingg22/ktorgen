@@ -19,6 +19,7 @@ kotlin {
         apiVersion.set(languageVersion)
         extraWarnings.set(true)
         allWarningsAsErrors.set(true)
+        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 
     abiValidation {
