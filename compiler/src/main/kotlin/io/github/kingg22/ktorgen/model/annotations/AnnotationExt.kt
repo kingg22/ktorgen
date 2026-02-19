@@ -1,13 +1,8 @@
-@file:JvmName("AnnotationExt")
-@file:OptIn(io.github.kingg22.ktorgen.core.KtorGenExperimental::class)
-
 package io.github.kingg22.ktorgen.model.annotations
 
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger.Companion.COOKIE_ON_FUNCTION_WITHOUT_VALUE
-import io.github.kingg22.ktorgen.core.KtorGen
-import io.github.kingg22.ktorgen.core.KtorGenFunction
-import io.github.kingg22.ktorgen.core.KtorGenFunctionKmp
+import io.github.kingg22.ktorgen.core.*
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.requireNotNull
@@ -105,16 +100,24 @@ private operator fun Cookie.PairString.component1() = first
 private operator fun Cookie.PairString.component2() = second
 
 // experimental is a meta-annotation (documented) for optIn only. this doesn't process it
-val ktorGenAnnotationsClass = setOf(KtorGen::class)
-
-val ktorGenAnnotationsIndication = setOf(
+val ktorGenAnnotationsClass = setOf(
     KtorGen::class,
-    KtorGenFunction::class,
-    KtorGenFunctionKmp::class,
+    KtorGenAnnotationPropagation::class,
+    KtorGenVisibilityControl::class,
+    KtorGenTopLevelFactory::class,
+    KtorGenHttpClientExtFactory::class,
+    KtorGenCompanionExtFactory::class,
+)
+
+const val KTORGEN_KMP_FACTORY = "KtorGenKmpFactory"
+
+val ktorGenOthers = setOf(
+    KtorGenExperimental::class,
 )
 
 val ktorGenAnnotationsFunction = setOf(
     KtorGenFunction::class,
+    KtorGenAnnotationPropagation::class,
     HTTP::class,
     GET::class,
     POST::class,
@@ -148,4 +151,4 @@ val ktorGenAnnotationsParameter = setOf(
 )
 
 val ktorGenAnnotations =
-    ktorGenAnnotationsClass + ktorGenAnnotationsIndication + ktorGenAnnotationsFunction + ktorGenAnnotationsParameter
+    ktorGenAnnotationsClass + ktorGenOthers + ktorGenAnnotationsFunction + ktorGenAnnotationsParameter

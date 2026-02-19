@@ -3,10 +3,7 @@ package io.github.kingg22.ktorgen.extractor
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
-import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ksp.toKModifier
 import io.github.kingg22.ktorgen.DiagnosticSender
@@ -20,12 +17,12 @@ import io.github.kingg22.ktorgen.http.HTTP
 import io.github.kingg22.ktorgen.http.Header
 import io.github.kingg22.ktorgen.http.Multipart
 import io.github.kingg22.ktorgen.model.FunctionData
-import io.github.kingg22.ktorgen.model.FunctionGenerationOptions
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
 import io.github.kingg22.ktorgen.model.annotations.toCookieValues
+import io.github.kingg22.ktorgen.model.options.FunctionGenerationOptions
 import io.github.kingg22.ktorgen.require
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
@@ -48,11 +45,7 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 declaration,
             )
             timer.addStep("Extracting the KtorGenFunction annotation")
-            var options = extractKtorGenFunction(declaration) ?: FunctionGenerationOptions.DEFAULT
-
-            if (options.propagateAnnotations) {
-                options = updateFunctionOptionsWith(declaration, options, deferredSymbols)
-            }
+            val options = extractKtorGenFunction(declaration) ?: FunctionGenerationOptions.DEFAULT
 
             if (!options.goingToGenerate) {
                 timer.require(!declaration.isAbstract, KtorGenLogger.ABSTRACT_FUNCTION_IGNORED, declaration)
@@ -72,6 +65,9 @@ internal class FunctionMapper : DeclarationFunctionMapper {
 
             val returnType = TypeData(type)
             timer.addStep("Processed return type: ${returnType.typeName}")
+
+            val (annotationsOptions, symbols) = declaration.extractAnnotationOptions()
+            deferredSymbols += symbols
 
             val functionAnnotations = context(timer.createTask("Extract annotations")) {
                 getFunctionAnnotations(declaration, basePath)
@@ -119,35 +115,8 @@ internal class FunctionMapper : DeclarationFunctionMapper {
                 }.toSet(),
                 ksFunctionDeclaration = declaration,
                 options = options,
+                annotationsOptions = annotationsOptions,
             ) to emptyList()
-        }
-    }
-
-    context(timer: DiagnosticSender)
-    private fun updateFunctionOptionsWith(
-        declaration: KSFunctionDeclaration,
-        options: FunctionGenerationOptions,
-        deferredSymbols: MutableList<KSAnnotated>,
-    ): FunctionGenerationOptions {
-        timer.addStep("Extracting the rest of annotations propagated for function")
-
-        val (annotations, optIns, symbols) = extractAnnotationsFiltered(declaration)
-
-        timer.addStep(
-            "Found ${symbols.size} unresolved symbols of function annotations, adding to deferred symbols list",
-        )
-        deferredSymbols += symbols
-
-        val mergedOptIn = mergeOptIns(optIns, options.optIns)
-
-        val mergedAnnotations = options.mergeAnnotations(annotations, optIns)
-
-        return options.copy(
-            annotations = mergedAnnotations,
-            optInAnnotation = mergedOptIn,
-            optIns = if (mergedOptIn != null) emptySet() else options.optIns,
-        ).also {
-            timer.addStep("Updated options with annotations and optIns propagated: $it")
         }
     }
 
@@ -173,11 +142,11 @@ internal class FunctionMapper : DeclarationFunctionMapper {
             timer.addStep("Going to get Fragment")
             function.getAnnotation(manualExtraction = {
                 FunctionAnnotation.Fragment(
-                    it.getArgumentValueByName<String>("value")?.replace(KTORGEN_DEFAULT_VALUE, "").orEmpty(),
+                    it.getArgumentValueByName<String>("value").replaceExact(KTORGEN_DEFAULT_VALUE, ""),
                     it.getArgumentValueByName("encoded") ?: false,
                 )
             }) { fragment: Fragment ->
-                FunctionAnnotation.Fragment(fragment.value.replace(KTORGEN_DEFAULT_VALUE, ""), fragment.encoded)
+                FunctionAnnotation.Fragment(fragment.value.replaceExact(KTORGEN_DEFAULT_VALUE, ""), fragment.encoded)
             }?.also {
                 add(it)
                 timer.addStep("Fragment found")
@@ -266,33 +235,16 @@ internal class FunctionMapper : DeclarationFunctionMapper {
         )
     }
 
-    private fun extractKtorGenFunction(declaration: KSFunctionDeclaration) =
+    private fun extractKtorGenFunction(declaration: KSFunctionDeclaration): FunctionGenerationOptions? =
         declaration.getAnnotation<KtorGenFunction, FunctionGenerationOptions>(manualExtraction = {
             FunctionGenerationOptions(
-                generate = it.getArgumentValueByName("generate") ?: true,
-                propagateAnnotations = it.getArgumentValueByName("propagateAnnotations") ?: true,
-                annotationsToPropagate =
-                it.getArgumentValueByName<List<KSType>>("annotations")
-                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
-                    ?.toSet()
-                    ?: emptySet(),
-                optIns = it.getArgumentValueByName<List<KSType>>("optInAnnotations")
-                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
-                    ?.toSet()
-                    ?: emptySet(),
-                customHeader = it.getArgumentValueByName("customHeader") ?: "",
-                optInAnnotation = null,
+                goingToGenerate = it.getArgumentValueByName("generate") ?: true,
+                customHeader = it.getArgumentValueByName("customHeader"),
             )
         }) {
             FunctionGenerationOptions(
-                generate = it.generate,
-                propagateAnnotations = it.propagateAnnotations,
-                annotationsToPropagate = it.annotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
-                optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
+                goingToGenerate = it.generate,
                 customHeader = it.customHeader,
-                optInAnnotation = null,
             )
         }
 }

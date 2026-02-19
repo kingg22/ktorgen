@@ -1,5 +1,3 @@
-@file:JvmName("Constants")
-
 package io.github.kingg22.ktorgen.model
 
 import com.squareup.kotlinpoet.ClassName

@@ -4,29 +4,31 @@ import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ANY
-import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
-import io.github.kingg22.ktorgen.checkImplementation
 import io.github.kingg22.ktorgen.core.KtorGen
+import io.github.kingg22.ktorgen.core.KtorGenCompanionExtFactory
+import io.github.kingg22.ktorgen.core.KtorGenHttpClientExtFactory
+import io.github.kingg22.ktorgen.core.KtorGenTopLevelFactory
 import io.github.kingg22.ktorgen.model.ClassData
-import io.github.kingg22.ktorgen.model.ClassGenerationOptions
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.KTORG_GENERATED_FILE_COMMENT
+import io.github.kingg22.ktorgen.model.options.AnnotationsOptions
+import io.github.kingg22.ktorgen.model.options.ClassGenerationOptions
+import io.github.kingg22.ktorgen.model.options.Factories
+import io.github.kingg22.ktorgen.model.options.Factories.CompanionExtension
+import io.github.kingg22.ktorgen.model.options.Factories.HttpClientExtension
+import io.github.kingg22.ktorgen.model.options.Factories.TopLevelFactory
 import io.github.kingg22.ktorgen.require
 import io.github.kingg22.ktorgen.requireNotNull
 import io.github.kingg22.ktorgen.work
-import kotlin.reflect.KClass
 
 internal class ClassMapper : DeclarationMapper {
     context(timer: DiagnosticSender)
@@ -52,35 +54,35 @@ internal class ClassMapper : DeclarationMapper {
 
         val interfaceName = declaration.simpleName.getShortName()
 
-        var ktorGenOnClass = false
-        var ktorGenOnCompanion = false
-        var options = extractKtorGen(declaration, interfaceName)?.also { ktorGenOnClass = true }
+        val options = extractKtorGen(declaration, interfaceName)
             ?: run {
                 if (companionObject != null) {
                     extractKtorGen(companionObject, interfaceName)?.let {
-                        ktorGenOnCompanion = true
                         return@run it
                     }
                 }
                 ClassGenerationOptions.default(
-                    generatedName = "_${interfaceName}Impl",
-                    visibilityModifier = declaration.getVisibility().name,
+                    generatedName = "${interfaceName}Impl",
+                    isDeclaredAtCompanionObject = false,
+                    isDeclaredAtInterface = false,
                 )
             }
-
-        timer.addStep(
-            "Retrieved @KtorGen options, going to propagate annotations? ${options.propagateAnnotations}. Options: $options",
-        )
-
-        val deferredSymbols = mutableListOf<KSAnnotated>()
-
-        if (options.propagateAnnotations) {
-            options = updateClassGenerationOptions(declaration, deferredSymbols, options)
-        }
+        timer.addStep("Retrieved @KtorGen options: $options")
 
         if (!options.goingToGenerate) {
             timer.addStep("Skipping, not going to generate this interface.")
             return@work null to emptyList()
+        }
+        val deferredSymbols = mutableListOf<KSAnnotated>()
+
+        // TODO add annotation options flag when is repeated on interface + companion object
+        var (annotationsOptions, symbols) = declaration.extractAnnotationOptions()
+        deferredSymbols += symbols
+        if (companionObject != null && annotationsOptions == AnnotationsOptions.NO_ANNOTATIONS) {
+            companionObject.extractAnnotationOptions().let { (options, symbols) ->
+                annotationsOptions = options
+                deferredSymbols += symbols
+            }
         }
 
         val packageName = declaration.packageName.asString()
@@ -137,51 +139,92 @@ internal class ClassMapper : DeclarationMapper {
                 KtorGenLogger.INTERFACE_NOT_HAVE_FILE + interfaceName,
                 declaration,
             ),
-            ksClassDeclaration = declaration,
+            ksInterface = declaration,
             superClasses = filteredSupertypes.asSequence(),
             properties = properties.asSequence(),
             modifierSet = declaration.modifiers.mapNotNull { it.toKModifier() }.toSet(),
-            companionObjectDeclaration = companionObject,
-            expectFunctions = expectFunctions.asSequence(),
-            isKtorGenAnnotationDeclaredOnClass = ktorGenOnClass,
-            isKtorGenAnnotationDeclaredOnCompanionClass = ktorGenOnCompanion,
+            ksCompanionObject = companionObject,
             options = options,
+            factories = buildSet {
+                if (expectFunctions.isNotEmpty()) {
+                    add(Factories.KmpExpectActual(expectFunctions))
+                }
+                extractTopLevelFactory(declaration, interfaceName)?.let { add(it) }
+                extractCompanionExtFactory(declaration, interfaceName)?.let { add(it) }
+                extractHttpClientExtFactory(declaration, interfaceName)?.let { add(it) }
+                if (companionObject != null) {
+                    extractTopLevelFactory(companionObject, interfaceName)?.let { add(it) }
+                    extractCompanionExtFactory(companionObject, interfaceName)?.let { add(it) }
+                    extractHttpClientExtFactory(companionObject, interfaceName)?.let { add(it) }
+                }
+            },
+            annotationsOptions = annotationsOptions,
+            visibilityOptions = declaration.extractVisibilityOptions(declaration.getVisibility().name),
         ).also { classData ->
-            timer.addStep("Mapper complete of ${classData.interfaceName} to ${classData.generatedName}")
+            timer.addStep("Mapper complete of ${classData.interfaceName} to ${classData.options.generatedName}")
         } to emptyList()
     }
 
-    context(timer: DiagnosticSender)
-    private fun updateClassGenerationOptions(
+    private fun extractTopLevelFactory(declaration: KSClassDeclaration, interfaceName: String): TopLevelFactory? {
+        val isInInterface = !declaration.isCompanionObject
+        val isInCompanionObject = declaration.isCompanionObject
+
+        return declaration.getAnnotation<KtorGenTopLevelFactory, TopLevelFactory>(manualExtraction = {
+            TopLevelFactory(
+                it.getArgumentValueByName<String>("name").replaceExact(KTORGEN_DEFAULT_VALUE, interfaceName),
+                isInInterface,
+                isInCompanionObject,
+            )
+        }) {
+            TopLevelFactory(
+                it.name.replaceExact(KTORGEN_DEFAULT_VALUE, interfaceName),
+                isInInterface,
+                isInCompanionObject,
+            )
+        }
+    }
+
+    private fun extractCompanionExtFactory(
         declaration: KSClassDeclaration,
-        deferredSymbols: MutableList<KSAnnotated>,
-        options: ClassGenerationOptions,
-    ): ClassGenerationOptions {
-        val (annotations, optIns, unresolvedSymbols) = extractAnnotationsFiltered(declaration)
-        val (functionAnnotations, functionOptIn, symbols) = extractFunctionAnnotationsFiltered(declaration)
+        interfaceName: String,
+    ): CompanionExtension? {
+        val isInInterface = !declaration.isCompanionObject
+        val isInCompanionObject = declaration.isCompanionObject
 
-        timer.addStep("Retrieved the rest of annotations and optIns")
-        timer.addStep("${symbols.size} unresolved symbols of function annotations")
-        timer.addStep("${unresolvedSymbols.size} unresolved symbols of interface annotations")
-        deferredSymbols += symbols
-        deferredSymbols += unresolvedSymbols
+        return declaration.getAnnotation<KtorGenCompanionExtFactory, CompanionExtension>(manualExtraction = {
+            CompanionExtension(
+                it.getArgumentValueByName<String>("name").replaceExact(KTORGEN_DEFAULT_VALUE, interfaceName),
+                isInInterface,
+                isInCompanionObject,
+            )
+        }) {
+            CompanionExtension(
+                it.name.replaceExact(KTORGEN_DEFAULT_VALUE, interfaceName),
+                isInInterface,
+                isInCompanionObject,
+            )
+        }
+    }
 
-        val mergedOptIn = mergeOptIns(optIns, options.optIns)
+    private fun extractHttpClientExtFactory(
+        declaration: KSClassDeclaration,
+        interfaceName: String,
+    ): HttpClientExtension? {
+        val isInInterface = !declaration.isCompanionObject
+        val isInCompanionObject = declaration.isCompanionObject
 
-        val mergedAnnotations = options.mergeAnnotations(annotations, optIns)
-
-        return options.copy(
-            annotationsToPropagate = mergedAnnotations,
-            extensionFunctionAnnotation =
-            (options.extensionFunctionAnnotation + functionAnnotations + functionOptIn)
-                .filterNot { ann ->
-                    options.optIns.any { it.typeName == ann.typeName } ||
-                        (optIns.any { it.typeName == ann.typeName })
-                }.toSet(),
-            optInAnnotation = mergedOptIn,
-            optIns = if (mergedOptIn != null) emptySet() else options.optIns,
-        ).also {
-            timer.addStep("Updated options with annotations and optIns propagated: $it")
+        return declaration.getAnnotation<KtorGenHttpClientExtFactory, HttpClientExtension>(manualExtraction = {
+            HttpClientExtension(
+                it.getArgumentValueByName<String>("name").replaceExact(KTORGEN_DEFAULT_VALUE, interfaceName),
+                isInInterface,
+                isInCompanionObject,
+            )
+        }) {
+            HttpClientExtension(
+                it.name.replaceExact(KTORGEN_DEFAULT_VALUE, interfaceName),
+                isInInterface,
+                isInCompanionObject,
+            )
         }
     }
 
@@ -214,141 +257,48 @@ internal class ClassMapper : DeclarationMapper {
         }
     }
 
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun extractFunctionAnnotationsFiltered(declaration: KSClassDeclaration) =
-        extractAnnotationsFiltered(declaration) { it.isAllowedForFunction() }
-
-    private fun KSAnnotated.isAllowedForFunction(): Boolean {
-        val targetAnnotation = annotations.firstOrNull {
-            it.shortName.getShortName() == Target::class.simpleName!!
-        } ?: return true // si no declara @Target, asumimos que es usable en cualquier sitio
-
-        val allowedTargets = targetAnnotation.arguments
-            .flatMap { it.value as? List<*> ?: emptyList<Any>() }
-            .mapNotNull { it?.toString()?.substringAfterLast('.') } // e.g., "CLASS", "FUNCTION"
-
-        return allowedTargets.any { it.equals(AnnotationTarget.FUNCTION.name, true) }
-    }
-
-    private fun KSAnnotation.isAllowedForFunction() =
-        (annotationType.resolve().declaration as? KSClassDeclaration)?.isAllowedForFunction() ?: false
-
-    private fun KSType.isAllowedForFunction() =
-        (this.declaration as? KSClassDeclaration)?.isAllowedForFunction() ?: false
-
-    private fun KClass<out Annotation>.isAllowedForFunction(): Boolean {
-        // Obtenemos el @Target si existe
-        val target = this.annotations.filterIsInstance<Target>().firstOrNull()
-            ?: return true // si no declara @Target, asumimos que es usable en cualquier sitio
-
-        // Revisamos si incluye FUNCTION en los targets
-        return AnnotationTarget.FUNCTION in target.allowedTargets
-    }
-
-    private fun extractKtorGen(kSClassDeclaration: KSClassDeclaration, interfaceName: String): ClassGenerationOptions? {
-        val defaultVisibility = kSClassDeclaration.getVisibility().name
-        val defaultGeneratedName = "_${interfaceName}Impl"
+    private fun extractKtorGen(
+        kSClassDeclaration: KSClassDeclaration,
+        interfaceName: String,
+    ): ClassGenerationOptions? {
+        val defaultGeneratedName = "${interfaceName}Impl"
+        val isDeclaredAtInterface = !kSClassDeclaration.isCompanionObject
+        val isDeclaredAtCompanionObject = kSClassDeclaration.isCompanionObject
 
         return kSClassDeclaration.getAnnotation<KtorGen, ClassGenerationOptions>(manualExtraction = {
-            val visibilityModifier = it.getArgumentValueByName<String>("visibilityModifier")
-                ?.replace(KTORGEN_DEFAULT_VALUE, defaultVisibility)?.uppercase() ?: defaultVisibility
-
-            val annotationList = it.getArgumentValueByName<List<KSType>>("annotations")
+            val generatedName = it.getArgumentValueByName<String>("name")
+                .replaceExact(KTORGEN_DEFAULT_VALUE, defaultGeneratedName)
 
             ClassGenerationOptions(
-                generatedName =
-                it.getArgumentValueByName<String>("name")?.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE }
-                    ?: defaultGeneratedName,
-
+                generatedName = generatedName,
                 goingToGenerate = it.getArgumentValueByName("generate") ?: true,
                 basePath = it.getArgumentValueByName("basePath") ?: "",
-                generateTopLevelFunction = it.getArgumentValueByName("generateTopLevelFunction") ?: true,
-                generateCompanionExtFunction = it.getArgumentValueByName("generateCompanionExtFunction") ?: false,
-                generateHttpClientExtension = it.getArgumentValueByName("generateHttpClientExtension") ?: false,
 
-                propagateAnnotations = it.getArgumentValueByName("propagateAnnotations") ?: true,
-                annotations = annotationList
-                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
-                    ?.toSet()
-                    ?: emptySet(),
-                optIns = it.getArgumentValueByName<List<KSType>>("optInAnnotations")
-                    ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                    ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
-                    ?.toSet()
-                    ?: emptySet(),
-                extensionFunctionAnnotation = (
-                    annotationList?.filter { a -> a.isAllowedForFunction() }
-                        ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                        ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
-                        ?.toSet() ?: emptySet()
-                    ) + (
-                    it.getArgumentValueByName<List<KSType>>("functionAnnotations")
-                        ?.mapNotNull { a -> a.declaration.qualifiedName?.asString() }
-                        ?.map { n -> AnnotationSpec.builder(ClassName.bestGuess(n)).build() }
-                        ?.toSet()
-                        ?: emptySet()
-                    ),
-
-                classVisibilityModifier = it.getArgumentValueByName<String>("classVisibilityModifier")?.replace(
-                    KTORGEN_DEFAULT_VALUE,
-                    visibilityModifier,
-                )?.uppercase() ?: visibilityModifier,
-                constructorVisibilityModifier =
-                it.getArgumentValueByName<String>("constructorVisibilityModifier")?.replace(
-                    KTORGEN_DEFAULT_VALUE,
-                    visibilityModifier,
-                )?.uppercase() ?: visibilityModifier,
-                functionVisibilityModifier = it.getArgumentValueByName<String>("functionVisibilityModifier")?.replace(
-                    KTORGEN_DEFAULT_VALUE,
-                    visibilityModifier,
-                )?.uppercase() ?: visibilityModifier,
-
-                customFileHeader = it.getArgumentValueByName<String>("customFileHeader")?.replace(
+                customFileHeader = it.getArgumentValueByName<String>("customFileHeader")?.replaceExact(
                     KTORGEN_DEFAULT_VALUE,
                     kSClassDeclaration.getVisibility().name,
                 ) ?: KTORG_GENERATED_FILE_COMMENT,
                 customClassHeader = it.getArgumentValueByName("customClassHeader") ?: "",
+                customFileName = it.getArgumentValueByName<String>("customFileName")
+                    .replaceExact(KTORGEN_DEFAULT_VALUE, generatedName),
+                isDeclaredAtInterface = isDeclaredAtInterface,
+                isDeclaredAtCompanionObject = isDeclaredAtCompanionObject,
             )
         }) {
-            val visibilityModifier = it.visibilityModifier
-                .replace(KTORGEN_DEFAULT_VALUE, defaultVisibility)
-                .uppercase()
-            val annotationList = it.annotations
+            val generatedName = it.name.replaceExact(KTORGEN_DEFAULT_VALUE, defaultGeneratedName)
 
             ClassGenerationOptions(
-                generatedName = it.name.takeUnless { n -> n == KTORGEN_DEFAULT_VALUE } ?: defaultGeneratedName,
+                generatedName = generatedName,
                 goingToGenerate = it.generate,
                 basePath = it.basePath,
-                generateTopLevelFunction = it.generateTopLevelFunction,
-                generateCompanionExtFunction = it.generateCompanionExtFunction,
-                generateHttpClientExtension = it.generateHttpClientExtension,
-
-                propagateAnnotations = it.propagateAnnotations,
-                annotations = annotationList.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
-                optIns = it.optInAnnotations.map { a -> AnnotationSpec.builder(a).build() }.toSet(),
-                extensionFunctionAnnotation = annotationList
-                    .filter { a -> a.isAllowedForFunction() }
-                    .map { a -> AnnotationSpec.builder(a).build() }
-                    .toSet() + it.functionAnnotations
-                    .map { a -> AnnotationSpec.builder(a).build() }
-                    .toSet(),
-
-                classVisibilityModifier = it.classVisibilityModifier.replace(
+                customFileHeader = it.customFileHeader.replaceExact(
                     KTORGEN_DEFAULT_VALUE,
-                    visibilityModifier,
-                ).uppercase(),
-                constructorVisibilityModifier = it.constructorVisibilityModifier.replace(
-                    KTORGEN_DEFAULT_VALUE,
-                    visibilityModifier,
-                ).uppercase(),
-                functionVisibilityModifier = it.functionVisibilityModifier.replace(
-                    KTORGEN_DEFAULT_VALUE,
-                    visibilityModifier,
-                ).uppercase(),
-
-                customFileHeader = it.customFileHeader.replace(KTORGEN_DEFAULT_VALUE, KTORG_GENERATED_FILE_COMMENT),
+                    KTORG_GENERATED_FILE_COMMENT,
+                ),
                 customClassHeader = it.customClassHeader,
+                customFileName = it.customFileName.replaceExact(KTORGEN_DEFAULT_VALUE, generatedName),
+                isDeclaredAtInterface = isDeclaredAtInterface,
+                isDeclaredAtCompanionObject = isDeclaredAtCompanionObject,
             )
         }
     }
