@@ -5,9 +5,9 @@ private const val PRINT_STACKTRACE_ON_EXCEPTION = "ktorgen.print_stacktrace"
 private const val EXPERIMENTAL = "ktorgen.experimental"
 
 data class KtorGenOptions(
-    val errorsLoggingType: ErrorsLoggingType,
-    val isPrintStackTraceOnException: Boolean,
-    val experimental: Boolean,
+    val errorsLoggingType: ErrorsLoggingType = ErrorsLoggingType.Warnings,
+    val isPrintStackTraceOnException: Boolean = false,
+    val experimental: Boolean = false,
 ) {
     constructor(
         options: Map<String, String>,
@@ -15,6 +15,12 @@ data class KtorGenOptions(
         errorsLoggingType = options[STRICK_CHECK_TYPE]?.toIntOrNull().let { ErrorsLoggingType.fromInt(it) },
         isPrintStackTraceOnException = options[PRINT_STACKTRACE_ON_EXCEPTION]?.toBoolean() ?: false,
         experimental = options[EXPERIMENTAL]?.toBoolean() ?: false,
+    )
+
+    fun toMap() = mapOf(
+        STRICK_CHECK_TYPE to errorsLoggingType.intValue.toString(),
+        PRINT_STACKTRACE_ON_EXCEPTION to isPrintStackTraceOnException.toString(),
+        EXPERIMENTAL to experimental.toString(),
     )
 
     enum class ErrorsLoggingType(val intValue: Int) {
