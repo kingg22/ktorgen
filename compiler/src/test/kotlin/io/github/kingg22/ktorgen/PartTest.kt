@@ -1,5 +1,8 @@
 package io.github.kingg22.ktorgen
 
+import io.github.kingg22.ktorgen.KtorGenOptions.Companion.strickCheckTypeToPair
+import io.github.kingg22.ktorgen.KtorGenOptions.ErrorsLoggingType
+
 /** Test related to the [@Part][io.github.kingg22.ktorgen.http.Part] annotation */
 class PartTest {
     @Test
@@ -128,9 +131,7 @@ class PartTest {
 
         runKtorGenProcessor(
             source,
-            processorOptions = mapOf(
-                KtorGenOptions.STRICK_CHECK_TYPE to KtorGenOptions.ErrorsLoggingType.Off.intValue.toString(),
-            ),
+            processorOptions = mapOf(strickCheckTypeToPair(ErrorsLoggingType.Off)),
         ) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
