@@ -13,9 +13,6 @@ interface DiagnosticSender {
     val isFinish: Boolean
     val isInProgress get() = isStarted && !isFinish
     val isCompleted get() = isStarted && isFinish
-    fun hasErrors(): Boolean
-    fun hasWarnings(): Boolean
-    fun hasErrorsOrWarnings() = hasErrors() || hasWarnings()
 
     /** Start the step. Only called on start and after root is started */
     fun start()
@@ -54,5 +51,9 @@ interface DiagnosticSender {
 
         /** Generate report of errors and warning, this not mark as finish the root timer */
         fun buildErrorsAndWarningsMessage(): String
+
+        fun hasErrors(): Boolean
+
+        fun hasWarnings(): Boolean
     }
 }

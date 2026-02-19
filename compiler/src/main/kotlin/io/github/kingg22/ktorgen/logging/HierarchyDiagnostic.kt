@@ -43,6 +43,10 @@ internal data class HierarchyDiagnostic private constructor(private val root: St
         appendFilteredSteps(root, 0) { it.type == WARNING || it.type == ERROR }
     }
 
+    override fun hasErrors(): Boolean = root.hasErrors()
+
+    override fun hasWarnings(): Boolean = root.hasWarnings()
+
     private fun StringBuilder.printStep(step: Step, indent: String) {
         val icon = iconFor(step)
         val label = step.type.label
@@ -113,8 +117,8 @@ internal data class HierarchyDiagnostic private constructor(private val root: St
 
         override val isStarted get() = startNanos != 0L
         override val isFinish get() = endNanos != 0L
-        override fun hasErrors(): Boolean = messages.any { it.type == ERROR } || children.any { it.hasErrors() }
-        override fun hasWarnings(): Boolean = messages.any { it.type == WARNING } || children.any { it.hasWarnings() }
+        fun hasErrors(): Boolean = messages.any { it.type == ERROR } || children.any { it.hasErrors() }
+        fun hasWarnings(): Boolean = messages.any { it.type == WARNING } || children.any { it.hasWarnings() }
 
         override fun start() {
             checkImplementation(!isStarted) { "Step '$name' already started" }
@@ -201,6 +205,7 @@ internal data class HierarchyDiagnostic private constructor(private val root: St
             return (this * factor).roundToInt() / factor
         }
 
+        /*
         @KtorGenWithoutCoverage
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -230,6 +235,7 @@ internal data class HierarchyDiagnostic private constructor(private val root: St
             result = 31 * result + children.hashCode()
             return result
         }
+         */
     }
 
     private data class DiagnosticMessage(val type: MessageType, val message: String, private val symbol: KSNode?) {
