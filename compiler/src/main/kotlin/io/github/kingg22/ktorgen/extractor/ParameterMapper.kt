@@ -58,14 +58,13 @@ internal class ParameterMapper : DeclarationParameterMapper {
             manualExtraction = {
                 ParameterAnnotation.Path(
                     it.getArgumentValueByName<String>("value")
-                        ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
-                        ?: declaration.name.safeString(),
+                        .replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
                     it.getArgumentValueByName<Boolean>("encoded") ?: false,
                 )
             },
         ) {
             ParameterAnnotation.Path(
-                it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
+                it.value.replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
                 it.encoded,
             )
         }?.let { add(it) }
@@ -74,14 +73,13 @@ internal class ParameterMapper : DeclarationParameterMapper {
             manualExtraction = {
                 ParameterAnnotation.Query(
                     it.getArgumentValueByName<String>("value")
-                        ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
-                        ?: declaration.name.safeString(),
+                        .replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
                     it.getArgumentValueByName<Boolean>("encoded") ?: false,
                 )
             },
         ) {
             ParameterAnnotation.Query(
-                it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
+                it.value.replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
                 it.encoded,
             )
         }?.let { add(it) }
@@ -101,16 +99,14 @@ internal class ParameterMapper : DeclarationParameterMapper {
         declaration.getAnnotation<Field, ParameterAnnotation.Field>(
             manualExtraction = {
                 ParameterAnnotation.Field(
-                    it.getArgumentValueByName<String>(
-                        "value",
-                    )?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
-                        ?: declaration.name.safeString(),
+                    it.getArgumentValueByName<String>("value")
+                        .replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
                     it.getArgumentValueByName<Boolean>("encoded") ?: false,
                 )
             },
         ) {
             ParameterAnnotation.Field(
-                it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
+                it.value.replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
                 it.encoded,
             )
         }?.let { add(it) }
@@ -123,14 +119,13 @@ internal class ParameterMapper : DeclarationParameterMapper {
             manualExtraction = {
                 ParameterAnnotation.Part(
                     it.getArgumentValueByName<String>("value")
-                        ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
-                        ?: declaration.name.safeString(),
+                        .replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
                     it.getArgumentValueByName<String>("encoding") ?: "binary",
                 )
             },
         ) {
             ParameterAnnotation.Part(
-                it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
+                it.value.replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
                 it.encoding,
             )
         }?.let { add(it) }
@@ -165,12 +160,11 @@ internal class ParameterMapper : DeclarationParameterMapper {
             manualExtraction = {
                 ParameterAnnotation.Tag(
                     it.getArgumentValueByName<String>("value")
-                        ?.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString())
-                        ?: declaration.name.safeString(),
+                        .replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()),
                 )
             },
         ) {
-            ParameterAnnotation.Tag(it.value.replace(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()))
+            ParameterAnnotation.Tag(it.value.replaceExact(KTORGEN_DEFAULT_VALUE, declaration.name.safeString()))
         }?.let { add(it) }
 
         declaration.getAnnotationsByType<Cookie>()

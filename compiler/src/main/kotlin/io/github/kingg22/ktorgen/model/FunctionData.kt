@@ -4,8 +4,9 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
-import io.github.kingg22.ktorgen.model.isHttpRequestBuilderType
-import io.github.kingg22.ktorgen.model.isHttpStatementType
+import io.github.kingg22.ktorgen.model.options.AnnotationsOptions
+import io.github.kingg22.ktorgen.model.options.FunctionGenerationOptions
+import io.github.kingg22.ktorgen.model.options.VisibilityOptions
 
 class FunctionData(
     val name: String,
@@ -16,8 +17,10 @@ class FunctionData(
     val ksFunctionDeclaration: KSFunctionDeclaration,
     val isSuspend: Boolean,
     val modifierSet: Set<KModifier>,
-    options: FunctionGenerationOptions,
-) : FunctionGenerationOptions(options) {
+    val options: FunctionGenerationOptions,
+    val annotationsOptions: AnnotationsOptions,
+) {
+    val goingToGenerate inline get() = options.goingToGenerate
     val urlTemplate by lazy(LazyThreadSafetyMode.NONE) { parseUrlTemplate(httpMethodAnnotation.path) }
     val isBody by lazy(LazyThreadSafetyMode.NONE) {
         parameterDataList.any { it.hasAnnotation<ParameterAnnotation.Body>() }
