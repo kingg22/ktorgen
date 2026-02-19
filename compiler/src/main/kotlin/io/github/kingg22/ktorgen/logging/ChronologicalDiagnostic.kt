@@ -10,271 +10,309 @@ import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
 import io.github.kingg22.ktorgen.checkImplementation
 import kotlin.math.pow
 import kotlin.math.roundToInt
-import kotlin.sequences.forEach
 
-// Inspired on Paris Processor timer https://github.com/airbnb/paris/blob/d8b5edbc56253bcdd0d0c57930d2e91113dd0f37/paris-processor/src/main/java/com/airbnb/paris/processor/Timer.kt
-@ConsistentCopyVisibility // no copyable
+/**
+ * DiagnosticTimer provides structured logging and timing for KSP processor execution.
+ * Messages are logged chronologically with clear hierarchical context.
+ */
+@ConsistentCopyVisibility
 internal data class ChronologicalDiagnostic private constructor(private val root: Step) :
     DiagnosticSender by root,
     DiagnosticSender.DiagnosticHolder {
-    constructor(name: String) : this(Step(name, ROOT, null, 0, mutableListOf()))
+    private val allMessages inline get() = root.allMessages
+
+    constructor(name: String) : this(Step(name, 0, null, mutableListOf()))
 
     @Deprecated("Use createTask instead", replaceWith = ReplaceWith("createTask(name)"))
-    override fun createPhase(name: String): DiagnosticSender = root.createPhase(name)
+    override fun createPhase(name: String): DiagnosticSender = root.createTask(name)
 
-    /** Generate all the report in mode verbose */
+    /** Generate all the report in mode verbose, this not mark as finish the root timer */
     override fun buildReport(): String = buildString {
-        appendFilteredMessagesChronologically { true }
+        appendLine("┌─ ${root.name} [${root.formattedDuration()}] ${if (hasErrors()) "❌" else "✓"}")
+        allMessages.forEach { entry ->
+            val indent = "┣─" + "──".repeat(entry.depth)
+            val path = buildBreadcrumb(entry.step)
+            appendLine("$indent${entry.severity.icon} $path")
+            appendLine("$indent   ${entry.message}")
+            entry.symbolInfo?.let { appendLine("$indent  → $it") }
+        }
+        appendLine("└─ Summary: ${allMessages.size} msgs (${errorCount()} errors, ${warningCount()} warnings)")
     }
 
     /** Generate report of all errors, this not mark as finish the root timer */
-    override fun buildErrorsMessage(): String = buildString {
-        appendLine("❌ Errors found during \"${root.name}\" execution:")
-        appendFilteredMessagesChronologically { it.message.type == ERROR }
-    }
+    override fun buildErrorsMessage(): String = buildFilteredReport("❌ ERRORS", ERROR)
 
     /** Generate report of all warnings, this not mark as finish the root timer */
-    override fun buildWarningsMessage(): String = buildString {
-        appendLine("⚠️ Warnings found during \"${root.name}\" execution:")
-        appendFilteredMessagesChronologically { it.message.type == WARNING }
-    }
+    override fun buildWarningsMessage(): String = buildFilteredReport("⚠️  WARNINGS", WARNING)
 
     /** Generate report of errors and warning, this not mark as finish the root timer */
     override fun buildErrorsAndWarningsMessage(): String = buildString {
-        appendLine("❌ Errors and ⚠️ Warnings found during \"${root.name}\" execution:")
-        appendFilteredMessagesChronologically { it.message.type == WARNING || it.message.type == ERROR }
+        val issues = allMessages.filter { it.severity == ERROR || it.severity == WARNING }
+        val errors = issues.count { it.severity == ERROR }
+        val warnings = issues.count { it.severity == WARNING }
+
+        appendLine("┌─ ISSUES: $errors errors, $warnings warnings")
+        if (issues.isEmpty()) {
+            appendLine("│  No issues found")
+        } else {
+            issues.forEach { entry ->
+                val path = buildCompactPath(entry.step)
+                appendLine("│ ${entry.severity.icon} $path")
+                appendLine("│    ${entry.message}")
+                entry.symbolInfo?.let { appendLine("│    → $it") }
+            }
+        }
+        appendLine("└─")
     }
 
-    private fun iconFor(step: Step): String = when (step.type) {
-        PHASE, TASK -> if (step.hasErrors()) "❌" else "✔️"
-        else -> step.type.icon
+    override fun hasErrors(): Boolean = allMessages.any { it.severity == ERROR }
+
+    override fun hasWarnings(): Boolean = allMessages.any { it.severity == WARNING }
+
+    private fun buildFilteredReport(title: String, severity: Severity): String = buildString {
+        val filtered = allMessages.filter { it.severity == severity }
+
+        appendLine("┌─ $title (${filtered.size})")
+        if (filtered.isEmpty()) {
+            appendLine("│  None found")
+        } else {
+            filtered.forEach { entry ->
+                val path = buildCompactPath(entry.step)
+                appendLine("│ ${severity.icon} $path")
+                appendLine("│    ${entry.message}")
+                entry.symbolInfo?.let { appendLine("│    → $it") }
+            }
+        }
+        appendLine("└─")
     }
 
-    private fun StringBuilder.appendFilteredMessagesChronologically(filter: (TimestampedMessage) -> Boolean) {
-        val filteredMessages = root.globalMessages.filter(filter)
+    private fun buildBreadcrumb(step: Step): String {
+        val parts = mutableListOf<String>()
+        var current: Step? = step
 
-        if (filteredMessages.isEmpty()) {
-            appendLine("  No messages found.")
-            return
+        while (current != null) {
+            parts.add(0, current.name)
+            current = current.parent
         }
 
-        for (timestampedMsg in filteredMessages) {
-            val msg = timestampedMsg.message
-            val step = timestampedMsg.step
-            val prefix = "|" + "-".repeat(step.depth * 2)
-
-            append("$prefix ${iconFor(step)} ${step.name}: ${msg.type.icon} ${msg.message}")
-            msg.generateSymbolInfo.takeIf { it.isNotEmpty() }?.let { symbolInfo ->
-                appendLine("    -> $symbolInfo")
-            } ?: appendLine()
-        }
+        return parts.joinToString(" → ")
     }
 
-    private data class TimestampedMessage(
-        val message: DiagnosticMessage,
+    private fun buildCompactPath(step: Step): String {
+        val parts = mutableListOf<String>()
+        var current: Step? = step
+
+        while (current != null && current.parent != null) {
+            parts.add(0, current.name)
+            current = current.parent
+        }
+
+        return parts.joinToString(" → ")
+    }
+
+    private fun errorCount() = allMessages.count { it.severity == ERROR }
+    private fun warningCount() = allMessages.count { it.severity == WARNING }
+
+    private data class LogEntry(
         val step: Step,
-        val timestamp: Long = System.nanoTime(),
+        val depth: Int,
+        val severity: Severity,
+        val message: String,
+        val symbolInfo: String?,
     )
 
-    private class Step(
-        val name: String,
-        val type: StepType,
-        val parent: Step?,
-        val depth: Int,
-        val globalMessages: MutableList<TimestampedMessage>,
-    ) : DiagnosticSender {
+    private enum class Severity(val icon: String) {
+        INFO("ℹ️"),
+        WARNING("⚠️"),
+        ERROR("❌"),
+    }
+
+    private class Step(val name: String, val depth: Int, val parent: Step?, val allMessages: MutableList<LogEntry>) :
+        DiagnosticSender {
         private var startNanos: Long = 0
         private var endNanos: Long = 0
-        val messages = mutableListOf<DiagnosticMessage>()
-        val children = mutableListOf<Step>()
+        private val children = mutableListOf<Step>()
 
         init {
-            checkImplementation(parent == null || this != parent) { "Invalid parent for step '$name." }
             if (parent != null) {
                 checkImplementation(parent.isInProgress) {
-                    "Parent step '${parent.name}' of '$name' not in progress and try to add a child step"
+                    "Cannot create child step '$name' - parent '${parent.name}' is not in progress"
                 }
                 parent.children.add(this)
             }
         }
 
+        override val isStarted: Boolean get() = startNanos != 0L
+        override val isFinish: Boolean get() = endNanos != 0L
+
         @KtorGenWithoutCoverage // This method is useful while debugging, is not necessary in runtime, I guess
         override fun toString() = (
-            "$type $name (${if (isCompleted) formattedDuration() else "Start at: $startNanos, not finished yet"}). \n" +
-                "Parent: ${parent?.name ?: "null"}, ${messages.size} messages, ${children.size} children.\n" +
-                "Messages: [${messages.joinToString().trim()}]\n" +
+            "$name (${if (isCompleted) formattedDuration() else "Start at: $startNanos, not finished yet"}). \n" +
+                "Parent: ${parent?.name ?: "null"} with depth: $depth, ${children.size} children.\n" +
                 "Children: [${children.joinToString().trim()}]"
             ).trim()
 
-        override val isStarted get() = startNanos != 0L
-        override val isFinish get() = endNanos != 0L
-        override fun hasErrors(): Boolean = messages.any { it.type == ERROR } || children.any { it.hasErrors() }
-        override fun hasWarnings(): Boolean = messages.any { it.type == WARNING } || children.any { it.hasWarnings() }
-
         override fun start() {
             checkImplementation(!isStarted) { "Step '$name' already started" }
-            if (parent != null) {
-                checkImplementation(parent.isInProgress) {
-                    "Parent step '${parent.name}' of '$name' not in progress and try to start a child step"
+            parent?.let {
+                checkImplementation(it.isInProgress) {
+                    "Cannot start step '$name' - parent '${it.name}' is not in progress"
                 }
             }
             startNanos = System.nanoTime()
         }
 
         override fun finish() {
-            checkImplementation(isStarted) { "Step '$name' not started yet and try to finish" }
-            checkImplementation(!isFinish) { "Step '$name' already finish" }
-            if (parent != null) {
-                checkImplementation(parent.isInProgress) {
-                    "Parent step '${parent.name}' of '$name' not in progress and try to finish a child step"
+            checkImplementation(isStarted) { "Step '$name' not started" }
+            checkImplementation(!isFinish) { "Step '$name' already finished" }
+            parent?.let {
+                checkImplementation(it.isInProgress) {
+                    "Cannot finish step '$name' - parent '${it.name}' is not in progress"
                 }
             }
             endNanos = System.nanoTime()
         }
 
-        fun createPhase(name: String): DiagnosticSender = Step(name, PHASE, this, depth + 1, globalMessages)
-
-        override fun createTask(name: String): DiagnosticSender = Step(name, TASK, this, depth + 1, globalMessages)
+        override fun createTask(name: String): DiagnosticSender = Step(name, depth + 1, this, allMessages)
 
         override fun addStep(message: String, symbol: KSNode?) {
-            val diagnosticMsg = DiagnosticMessage(STEP, message.trim(), symbol)
-            messages.add(diagnosticMsg)
-            globalMessages.add(TimestampedMessage(diagnosticMsg, this))
+            allMessages.add(
+                LogEntry(
+                    step = this,
+                    depth = depth,
+                    severity = INFO,
+                    message = message.trim(),
+                    symbolInfo = extractSymbolInfo(symbol),
+                ),
+            )
         }
 
         override fun addWarning(message: String, symbol: KSNode?) {
-            val diagnosticMsg = DiagnosticMessage(WARNING, message.trim(), symbol)
-            messages.add(diagnosticMsg)
-            globalMessages.add(TimestampedMessage(diagnosticMsg, this))
+            allMessages.add(
+                LogEntry(
+                    step = this,
+                    depth = depth,
+                    severity = WARNING,
+                    message = message.trim(),
+                    symbolInfo = extractSymbolInfo(symbol),
+                ),
+            )
         }
 
         override fun addError(message: String, symbol: KSNode?) {
-            val diagnosticMsg = DiagnosticMessage(ERROR, message.trim(), symbol)
-            messages.add(diagnosticMsg)
-            globalMessages.add(TimestampedMessage(diagnosticMsg, this))
+            allMessages.add(
+                LogEntry(
+                    step = this,
+                    depth = depth,
+                    severity = ERROR,
+                    message = message.trim(),
+                    symbolInfo = extractSymbolInfo(symbol),
+                ),
+            )
         }
 
         override fun die(message: String, symbol: KSNode?, cause: Exception?): Nothing {
-            var suppressException: Throwable? = null
+            var suppressedException: Throwable? = null
 
             try {
-                val diagnosticMsg = DiagnosticMessage(ERROR, message.trim(), symbol)
-                messages.add(diagnosticMsg)
-                globalMessages.add(TimestampedMessage(diagnosticMsg, this))
+                addError(message, symbol)
 
-                // cancel in order of hierarchy
-                if (parent == null) {
-                    this.retrieveAllChildrenStep() + this
-                } else {
-                    parent.retrieveAllChildrenStep() + parent
-                }
+                // Finish all in-progress steps
+                collectAllSteps()
                     .filter { it.isInProgress }
                     .forEach { it.finish() }
             } catch (e: KtorGenFatalError) {
-                // rethrow if is caught here
                 throw e
             } catch (e: Throwable) {
-                suppressException = e
+                suppressedException = e
             }
+
             val exception = KtorGenFatalError(message, cause)
-            suppressException?.let { exception.addSuppressed(suppressException) }
+            suppressedException?.let { exception.addSuppressed(it) }
             throw exception
         }
 
         fun formattedDuration(): String {
             if (endNanos == 0L || startNanos == 0L) return "--"
-            val ms = (endNanos - startNanos).div(1_000_000.0).roundTo(3)
-            return "$ms ms"
+            val ms = (endNanos - startNanos).div(1_000_000.0).roundTo(2)
+            return "${ms}ms"
         }
 
-        private fun retrieveAllChildrenStep(): Sequence<DiagnosticSender> = sequence {
-            yieldAll(children.flatMap { it.retrieveAllChildrenStep() })
-            yieldAll(children)
+        private fun collectAllSteps(): List<Step> {
+            val steps = mutableListOf<Step>()
+            var current: Step? = this
+
+            // Go to root
+            while (current?.parent != null) {
+                current = current.parent
+            }
+
+            // Collect all from root
+            fun collect(step: Step) {
+                steps.add(step)
+                step.children.forEach { collect(it) }
+            }
+
+            current?.let { collect(it) }
+            return steps
         }
 
-        private fun Double.roundTo(numFractionDigits: Int): Double {
-            val factor = 10.0.pow(numFractionDigits.toDouble())
+        private fun extractSymbolInfo(symbol: KSNode?): String? {
+            if (symbol == null) return null
+
+            val location = symbol.location as? FileLocation ?: return null
+            val fileName = location.filePath.substringAfterLast('/')
+            val line = location.lineNumber
+
+            return when (symbol) {
+                is KSDeclaration -> {
+                    val name = symbol.qualifiedName?.asString() ?: "<unknown>"
+                    "$name ($fileName:$line)"
+                }
+
+                is KSValueParameter -> {
+                    val type = symbol.type.resolve()
+                    val varargPrefix = if (symbol.isVararg) "vararg " else ""
+                    val paramName = symbol.name?.asString() ?: "<unknown>"
+                    val typeName = type.declaration.simpleName.asString()
+                    val nullable = if (type.isMarkedNullable) "?" else ""
+                    val function = (symbol.parent as? KSDeclaration)?.qualifiedName?.asString() ?: "<unknown>"
+                    "$varargPrefix$paramName: $typeName$nullable in $function ($fileName:$line)"
+                }
+
+                else -> "$fileName:$line"
+            }
+        }
+
+        private fun Double.roundTo(decimals: Int): Double {
+            val factor = 10.0.pow(decimals.toDouble())
             return (this * factor).roundToInt() / factor
         }
 
-        @KtorGenWithoutCoverage
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
 
             other as Step
 
-            if (parent != other.parent) return false
+            if (depth != other.depth) return false
             if (startNanos != other.startNanos) return false
             if (endNanos != other.endNanos) return false
             if (name != other.name) return false
-            if (type != other.type) return false
-            if (messages != other.messages) return false
+            if (parent != other.parent) return false
             if (children != other.children) return false
 
             return true
         }
 
-        @KtorGenWithoutCoverage
         override fun hashCode(): Int {
-            var result = startNanos.hashCode()
-            result = 31 * result + parent.hashCode()
+            var result = depth
+            result = 31 * result + startNanos.hashCode()
             result = 31 * result + endNanos.hashCode()
             result = 31 * result + name.hashCode()
-            result = 31 * result + type.hashCode()
-            result = 31 * result + messages.hashCode()
+            result = 31 * result + (parent?.hashCode() ?: 0)
             result = 31 * result + children.hashCode()
             return result
         }
-    }
-
-    private data class DiagnosticMessage(val type: MessageType, val message: String, private val symbol: KSNode?) {
-        // invoke to get the info of location during initialization
-        val generateSymbolInfo: String = run {
-            if (symbol == null) return@run ""
-            if (symbol.location is FileLocation) {
-                val fileLocation = symbol.location as? FileLocation
-                val fileName = fileLocation?.filePath?.substringAfterLast('/')
-                val line = fileLocation?.lineNumber
-
-                if (symbol is KSDeclaration) {
-                    val symbolName = symbol.qualifiedName?.asString() ?: UNKNOWN_SYMBOL
-                    return@run "at $symbolName($fileName:$line)"
-                } else if (symbol is KSValueParameter) {
-                    val type = symbol.type.resolve()
-                    val vararg = if (symbol.isVararg) "vararg" else ""
-                    val function = symbol.parent as? KSDeclaration
-                    val functionName = function?.qualifiedName?.asString() ?: UNKNOWN_SYMBOL
-                    return@run "on parameter '$vararg ${symbol.name?.asString() ?: UNKNOWN_SYMBOL}: " +
-                        "${type.declaration.simpleName.asString()}${if (type.isMarkedNullable) "?" else ""}' " +
-                        "at $functionName($fileName:$line)"
-                }
-            }
-            return@run ""
-        }
-
-        override fun toString() = "$type: $message $generateSymbolInfo".trim()
-
-        private companion object {
-            private const val UNKNOWN_SYMBOL = "<unknown>"
-        }
-    }
-
-    private enum class MessageType(val icon: String) {
-        WARNING("⚠️"),
-        ERROR("❌"),
-        STEP("🟢"),
-        ;
-
-        override fun toString(): String = "$icon $name"
-    }
-
-    private enum class StepType(val label: String, val icon: String) {
-        ROOT("Processor", "⚙️"),
-        PHASE("Phase", "ℹ️"),
-        TASK("Task", "🛠️"),
-        ;
-
-        override fun toString(): String = "$icon $label"
     }
 }
