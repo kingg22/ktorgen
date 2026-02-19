@@ -22,7 +22,7 @@ internal class ValidatorPipeline(private val validators: Set<ValidatorStrategy>)
         onFatalError: () -> Unit,
     ): ClassData? {
         // if we don't go to generate it, skip
-        if (!classData.goingToGenerate) return null
+        if (!classData.options.goingToGenerate) return null
 
         val context = ValidationContext(classData)
 

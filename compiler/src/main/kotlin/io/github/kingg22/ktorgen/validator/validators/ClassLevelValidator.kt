@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.KModifier
 import io.github.kingg22.ktorgen.KtorGenLogger
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
+import io.github.kingg22.ktorgen.model.options.Factories
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
@@ -14,8 +15,11 @@ internal class ClassLevelValidator : ValidatorStrategy {
 
     override fun ValidationResult.validate(context: ValidationContext) {
         val interfaceDeclaration = context.classData
+        val visibilityOptions = context.classData.visibilityOptions
+        val ksInterfaceSymbol = interfaceDeclaration.ksInterface
+        val ksCompanionSymbol = interfaceDeclaration.ksCompanionObject
 
-        val classVisibility = context.classData.classVisibilityModifier
+        val classVisibility = visibilityOptions.classVisibilityModifier
         if (classVisibility.isBlank() || (
                 classVisibility.equals("public", true).not() &&
                     classVisibility.equals("internal", true).not() &&
@@ -24,62 +28,76 @@ internal class ClassLevelValidator : ValidatorStrategy {
         ) {
             addError(
                 KtorGenLogger.ONLY_PUBLIC_INTERNAL_CLASS + "Current '$classVisibility'",
-                interfaceDeclaration,
+                ksInterfaceSymbol,
             )
         }
-        validateKModifier(classVisibility, interfaceDeclaration)
+        validateKModifier(classVisibility, ksInterfaceSymbol)
 
-        val constructorVisibility = context.classData.constructorVisibilityModifier
+        val constructorVisibility = visibilityOptions.constructorVisibilityModifier
         if (constructorVisibility.isBlank() ||
             constructorVisibility.equals("private", true) ||
             constructorVisibility.equals("protected", true)
         ) {
             addError(
                 KtorGenLogger.PRIVATE_CONSTRUCTOR + "Current '$constructorVisibility'",
-                interfaceDeclaration,
+                interfaceDeclaration.ksInterface,
             )
         }
-        validateKModifier(constructorVisibility, interfaceDeclaration)
+        validateKModifier(constructorVisibility, ksInterfaceSymbol)
 
         if (classVisibility.equals("private", true) &&
-            context.classData.generateTopLevelFunction.not() &&
-            context.classData.generateCompanionExtFunction.not() &&
-            context.classData.generateHttpClientExtension.not()
+            interfaceDeclaration.generateTopLevelFunction.not() &&
+            interfaceDeclaration.generateCompanionExtFunction.not() &&
+            interfaceDeclaration.generateHttpClientExtension.not()
         ) {
             if (context.expectFunctions.none()) {
-                addError(KtorGenLogger.PRIVATE_CLASS_NO_ACCESS, interfaceDeclaration)
+                addError(KtorGenLogger.PRIVATE_CLASS_NO_ACCESS, ksInterfaceSymbol)
             } else {
-                addWarning(KtorGenLogger.PRIVATE_CLASS_NO_ACCESS, interfaceDeclaration)
+                addWarning(KtorGenLogger.PRIVATE_CLASS_NO_ACCESS, ksInterfaceSymbol)
             }
         }
 
-        val functionVisibility = context.classData.functionVisibilityModifier
+        val functionVisibility = visibilityOptions.factoryFunctionVisibilityModifier
         if (functionVisibility.isBlank() ||
             functionVisibility.equals("private", true) ||
             functionVisibility.equals("protected", true)
         ) {
             addError(
                 KtorGenLogger.PRIVATE_FUNCTION + "Current '$functionVisibility'",
-                interfaceDeclaration,
+                ksInterfaceSymbol,
             )
         }
-        validateKModifier(functionVisibility, interfaceDeclaration)
+        validateKModifier(functionVisibility, ksInterfaceSymbol)
 
         if (context.classData.modifierSet.contains(KModifier.PRIVATE)) {
             addError(
                 KtorGenLogger.PRIVATE_INTERFACE_CANT_GENERATE + "Current ${context.classData.modifierSet}",
-                interfaceDeclaration,
+                ksInterfaceSymbol,
             )
         }
 
-        if (context.classData.companionObjectDeclaration == null && context.classData.generateCompanionExtFunction) {
-            addError(KtorGenLogger.MISSING_COMPANION_TO_GENERATE, interfaceDeclaration)
+        if (ksCompanionSymbol == null &&
+            interfaceDeclaration.generateCompanionExtFunction
+        ) {
+            addError(KtorGenLogger.MISSING_COMPANION_TO_GENERATE, ksInterfaceSymbol)
         }
 
-        if (context.classData.companionObjectDeclaration != null &&
-            (context.classData.isKtorGenOnCompanionObject && context.classData.isKtorGenOnClass)
-        ) {
-            addError(KtorGenLogger.TWO_KTORGEN_ANNOTATIONS, context.classData.companionObjectDeclaration)
+        val ktorgenOptions = interfaceDeclaration.options
+
+        if (ktorgenOptions.isDeclaredAtCompanionObject && ktorgenOptions.isDeclaredAtInterface) {
+            addError(KtorGenLogger.DOUBLE_ANNOTATIONS + "@KtorGen()", ksCompanionSymbol)
+        }
+
+        if (interfaceDeclaration.factories.count { it is Factories.TopLevelFactory } > 1) {
+            addError(KtorGenLogger.DOUBLE_ANNOTATIONS + "@KtorGenTopLevelFactory()", ksCompanionSymbol)
+        }
+
+        if (interfaceDeclaration.factories.count { it is Factories.CompanionExtension } > 1) {
+            addError(KtorGenLogger.DOUBLE_ANNOTATIONS + "@KtorGenCompanionExtFactory()", ksCompanionSymbol)
+        }
+
+        if (interfaceDeclaration.factories.count { it is Factories.HttpClientExtension } > 1) {
+            addError(KtorGenLogger.DOUBLE_ANNOTATIONS + "@KtorGenHttpClientExtFactory()", ksCompanionSymbol)
         }
 
         validateFunctions(context)

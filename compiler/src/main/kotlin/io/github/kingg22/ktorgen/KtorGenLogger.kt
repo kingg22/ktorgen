@@ -109,7 +109,7 @@ internal data class KtorGenLogger(private val kspLogger: KSPLogger, private val 
             "Only public or internal or private visibility modifier for class is valid. "
         const val MISSING_COMPANION_TO_GENERATE =
             "Missing declare explicit the companion to generate an extension function or remove @KtorGen(generateCompanionExtFunction = false). This limitation is of KSP and how kotlin generate the companion class. See KSP limitations: https://kotlinlang.org/docs/ksp-why-ksp.html#limitations and Kotlin Companion objects https://kotlinlang.org/docs/object-declarations.html#companion-objects"
-        const val TWO_KTORGEN_ANNOTATIONS = "2 annotation of @KtorGen is not valid, please remove of them."
+        const val DOUBLE_ANNOTATIONS = "Double annotations of type CLASS, please remove of them. "
         const val URL_SYNTAX_ERROR =
             "URL syntax error. See https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Path "
         const val PRIVATE_CLASS_NO_ACCESS =

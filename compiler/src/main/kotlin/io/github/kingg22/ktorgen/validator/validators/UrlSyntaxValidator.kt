@@ -30,7 +30,7 @@ internal class UrlSyntaxValidator : ValidatorStrategy {
                 )
             }
 
-            val basePath = context.classData.basePath
+            val basePath = context.classData.options.basePath
             val methodPath = function.httpMethodAnnotation.path
 
             if (hasSuspiciousDoubleSlash(basePath, methodPath)) {
