@@ -1,9 +1,6 @@
-@file:JvmName("-Constants")
+@file:kotlin.jvm.JvmName("-Constants")
 
 package io.github.kingg22.ktorgen.core
-
-import kotlin.jvm.JvmName
-import kotlin.jvm.JvmSynthetic
 
 /**
  * Indicate a default value going to be generated;
@@ -12,5 +9,5 @@ import kotlin.jvm.JvmSynthetic
  *
  * This constant is _internal_ and only used to generate code.
  */
-@get:JvmSynthetic
+@kotlin.jvm.JvmSynthetic
 internal const val KTORGEN_DEFAULT_NAME = "__DEFAULT__"
