@@ -36,10 +36,10 @@ internal class FactoryFunctionGenerator {
             )?.let { functions.add(it) }
         }
 
-        if (classData.generateCompanionExtFunction && classData.companionObjectDeclaration != null) {
+        if (classData.generateCompanionExtFunction && classData.ksCompanionObject != null) {
             generateCompanionFunction(
                 classData = classData,
-                companionObjectClassName = classData.companionObjectDeclaration.toClassName(),
+                companionObjectClassName = classData.ksCompanionObject.toClassName(),
                 constructorParams = constructorParams,
                 functionAnnotation = functionAnnotation,
                 functionVisibilityModifier = functionVisibilityModifier,
@@ -66,7 +66,7 @@ internal class FactoryFunctionGenerator {
         functionVisibilityModifier: KModifier,
     ): FunSpec? {
         val function = generateTopLevelFactoryFunction(
-            classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
+            classNameImpl = ClassName(classData.packageNameString, classData.options.generatedName),
             interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
             constructorParams = constructorParams,
         ).addModifiers(functionVisibilityModifier)
@@ -98,7 +98,7 @@ internal class FactoryFunctionGenerator {
             paramTypes = constructorParams.map { it.type },
             generateCompanionExtensionFunction(
                 companionClassName = companionObjectClassName,
-                classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
+                classNameImpl = ClassName(classData.packageNameString, classData.options.generatedName),
                 interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
                 constructorParams = constructorParams,
             ).addModifiers(functionVisibilityModifier)
@@ -117,7 +117,7 @@ internal class FactoryFunctionGenerator {
     ): FunSpec? {
         val function = generateHttpClientExtensionFunction(
             httpClientClassName = HttpClientClassName,
-            classNameImpl = ClassName(classData.packageNameString, classData.generatedName),
+            classNameImpl = ClassName(classData.packageNameString, classData.options.generatedName),
             interfaceClassName = ClassName(classData.packageNameString, classData.interfaceName),
             constructorParams = constructorParams,
         ).addModifiers(functionVisibilityModifier)

@@ -15,12 +15,12 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
 import io.github.kingg22.ktorgen.DiagnosticSender
+import io.github.kingg22.ktorgen.applyIf
 import io.github.kingg22.ktorgen.applyIfNotNull
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
-import io.github.kingg22.ktorgen.model.KTORG_GENERATED_COMMENT
-import io.github.kingg22.ktorgen.model.Options
 import io.github.kingg22.ktorgen.model.ParameterData
+import io.github.kingg22.ktorgen.model.options.AnnotationsOptions
 import io.github.kingg22.ktorgen.work
 
 internal class KotlinpoetGenerator : KtorGenGenerator {
@@ -41,13 +41,13 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
         val classBuilder = createClassBuilder(classData)
         val fileBuilder = createFileBuilder(classData)
 
-        timer.addStep("Creating class for ${classData.interfaceName} to ${classData.generatedName}")
+        timer.addStep("Creating class for ${classData.interfaceName} to ${classData.options.generatedName}")
 
         // Generate constructor and properties
         val (constructor, properties, httpClient) =
             constructorGenerator.generatePrimaryConstructorAndProperties(
                 classData,
-                KModifier.valueOf(classData.constructorVisibilityModifier.uppercase()),
+                KModifier.valueOf(classData.visibilityOptions.constructorVisibilityModifier.uppercase()),
             )
         // Needs to refresh the reference of Ktor PartData
         functionBodyGenerator = FunctionBodyGenerator(
@@ -56,7 +56,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
         )
 
         // Generate functions
-        val functions = classData.functions.filter { it.goingToGenerate }.toList()
+        val functions = classData.functions.filter { it.options.goingToGenerate }.toList()
         timer.addStep("Generated primary constructor and properties, going to generate ${functions.size} functions")
 
         // Build class structure
@@ -109,7 +109,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
             .indent("    ") // use 4 spaces https://pinterest.github.io/ktlint/latest/rules/standard/#indentation
     }
 
-    private fun Options.buildAnnotations(): Set<AnnotationSpec> {
+    private fun AnnotationsOptions.buildAnnotations(): Set<AnnotationSpec> {
         val annotations = annotations.toMutableSet()
 
         // si tengo optIns pendientes y no hay optInAnnotation unificado → generar uno
@@ -140,17 +140,18 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
             }
     }
 
-    private fun createClassBuilder(classData: ClassData) = TypeSpec.classBuilder(classData.generatedName)
-        .addModifiers(KModifier.valueOf(classData.classVisibilityModifier.uppercase()))
+    private fun createClassBuilder(classData: ClassData): TypeSpec.Builder = TypeSpec
+        .classBuilder(classData.options.generatedName)
+        .addModifiers(KModifier.valueOf(classData.visibilityOptions.classVisibilityModifier.uppercase()))
         .addSuperinterface(ClassName(classData.packageNameString, classData.interfaceName))
-        .addKdoc(classData.customClassHeader)
-        .addAnnotations(classData.buildAnnotations())
+        .addKdoc(classData.options.customClassHeader)
+        .addAnnotations(classData.annotationsOptions.buildAnnotations())
         .addOriginatingKSFile(classData.ksFile)
 
-    private fun createFileBuilder(classData: ClassData) =
-        FileSpec.builder(classData.packageNameString, classData.generatedName)
-            .addDefaultConfig()
-            .addFileComment(classData.customFileHeader)
+    private fun createFileBuilder(classData: ClassData): FileSpec.Builder = FileSpec
+        .builder(classData.packageNameString, classData.options.customFileName)
+        .addDefaultConfig()
+        .addFileComment(classData.options.customFileHeader)
 
     private fun TypeSpec.Builder.buildClassStructure(
         classData: ClassData,
@@ -167,15 +168,15 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
     private fun generateFunction(func: FunctionData): FunSpec = FunSpec.builder(func.name)
         .addModifiers(func.modifierSet)
         .returns(func.returnTypeData.typeName)
-        .addAnnotations(func.buildAnnotations())
-        .addKdoc(func.customHeader.ifEmpty { KTORG_GENERATED_COMMENT })
+        .addAnnotations(func.annotationsOptions.buildAnnotations())
+        .applyIfNotNull(func.options.customHeader) { addKdoc(it) }
+        .applyIf(func.isSuspend) { addModifiers(SUSPEND) }
         .apply {
-            if (func.isSuspend) addModifiers(SUSPEND)
             func.parameterDataList.forEach { param ->
                 addParameter(createParameterSpec(param))
             }
-            addCode(functionBodyGenerator.generateFunctionBody(func))
         }
+        .addCode(functionBodyGenerator.generateFunctionBody(func))
         .build()
 
     private fun createParameterSpec(param: ParameterData): ParameterSpec = ParameterSpec.builder(
@@ -188,11 +189,13 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
 
     context(_: DiagnosticSender)
     private fun generateFactoryFunctions(classData: ClassData, constructorParams: List<ParameterSpec>): List<FunSpec> {
-        val classAnnotations = classData.buildAnnotations()
+        val classAnnotations = classData.annotationsOptions.buildAnnotations()
         val optInAnnotation = classAnnotations.firstOrNull { it.typeName == ClassName("kotlin", "OptIn") }
         val functionAnnotation =
-            setOfNotNull(GeneratedAnnotation, optInAnnotation) + classData.extensionFunctionAnnotation
-        val functionVisibilityModifier = KModifier.valueOf(classData.functionVisibilityModifier.uppercase())
+            setOfNotNull(GeneratedAnnotation, optInAnnotation) + classData.annotationsOptions.factoryFunctionAnnotations
+        val functionVisibilityModifier = KModifier.valueOf(
+            classData.visibilityOptions.factoryFunctionVisibilityModifier.uppercase(),
+        )
 
         return factoryFunctionGenerator.generateFactoryFunctions(
             classData,
