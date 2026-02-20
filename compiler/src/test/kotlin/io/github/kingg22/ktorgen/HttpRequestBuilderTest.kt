@@ -112,4 +112,56 @@ class HttpRequestBuilderTest {
             assertNull(result.findGeneratedSource(TEST_SERVICE_IMPL_PATH))
         }
     }
+
+    @Test
+    fun testUnknownLambdaThrowsError() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+                package com.example.api
+
+                import io.github.kingg22.ktorgen.http.GET
+
+                interface TestService {
+                    @GET("posts")
+                    suspend fun test(builder: StringBuilder.() -> Unit)
+
+                    @GET("posts")
+                    suspend fun test2(builder: StringBuilder.(String) -> Unit)
+                }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { compilation ->
+            compilation.hasErrorContaining(KtorGenLogger.PARAMETER_WITHOUT_ANNOTATION.trim())
+            compilation.hasErrorCount(2)
+            compilation.hasNoWarnings()
+            assertNull(compilation.findGeneratedSource(TEST_SERVICE_IMPL_PATH))
+        }
+    }
+
+    @Test
+    fun testHttpRequestBuilderLambdaReturnNoUnitThrowsError() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+                package com.example.api
+
+                import io.github.kingg22.ktorgen.http.GET
+                import io.ktor.client.request.HttpRequestBuilder
+
+                interface TestService {
+                    @GET("posts")
+                    suspend fun test(builder: HttpRequestBuilder.() -> String)
+                }
+            """.trimIndent(),
+        )
+
+        runKtorGenProcessor(source) { compilation ->
+            compilation.hasErrorContaining(KtorGenLogger.PARAMETER_WITHOUT_ANNOTATION.trim())
+            compilation.hasErrorCount(1)
+            compilation.hasNoWarnings()
+            assertNull(compilation.findGeneratedSource(TEST_SERVICE_IMPL_PATH))
+        }
+    }
 }
