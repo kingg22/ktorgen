@@ -15,15 +15,21 @@ import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import io.github.kingg22.ktorgen.DiagnosticSender
+import io.github.kingg22.ktorgen.KtorGenLogger.Companion.COOKIE_ON_FUNCTION_WITHOUT_VALUE
 import io.github.kingg22.ktorgen.checkImplementation
 import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
 import io.github.kingg22.ktorgen.core.KtorGenVisibility
 import io.github.kingg22.ktorgen.core.KtorGenVisibilityControl
+import io.github.kingg22.ktorgen.http.Cookie
+import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.KotlinOptInClassName
+import io.github.kingg22.ktorgen.model.annotations.CookieValues
 import io.github.kingg22.ktorgen.model.annotations.KTORGEN_KMP_FACTORY
 import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotations
+import io.github.kingg22.ktorgen.model.annotations.removeWhitespace
 import io.github.kingg22.ktorgen.model.options.AnnotationsOptions
 import io.github.kingg22.ktorgen.model.options.VisibilityOptions
+import io.github.kingg22.ktorgen.requireNotNull
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.reflect.KClass
@@ -55,19 +61,19 @@ fun filterAnnotation(ksAnnotation: KSAnnotation, annotationKClass: KClass<out An
  * Catch those exceptions [NoSuchElementException], [KSTypeNotPresentException] and [KSTypesNotPresentException],
  * because [an issue with default values](https://github.com/google/ksp/issues/2356)
  */
-internal inline fun <T> catchKSPExceptions(fallback: () -> T, block: () -> T): T {
+internal inline fun <T> catchKSPExceptions(fallback: (Exception) -> T, block: () -> T): T {
     contract {
         callsInPlace(fallback, InvocationKind.AT_MOST_ONCE)
         callsInPlace(block, InvocationKind.AT_MOST_ONCE)
     }
     return try {
         block()
-    } catch (_: NoSuchElementException) {
-        fallback()
-    } catch (_: KSTypeNotPresentException) {
-        fallback()
-    } catch (_: KSTypesNotPresentException) {
-        fallback()
+    } catch (e: NoSuchElementException) {
+        fallback(e)
+    } catch (e: KSTypeNotPresentException) {
+        fallback(e)
+    } catch (e: KSTypesNotPresentException) {
+        fallback(e)
     }
 }
 
@@ -206,8 +212,6 @@ private fun KClass<out Annotation>.isAllowedForFunction(): Boolean {
     return AnnotationTarget.FUNCTION in target.allowedTargets
 }
 
-infix fun <A, B, C> Pair<A, B>.to(that: C): Triple<A, B, C> = Triple(first, second, that)
-
 /**
  * Extract annotations and merge with previous options because want to propagate
  * @receiver Target to extract annotations
@@ -220,6 +224,8 @@ private fun KSAnnotated.extractAndMergeAnnotations(
     options: AnnotationsOptions,
     extractForFunction: Boolean = false,
 ): Pair<AnnotationsOptions, List<KSAnnotated>> {
+    infix fun <A, B, C> Pair<A, B>.to(that: C): Triple<A, B, C> = Triple(first, second, that)
+
     timer.addStep("Extracting annotations and optIns to propagate")
     val (annotations, optInAnnotation, unresolvedSymbols) = extractAnnotationsFiltered(this)
     val (functionAnnotations, functionOptIn, symbols) = if (extractForFunction) {
@@ -393,3 +399,85 @@ internal fun KSClassDeclaration.extractVisibilityOptions(defaultVisibility: Stri
             ).uppercase(),
         )
     } ?: VisibilityOptions.default(defaultVisibility)
+
+// a lot of try-catch because default values is not working for KMP builds https://github.com/google/ksp/issues/2356
+
+/**
+ * This is a mapper function, handle try-catch of default values, die when [parameterName] is required, but is null.
+ * @receiver the [Cookie] annotation to convert to [CookieValues]
+ * @param timer the [DiagnosticSender] to use for logging
+ * @param parameterName the name of the parameter, used as a fallback value
+ * @return [CookieValues] cleaned
+ */
+context(timer: DiagnosticSender)
+fun Cookie.toCookieValues(parameterName: String? = null): CookieValues {
+    // clean here because don't need validation, otherwise don't do it
+    var isParameter = false
+
+    val finalValue = catchKSPExceptions(fallback = { e ->
+        isParameter = true
+        timer.addStep("Caught exception while parsing cookie value, assuming it's a parameter")
+        timer.requireNotNull(parameterName, COOKIE_ON_FUNCTION_WITHOUT_VALUE, cause = e)
+    }) {
+        when (val cleanValue = value.removeWhitespace()) {
+            KTORGEN_DEFAULT_VALUE -> {
+                isParameter = true
+                timer.requireNotNull(parameterName, COOKIE_ON_FUNCTION_WITHOUT_VALUE)
+            }
+
+            else -> {
+                isParameter = false
+                cleanValue
+            }
+        }
+    }
+
+    operator fun Cookie.PairString.component1() = first
+    operator fun Cookie.PairString.component2() = second
+
+    return CookieValues(
+        name = catchKSPExceptions(fallback = { e ->
+            timer.die("Cookie name is required", cause = e)
+        }) { name.removeWhitespace() },
+        value = finalValue,
+        isValueParameter = isParameter,
+        maxAge = catchKSPExceptions(fallback = { _ ->
+            timer.addStep("Cookie maxAge is not set, assuming it's 0")
+            0
+        }) { maxAge },
+        expiresTimestamp = catchKSPExceptions(fallback = { _ ->
+            timer.addStep("Cookie expiresTimestamp is not set, assuming it's null")
+            null
+        }) {
+            expiresTimestamp.takeIf { it != -1L }
+        },
+        domain = catchKSPExceptions(fallback = { _ ->
+            timer.addStep("Cookie domain is not set, assuming it's null")
+            null
+        }) {
+            domain.removeWhitespace().takeIf { it.isNotBlank() }
+        },
+        path = catchKSPExceptions(fallback = { _ ->
+            timer.addStep("Cookie path is not set, assuming it's null")
+            null
+        }) {
+            path.removeWhitespace().takeIf { it.isNotBlank() }
+        },
+        secure = catchKSPExceptions(fallback = {
+            timer.addStep("Cookie secure is not set, assuming it's false")
+            false
+        }) { secure },
+        httpOnly = catchKSPExceptions(fallback = {
+            timer.addStep("Cookie httpOnly is not set, assuming it's false")
+            false
+        }) { httpOnly },
+        extensions = catchKSPExceptions(fallback = {
+            timer.addStep("Cookie extensions are not set, assuming it's empty")
+            emptyMap()
+        }) {
+            extensions.associate { (key, value) ->
+                key.removeWhitespace() to value.removeWhitespace().takeIf { it.isNotBlank() }
+            }
+        },
+    )
+}

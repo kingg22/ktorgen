@@ -21,7 +21,6 @@ import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.HttpMethod
-import io.github.kingg22.ktorgen.model.annotations.toCookieValues
 import io.github.kingg22.ktorgen.model.options.FunctionGenerationOptions
 import io.github.kingg22.ktorgen.require
 import io.github.kingg22.ktorgen.requireNotNull

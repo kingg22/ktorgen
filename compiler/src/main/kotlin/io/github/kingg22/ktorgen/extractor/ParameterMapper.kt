@@ -4,15 +4,12 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
-import com.squareup.kotlinpoet.AnnotationSpec
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
-import io.github.kingg22.ktorgen.model.KotlinOptInClassName
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
-import io.github.kingg22.ktorgen.model.annotations.toCookieValues
 import io.github.kingg22.ktorgen.work
 
 internal class ParameterMapper : DeclarationParameterMapper {
