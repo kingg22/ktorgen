@@ -13,24 +13,15 @@ import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ksp.writeTo
-import io.github.kingg22.ktorgen.core.KtorGen
-import io.github.kingg22.ktorgen.core.KtorGenFunction
 import io.github.kingg22.ktorgen.extractor.DeclarationMapper
 import io.github.kingg22.ktorgen.generator.KotlinpoetGenerator
 import io.github.kingg22.ktorgen.generator.KtorGenGenerator
-import io.github.kingg22.ktorgen.http.DELETE
-import io.github.kingg22.ktorgen.http.GET
-import io.github.kingg22.ktorgen.http.HEAD
-import io.github.kingg22.ktorgen.http.HTTP
-import io.github.kingg22.ktorgen.http.OPTIONS
-import io.github.kingg22.ktorgen.http.PATCH
-import io.github.kingg22.ktorgen.http.POST
-import io.github.kingg22.ktorgen.http.PUT
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.KTOR_CLIENT_PART_DATA
+import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotationsClass
+import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotationsFunction
 import io.github.kingg22.ktorgen.validator.Validator
 
-@Suppress("DEPRECATION")
 internal class KtorGenProcessor(
     private val env: SymbolProcessorEnvironment,
     private val logger: KtorGenLogger,
@@ -95,7 +86,7 @@ internal class KtorGenProcessor(
                 return finishProcessWithDeferredSymbols(resolver)
             }
 
-            val validationPhase = timer.createPhase("Validation for round $roundCount")
+            val validationPhase = timer.createTask("Validation for round $roundCount")
             validationPhase.start()
 
             val validClassData = fullClassList.mapNotNull { classData ->
@@ -118,7 +109,7 @@ internal class KtorGenProcessor(
 
             // 6. Generamos el código
             for (classData in validClassData) {
-                context(timer.createPhase("Code Generation for ${classData.interfaceName} and round $roundCount")) {
+                context(timer.createTask("Code Generation for ${classData.interfaceName} and round $roundCount")) {
                     generateKsp(classData, env.codeGenerator, resolver)
                 }
             }
@@ -235,50 +226,35 @@ internal class KtorGenProcessor(
         append("\n]")
     }
 
-    private fun getAnnotatedInterfaceTypes(resolver: Resolver) =
-        resolver.getSymbolsWithAnnotation(KtorGen::class.qualifiedName!!)
-            .filterIsInstance<KSClassDeclaration>()
-            .mapNotNull { decl ->
-                when (decl.classKind) {
-                    INTERFACE -> decl
+    private fun getAnnotatedInterfaceTypes(resolver: Resolver): List<KSClassDeclaration> = ktorGenAnnotationsClass
+        .flatMap { annotation ->
+            resolver.getSymbolsWithAnnotation(annotation.qualifiedName!!)
+                .filterIsInstance<KSClassDeclaration>()
+                .mapNotNull { decl ->
+                    when (decl.classKind) {
+                        INTERFACE -> decl
 
-                    OBJECT, CLASS -> if (decl.isCompanionObject) {
-                        decl.parentDeclaration as? KSClassDeclaration
-                    } else {
-                        logger.error(KtorGenLogger.KTOR_GEN_TYPE_NOT_ALLOWED, decl)
-                        null
-                    }
+                        OBJECT, CLASS -> if (decl.isCompanionObject) {
+                            decl.parentDeclaration as? KSClassDeclaration
+                        } else {
+                            logger.error(KtorGenLogger.KTOR_GEN_TYPE_NOT_ALLOWED, decl)
+                            null
+                        }
 
-                    ENUM_CLASS, ENUM_ENTRY, ANNOTATION_CLASS -> {
-                        logger.error(KtorGenLogger.KTOR_GEN_TYPE_NOT_ALLOWED, decl)
-                        null
+                        ENUM_CLASS, ENUM_ENTRY, ANNOTATION_CLASS -> {
+                            logger.error(KtorGenLogger.KTOR_GEN_TYPE_NOT_ALLOWED, decl)
+                            null
+                        }
                     }
                 }
-            }
-            .filter { it.classKind == INTERFACE }
+                .filter { it.classKind == INTERFACE }
+        }
 
-    private fun getAnnotatedFunctions(resolver: Resolver): Sequence<KSFunctionDeclaration> {
-        val getAnnotated = resolver.getSymbolsWithAnnotation(GET::class.qualifiedName!!)
-        val postAnnotated = resolver.getSymbolsWithAnnotation(POST::class.qualifiedName!!)
-        val putAnnotated = resolver.getSymbolsWithAnnotation(PUT::class.qualifiedName!!)
-        val deleteAnnotated = resolver.getSymbolsWithAnnotation(DELETE::class.qualifiedName!!)
-        val headAnnotated = resolver.getSymbolsWithAnnotation(HEAD::class.qualifiedName!!)
-        val optionsAnnotated = resolver.getSymbolsWithAnnotation(OPTIONS::class.qualifiedName!!)
-        val patchAnnotated = resolver.getSymbolsWithAnnotation(PATCH::class.qualifiedName!!)
-        val httpAnnotated = resolver.getSymbolsWithAnnotation(HTTP::class.qualifiedName!!)
-        val genAnnotated = resolver.getSymbolsWithAnnotation(KtorGenFunction::class.qualifiedName!!)
-
-        return (
-            getAnnotated +
-                postAnnotated +
-                putAnnotated +
-                deleteAnnotated +
-                headAnnotated +
-                optionsAnnotated +
-                patchAnnotated +
-                httpAnnotated +
-                genAnnotated
-            ).filterIsInstance<KSFunctionDeclaration>().distinct()
+    private fun getAnnotatedFunctions(resolver: Resolver): List<KSFunctionDeclaration> {
+        val functionAnnotated = ktorGenAnnotationsFunction.flatMap { annotation ->
+            resolver.getSymbolsWithAnnotation(annotation.qualifiedName!!)
+        }
+        return functionAnnotated.filterIsInstance<KSFunctionDeclaration>().distinct()
     }
 
     private fun onFirstRound() {
@@ -304,7 +280,7 @@ internal class KtorGenProcessor(
         onDeferredSymbols: (KSClassDeclaration, List<KSAnnotated>) -> Unit,
     ): ClassDataWithKmpExpectFunctions {
         // 1. Todas las funciones anotadas (GET, POST, etc.), agrupadas por clase donde están declaradas
-        val mapperPhase = timer.createPhase("Extraction and Mapper, round $roundCount")
+        val mapperPhase = timer.createTask("Extraction and Mapper, round $roundCount")
         mapperPhase.start()
 
         val annotatedFunctionsGroupedByClass = getAnnotatedFunctions(resolver)
