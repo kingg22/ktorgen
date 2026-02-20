@@ -69,6 +69,6 @@ jobs:
         run: uv run mkdocs build
 
       - name: Deploy PR preview
-        uses: rossjrw/pr-preview-action@8ff09e486b4c23709012eedd3b42e9f0b95dd0c5 # v1.6.3
+        uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
         with:
           source-dir: build/mkdocs
