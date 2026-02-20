@@ -27,7 +27,7 @@ google-truth = "1.4.5"
 
 # https://github.com/JetBrains/kotlin/releases
 # match according to androidx https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L55
-kotlin = "2.2.20"
+kotlin = "2.3.10"
 
 # https://github.com/square/kotlinpoet/releases
 kotlin-poet = "2.2.0"

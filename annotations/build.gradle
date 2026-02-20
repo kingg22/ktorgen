@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -15,7 +16,7 @@ version = libs.versions.ktorgen.version.get()
 
 kotlin {
     compilerOptions {
-        languageVersion.set(KotlinVersion.KOTLIN_2_0)
+        languageVersion.set(KotlinVersion.KOTLIN_2_1)
         apiVersion.set(languageVersion)
         extraWarnings.set(true)
         allWarningsAsErrors.set(true)
@@ -40,14 +41,20 @@ kotlin {
         compileSdk = Integer.parseInt(libs.versions.android.compileSdk.get())
         minSdk = Integer.parseInt(libs.versions.android.minSdk.get())
 
-        compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
+        compilerOptions {
+            jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
+            jvmTarget.set(JvmTarget.JVM_1_8)
+        }
 
         optimization.consumerKeepRules.publish = true
         optimization.consumerKeepRules.files.add(project.file("consumer-rules.pro"))
     }
 
     jvm {
-        compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
+        compilerOptions {
+            jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
+            jvmTarget.set(JvmTarget.JVM_1_8)
+        }
     }
 
     js {
