@@ -37,6 +37,39 @@ class KtorGenAnnotationPropagationTest {
     }
 
     @Test
+    fun testOptInAnnotationIsPropagatedInParam() {
+        val source = Source.kotlin(
+            "Source.kt",
+            """
+                package com.example.api
+
+                import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
+                import io.github.kingg22.ktorgen.core.KtorGenExperimental
+                import io.github.kingg22.ktorgen.http.GET
+                import io.github.kingg22.ktorgen.http.Header
+                import io.github.kingg22.ktorgen.http.Path
+
+                @OptIn(KtorGenExperimental::class)
+                @KtorGenAnnotationPropagation
+                interface TestService {
+                    @Header("x", "y")
+                    @GET("posts/{id}")
+                    suspend fun test(@OptIn(ExperimentalStdlibApi::class) @Path id: String): String
+                }
+            """.trimIndent(),
+        )
+
+        val expectedHeadersArgumentText = "@OptIn(ExperimentalStdlibApi::class)"
+
+        runKtorGenProcessor(source) { compilationResultSubject ->
+            compilationResultSubject.hasNoWarnings()
+            val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+            generatedFile.contains(expectedHeadersArgumentText)
+            compilationResultSubject.hasErrorCount(0)
+        }
+    }
+
+    @Test
     fun testRequiredOptInAnnotationIsPropagatedInClassGeneratedWithoutOptInAnnotation() {
         val source = Source.kotlin(
             "Source2.kt",
