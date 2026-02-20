@@ -23,19 +23,9 @@ internal class ParameterMapper : DeclarationParameterMapper {
             val type = declaration.type.resolve()
             if (type.isError) return@work null to listOf(declaration.type)
 
+            // TODO this propagation of annotations needs to be done with a flag
             val (annotations, optIns, symbols) = extractAnnotationsFiltered(declaration)
             if (symbols.isNotEmpty()) return@work null to symbols
-
-            // TODO can produce invalid code due double OptIn annotation
-            val optInAnnotation = if (optIns.isNotEmpty()) {
-                AnnotationSpec.builder(KotlinOptInClassName)
-                    .addMember(
-                        optIns.joinToString { "%T::class" },
-                        *optIns.map { it.typeName }.toTypedArray(),
-                    ).build()
-            } else {
-                null
-            }
 
             ParameterData(
                 nameString = paramName,
@@ -45,7 +35,7 @@ internal class ParameterMapper : DeclarationParameterMapper {
                     timer.addStep("Processed annotations")
                 }.asSequence(),
                 nonKtorgenAnnotations = annotations.asSequence(),
-                optInAnnotation = optInAnnotation,
+                optInAnnotation = optIns.firstOrNull(),
                 isHttpRequestBuilderLambda = isHttpRequestBuilderLambda(type).also {
                     timer.addStep("Processed is http builder lambda: $it")
                 },
