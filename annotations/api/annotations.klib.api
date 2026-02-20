@@ -11,40 +11,40 @@ open annotation class io.github.kingg22.ktorgen.core/Generated : kotlin/Annotati
 }
 
 open annotation class io.github.kingg22.ktorgen.core/KtorGen : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGen|null[0]
-    constructor <init>(kotlin/String = ..., kotlin/Boolean = ..., kotlin/String = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGen.<init>|<init>(kotlin.String;kotlin.Boolean;kotlin.String;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
+    constructor <init>(kotlin/String = ..., kotlin/Boolean = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGen.<init>|<init>(kotlin.String;kotlin.Boolean;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
 
-    final val annotations // io.github.kingg22.ktorgen.core/KtorGen.annotations|{}annotations[0]
-        final fun <get-annotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGen.annotations.<get-annotations>|<get-annotations>(){}[0]
     final val basePath // io.github.kingg22.ktorgen.core/KtorGen.basePath|{}basePath[0]
         final fun <get-basePath>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.basePath.<get-basePath>|<get-basePath>(){}[0]
-    final val classVisibilityModifier // io.github.kingg22.ktorgen.core/KtorGen.classVisibilityModifier|{}classVisibilityModifier[0]
-        final fun <get-classVisibilityModifier>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.classVisibilityModifier.<get-classVisibilityModifier>|<get-classVisibilityModifier>(){}[0]
-    final val constructorVisibilityModifier // io.github.kingg22.ktorgen.core/KtorGen.constructorVisibilityModifier|{}constructorVisibilityModifier[0]
-        final fun <get-constructorVisibilityModifier>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.constructorVisibilityModifier.<get-constructorVisibilityModifier>|<get-constructorVisibilityModifier>(){}[0]
     final val customClassHeader // io.github.kingg22.ktorgen.core/KtorGen.customClassHeader|{}customClassHeader[0]
         final fun <get-customClassHeader>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.customClassHeader.<get-customClassHeader>|<get-customClassHeader>(){}[0]
     final val customFileHeader // io.github.kingg22.ktorgen.core/KtorGen.customFileHeader|{}customFileHeader[0]
         final fun <get-customFileHeader>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.customFileHeader.<get-customFileHeader>|<get-customFileHeader>(){}[0]
-    final val functionAnnotations // io.github.kingg22.ktorgen.core/KtorGen.functionAnnotations|{}functionAnnotations[0]
-        final fun <get-functionAnnotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGen.functionAnnotations.<get-functionAnnotations>|<get-functionAnnotations>(){}[0]
-    final val functionVisibilityModifier // io.github.kingg22.ktorgen.core/KtorGen.functionVisibilityModifier|{}functionVisibilityModifier[0]
-        final fun <get-functionVisibilityModifier>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.functionVisibilityModifier.<get-functionVisibilityModifier>|<get-functionVisibilityModifier>(){}[0]
+    final val customFileName // io.github.kingg22.ktorgen.core/KtorGen.customFileName|{}customFileName[0]
+        final fun <get-customFileName>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.customFileName.<get-customFileName>|<get-customFileName>(){}[0]
     final val generate // io.github.kingg22.ktorgen.core/KtorGen.generate|{}generate[0]
         final fun <get-generate>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGen.generate.<get-generate>|<get-generate>(){}[0]
-    final val generateCompanionExtFunction // io.github.kingg22.ktorgen.core/KtorGen.generateCompanionExtFunction|{}generateCompanionExtFunction[0]
-        final fun <get-generateCompanionExtFunction>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGen.generateCompanionExtFunction.<get-generateCompanionExtFunction>|<get-generateCompanionExtFunction>(){}[0]
-    final val generateHttpClientExtension // io.github.kingg22.ktorgen.core/KtorGen.generateHttpClientExtension|{}generateHttpClientExtension[0]
-        final fun <get-generateHttpClientExtension>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGen.generateHttpClientExtension.<get-generateHttpClientExtension>|<get-generateHttpClientExtension>(){}[0]
-    final val generateTopLevelFunction // io.github.kingg22.ktorgen.core/KtorGen.generateTopLevelFunction|{}generateTopLevelFunction[0]
-        final fun <get-generateTopLevelFunction>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGen.generateTopLevelFunction.<get-generateTopLevelFunction>|<get-generateTopLevelFunction>(){}[0]
     final val name // io.github.kingg22.ktorgen.core/KtorGen.name|{}name[0]
         final fun <get-name>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.name.<get-name>|<get-name>(){}[0]
-    final val optInAnnotations // io.github.kingg22.ktorgen.core/KtorGen.optInAnnotations|{}optInAnnotations[0]
-        final fun <get-optInAnnotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGen.optInAnnotations.<get-optInAnnotations>|<get-optInAnnotations>(){}[0]
-    final val propagateAnnotations // io.github.kingg22.ktorgen.core/KtorGen.propagateAnnotations|{}propagateAnnotations[0]
-        final fun <get-propagateAnnotations>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGen.propagateAnnotations.<get-propagateAnnotations>|<get-propagateAnnotations>(){}[0]
-    final val visibilityModifier // io.github.kingg22.ktorgen.core/KtorGen.visibilityModifier|{}visibilityModifier[0]
-        final fun <get-visibilityModifier>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGen.visibilityModifier.<get-visibilityModifier>|<get-visibilityModifier>(){}[0]
+}
+
+open annotation class io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation|null[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ...) // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation.<init>|<init>(kotlin.Boolean;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>){}[0]
+
+    final val annotations // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation.annotations|{}annotations[0]
+        final fun <get-annotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation.annotations.<get-annotations>|<get-annotations>(){}[0]
+    final val factoryFunctionAnnotations // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation.factoryFunctionAnnotations|{}factoryFunctionAnnotations[0]
+        final fun <get-factoryFunctionAnnotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation.factoryFunctionAnnotations.<get-factoryFunctionAnnotations>|<get-factoryFunctionAnnotations>(){}[0]
+    final val optInAnnotations // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation.optInAnnotations|{}optInAnnotations[0]
+        final fun <get-optInAnnotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation.optInAnnotations.<get-optInAnnotations>|<get-optInAnnotations>(){}[0]
+    final val propagateAnnotations // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation.propagateAnnotations|{}propagateAnnotations[0]
+        final fun <get-propagateAnnotations>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGenAnnotationPropagation.propagateAnnotations.<get-propagateAnnotations>|<get-propagateAnnotations>(){}[0]
+}
+
+open annotation class io.github.kingg22.ktorgen.core/KtorGenCompanionExtFactory : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenCompanionExtFactory|null[0]
+    constructor <init>(kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGenCompanionExtFactory.<init>|<init>(kotlin.String){}[0]
+
+    final val name // io.github.kingg22.ktorgen.core/KtorGenCompanionExtFactory.name|{}name[0]
+        final fun <get-name>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGenCompanionExtFactory.name.<get-name>|<get-name>(){}[0]
 }
 
 open annotation class io.github.kingg22.ktorgen.core/KtorGenExperimental : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenExperimental|null[0]
@@ -52,22 +52,47 @@ open annotation class io.github.kingg22.ktorgen.core/KtorGenExperimental : kotli
 }
 
 open annotation class io.github.kingg22.ktorgen.core/KtorGenFunction : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenFunction|null[0]
-    constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> = ..., kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGenFunction.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.Array<kotlin.reflect.KClass<out|kotlin.Annotation>>;kotlin.String){}[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGenFunction.<init>|<init>(kotlin.Boolean;kotlin.String){}[0]
 
-    final val annotations // io.github.kingg22.ktorgen.core/KtorGenFunction.annotations|{}annotations[0]
-        final fun <get-annotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGenFunction.annotations.<get-annotations>|<get-annotations>(){}[0]
     final val customHeader // io.github.kingg22.ktorgen.core/KtorGenFunction.customHeader|{}customHeader[0]
         final fun <get-customHeader>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGenFunction.customHeader.<get-customHeader>|<get-customHeader>(){}[0]
     final val generate // io.github.kingg22.ktorgen.core/KtorGenFunction.generate|{}generate[0]
         final fun <get-generate>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGenFunction.generate.<get-generate>|<get-generate>(){}[0]
-    final val optInAnnotations // io.github.kingg22.ktorgen.core/KtorGenFunction.optInAnnotations|{}optInAnnotations[0]
-        final fun <get-optInAnnotations>(): kotlin/Array<kotlin.reflect/KClass<out kotlin/Annotation>> // io.github.kingg22.ktorgen.core/KtorGenFunction.optInAnnotations.<get-optInAnnotations>|<get-optInAnnotations>(){}[0]
-    final val propagateAnnotations // io.github.kingg22.ktorgen.core/KtorGenFunction.propagateAnnotations|{}propagateAnnotations[0]
-        final fun <get-propagateAnnotations>(): kotlin/Boolean // io.github.kingg22.ktorgen.core/KtorGenFunction.propagateAnnotations.<get-propagateAnnotations>|<get-propagateAnnotations>(){}[0]
 }
 
 open annotation class io.github.kingg22.ktorgen.core/KtorGenFunctionKmp : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenFunctionKmp|null[0]
     constructor <init>() // io.github.kingg22.ktorgen.core/KtorGenFunctionKmp.<init>|<init>(){}[0]
+}
+
+open annotation class io.github.kingg22.ktorgen.core/KtorGenHttpClientExtFactory : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenHttpClientExtFactory|null[0]
+    constructor <init>(kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGenHttpClientExtFactory.<init>|<init>(kotlin.String){}[0]
+
+    final val name // io.github.kingg22.ktorgen.core/KtorGenHttpClientExtFactory.name|{}name[0]
+        final fun <get-name>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGenHttpClientExtFactory.name.<get-name>|<get-name>(){}[0]
+}
+
+open annotation class io.github.kingg22.ktorgen.core/KtorGenKmpFactory : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenKmpFactory|null[1]
+    constructor <init>() // io.github.kingg22.ktorgen.core/KtorGenKmpFactory.<init>|<init>(){}[1]
+}
+
+open annotation class io.github.kingg22.ktorgen.core/KtorGenTopLevelFactory : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenTopLevelFactory|null[0]
+    constructor <init>(kotlin/String = ...) // io.github.kingg22.ktorgen.core/KtorGenTopLevelFactory.<init>|<init>(kotlin.String){}[0]
+
+    final val name // io.github.kingg22.ktorgen.core/KtorGenTopLevelFactory.name|{}name[0]
+        final fun <get-name>(): kotlin/String // io.github.kingg22.ktorgen.core/KtorGenTopLevelFactory.name.<get-name>|<get-name>(){}[0]
+}
+
+open annotation class io.github.kingg22.ktorgen.core/KtorGenVisibilityControl : kotlin/Annotation { // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl|null[0]
+    constructor <init>(io.github.kingg22.ktorgen.core/KtorGenVisibility = ..., io.github.kingg22.ktorgen.core/KtorGenVisibility = ..., io.github.kingg22.ktorgen.core/KtorGenVisibility = ..., io.github.kingg22.ktorgen.core/KtorGenVisibility = ...) // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl.<init>|<init>(io.github.kingg22.ktorgen.core.KtorGenVisibility;io.github.kingg22.ktorgen.core.KtorGenVisibility;io.github.kingg22.ktorgen.core.KtorGenVisibility;io.github.kingg22.ktorgen.core.KtorGenVisibility){}[0]
+
+    final val classVisibilityModifier // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl.classVisibilityModifier|{}classVisibilityModifier[0]
+        final fun <get-classVisibilityModifier>(): io.github.kingg22.ktorgen.core/KtorGenVisibility // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl.classVisibilityModifier.<get-classVisibilityModifier>|<get-classVisibilityModifier>(){}[0]
+    final val constructorVisibilityModifier // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl.constructorVisibilityModifier|{}constructorVisibilityModifier[0]
+        final fun <get-constructorVisibilityModifier>(): io.github.kingg22.ktorgen.core/KtorGenVisibility // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl.constructorVisibilityModifier.<get-constructorVisibilityModifier>|<get-constructorVisibilityModifier>(){}[0]
+    final val factoryFunctionVisibilityModifier // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl.factoryFunctionVisibilityModifier|{}factoryFunctionVisibilityModifier[0]
+        final fun <get-factoryFunctionVisibilityModifier>(): io.github.kingg22.ktorgen.core/KtorGenVisibility // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl.factoryFunctionVisibilityModifier.<get-factoryFunctionVisibilityModifier>|<get-factoryFunctionVisibilityModifier>(){}[0]
+    final val visibilityModifier // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl.visibilityModifier|{}visibilityModifier[0]
+        final fun <get-visibilityModifier>(): io.github.kingg22.ktorgen.core/KtorGenVisibility // io.github.kingg22.ktorgen.core/KtorGenVisibilityControl.visibilityModifier.<get-visibilityModifier>|<get-visibilityModifier>(){}[0]
 }
 
 open annotation class io.github.kingg22.ktorgen.http/Body : kotlin/Annotation { // io.github.kingg22.ktorgen.http/Body|null[0]
@@ -710,4 +735,17 @@ open annotation class io.github.kingg22.ktorgen.http/Tag : kotlin/Annotation { /
 
 open annotation class io.github.kingg22.ktorgen.http/Url : kotlin/Annotation { // io.github.kingg22.ktorgen.http/Url|null[0]
     constructor <init>() // io.github.kingg22.ktorgen.http/Url.<init>|<init>(){}[0]
+}
+
+final enum class io.github.kingg22.ktorgen.core/KtorGenVisibility : kotlin/Enum<io.github.kingg22.ktorgen.core/KtorGenVisibility> { // io.github.kingg22.ktorgen.core/KtorGenVisibility|null[0]
+    enum entry DEFAULT // io.github.kingg22.ktorgen.core/KtorGenVisibility.DEFAULT|null[0]
+    enum entry INTERNAL // io.github.kingg22.ktorgen.core/KtorGenVisibility.INTERNAL|null[0]
+    enum entry PRIVATE // io.github.kingg22.ktorgen.core/KtorGenVisibility.PRIVATE|null[0]
+    enum entry PUBLIC // io.github.kingg22.ktorgen.core/KtorGenVisibility.PUBLIC|null[0]
+
+    final val entries // io.github.kingg22.ktorgen.core/KtorGenVisibility.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.kingg22.ktorgen.core/KtorGenVisibility> // io.github.kingg22.ktorgen.core/KtorGenVisibility.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.kingg22.ktorgen.core/KtorGenVisibility // io.github.kingg22.ktorgen.core/KtorGenVisibility.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.kingg22.ktorgen.core/KtorGenVisibility> // io.github.kingg22.ktorgen.core/KtorGenVisibility.values|values#static(){}[0]
 }

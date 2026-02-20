@@ -2,36 +2,59 @@ public abstract interface annotation class io/github/kingg22/ktorgen/core/Genera
 }
 
 public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGen : java/lang/annotation/Annotation {
-	public abstract fun annotations ()[Ljava/lang/Class;
 	public abstract fun basePath ()Ljava/lang/String;
-	public abstract fun classVisibilityModifier ()Ljava/lang/String;
-	public abstract fun constructorVisibilityModifier ()Ljava/lang/String;
 	public abstract fun customClassHeader ()Ljava/lang/String;
 	public abstract fun customFileHeader ()Ljava/lang/String;
-	public abstract fun functionAnnotations ()[Ljava/lang/Class;
-	public abstract fun functionVisibilityModifier ()Ljava/lang/String;
+	public abstract fun customFileName ()Ljava/lang/String;
 	public abstract fun generate ()Z
-	public abstract fun generateCompanionExtFunction ()Z
-	public abstract fun generateHttpClientExtension ()Z
-	public abstract fun generateTopLevelFunction ()Z
 	public abstract fun name ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenAnnotationPropagation : java/lang/annotation/Annotation {
+	public abstract fun annotations ()[Ljava/lang/Class;
+	public abstract fun factoryFunctionAnnotations ()[Ljava/lang/Class;
 	public abstract fun optInAnnotations ()[Ljava/lang/Class;
 	public abstract fun propagateAnnotations ()Z
-	public abstract fun visibilityModifier ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenCompanionExtFactory : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
 }
 
 public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenExperimental : java/lang/annotation/Annotation {
 }
 
 public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenFunction : java/lang/annotation/Annotation {
-	public abstract fun annotations ()[Ljava/lang/Class;
 	public abstract fun customHeader ()Ljava/lang/String;
 	public abstract fun generate ()Z
-	public abstract fun optInAnnotations ()[Ljava/lang/Class;
-	public abstract fun propagateAnnotations ()Z
 }
 
 public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenFunctionKmp : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenHttpClientExtFactory : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenTopLevelFactory : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
+}
+
+public final class io/github/kingg22/ktorgen/core/KtorGenVisibility : java/lang/Enum {
+	public static final field DEFAULT Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
+	public static final field INTERNAL Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
+	public static final field PRIVATE Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
+	public static final field PUBLIC Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
+	public static fun values ()[Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
+}
+
+public abstract interface annotation class io/github/kingg22/ktorgen/core/KtorGenVisibilityControl : java/lang/annotation/Annotation {
+	public abstract fun classVisibilityModifier ()Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
+	public abstract fun constructorVisibilityModifier ()Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
+	public abstract fun factoryFunctionVisibilityModifier ()Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
+	public abstract fun visibilityModifier ()Lio/github/kingg22/ktorgen/core/KtorGenVisibility;
 }
 
 public abstract interface annotation class io/github/kingg22/ktorgen/http/Body : java/lang/annotation/Annotation {
