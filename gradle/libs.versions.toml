@@ -37,7 +37,7 @@ kover = "0.9.7"
 
 # https://github.com/google/ksp/releases
 ksp-api = "2.2.20-2.0.4"
-ksp-plugin = "2.3.5"
+ksp-plugin = "2.3.6"
 
 # https://github.com/pinterest/ktlint/releases
 ktlint-pinterest = "1.7.1"
