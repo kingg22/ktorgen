@@ -9,6 +9,7 @@ import com.squareup.kotlinpoet.ClassName
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
+import io.github.kingg22.ktorgen.model.KotlinOptInClassName
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.TypeData
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
@@ -27,7 +28,7 @@ internal class ParameterMapper : DeclarationParameterMapper {
             if (symbols.isNotEmpty()) return@work null to symbols
 
             val optInAnnotation = if (optIns.isNotEmpty()) {
-                AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
+                AnnotationSpec.builder(KotlinOptInClassName)
                     .addMember(
                         optIns.joinToString { "%T::class" },
                         *optIns.map { it.typeName }.toTypedArray(),
