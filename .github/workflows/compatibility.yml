@@ -100,6 +100,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
+    permissions:
+      contents: read
     steps:
       - id: generate
         shell: bash
