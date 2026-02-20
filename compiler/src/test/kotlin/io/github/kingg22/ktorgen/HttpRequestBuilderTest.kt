@@ -134,7 +134,7 @@ class HttpRequestBuilderTest {
 
         runKtorGenProcessor(source) { compilation ->
             compilation.hasErrorContaining(KtorGenLogger.PARAMETER_WITHOUT_ANNOTATION.trim())
-            compilation.hasErrorCount(2)
+            compilation.hasErrorCount(1)
             compilation.hasNoWarnings()
             assertNull(compilation.findGeneratedSource(TEST_SERVICE_IMPL_PATH))
         }
