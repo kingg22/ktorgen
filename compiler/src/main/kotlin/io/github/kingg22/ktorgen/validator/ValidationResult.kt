@@ -3,21 +3,24 @@ package io.github.kingg22.ktorgen.validator
 import com.google.devtools.ksp.symbol.KSNode
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.KtorGenLogger
+import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
 import io.github.kingg22.ktorgen.model.ParameterData
 
 interface ValidationResult {
+    @KtorGenWithoutCoverage
     fun addError(message: String, classData: ClassData) = addError(message, classData.ksInterface)
     fun addError(message: String, functionData: FunctionData) = addError(message, functionData.ksFunctionDeclaration)
     fun addError(message: String, parameterData: ParameterData) = addError(message, parameterData.ksValueParameter)
-    fun addError(message: String, symbol: KSNode? = null)
+    fun addError(message: String, symbol: KSNode?)
 
+    @KtorGenWithoutCoverage
     fun addWarning(message: String, classData: ClassData) = addWarning(message, classData.ksInterface)
     fun addWarning(message: String, functionData: FunctionData) =
         addWarning(message, functionData.ksFunctionDeclaration)
     fun addWarning(message: String, parameterData: ParameterData) = addWarning(message, parameterData.ksValueParameter)
-    fun addWarning(message: String, symbol: KSNode? = null)
+    fun addWarning(message: String, symbol: KSNode?)
 }
 
 /** This a container of errors and warnings, not couple the validation strategies with diagnostic sender */

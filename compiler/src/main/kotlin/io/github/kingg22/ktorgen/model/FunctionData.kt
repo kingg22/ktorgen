@@ -6,7 +6,6 @@ import io.github.kingg22.ktorgen.model.annotations.FunctionAnnotation
 import io.github.kingg22.ktorgen.model.annotations.ParameterAnnotation
 import io.github.kingg22.ktorgen.model.options.AnnotationsOptions
 import io.github.kingg22.ktorgen.model.options.FunctionGenerationOptions
-import io.github.kingg22.ktorgen.model.options.VisibilityOptions
 
 class FunctionData(
     val name: String,
@@ -37,11 +36,6 @@ class FunctionData(
                 param.hasAnnotation<ParameterAnnotation.Part>() || param.hasAnnotation<ParameterAnnotation.PartMap>()
             }
     }
-    val isBodyInferred by lazy(LazyThreadSafetyMode.NONE) { listOf(isBody, isFormUrl, isMultipart).count { it } == 1 }
-    val isHttpRequestBuilderReturns
-        inline get() = returnTypeData.typeName.isHttpRequestBuilderType
-    val isHttpStatementReturns
-        inline get() = returnTypeData.typeName.isHttpStatementType
 
     inline fun <reified T : FunctionAnnotation> findAnnotationOrNull(): T? =
         this.ktorGenAnnotations.filterIsInstance<T>().firstOrNull()

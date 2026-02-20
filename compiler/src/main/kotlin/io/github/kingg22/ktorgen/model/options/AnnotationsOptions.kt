@@ -11,7 +11,7 @@ data class AnnotationsOptions(
     val factoryFunctionAnnotations: Set<AnnotationSpec> = emptySet(),
     override val isDeclaredAtInterface: Boolean,
     override val isDeclaredAtCompanionObject: Boolean,
-    override val isDeclaredAtFunctionLevel: Boolean = false,
+    override val isDeclaredAtFunctionLevel: Boolean,
 ) : DeclaredPosition {
     companion object {
         @JvmField
@@ -23,6 +23,7 @@ data class AnnotationsOptions(
             factoryFunctionAnnotations = emptySet(),
             isDeclaredAtInterface = false,
             isDeclaredAtCompanionObject = false,
+            isDeclaredAtFunctionLevel = false,
         )
     }
 }
