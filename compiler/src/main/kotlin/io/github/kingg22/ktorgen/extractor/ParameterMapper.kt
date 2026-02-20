@@ -5,7 +5,6 @@ import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.ClassName
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.http.*
 import io.github.kingg22.ktorgen.model.KTORGEN_DEFAULT_VALUE
@@ -27,6 +26,7 @@ internal class ParameterMapper : DeclarationParameterMapper {
             val (annotations, optIns, symbols) = extractAnnotationsFiltered(declaration)
             if (symbols.isNotEmpty()) return@work null to symbols
 
+            // TODO can produce invalid code due double OptIn annotation
             val optInAnnotation = if (optIns.isNotEmpty()) {
                 AnnotationSpec.builder(KotlinOptInClassName)
                     .addMember(
