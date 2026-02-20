@@ -49,9 +49,9 @@ class IntegrationTest {
                 import io.ktor.client.HttpClient
 
                 // Refer to the generated class to ensure it exists and is public
-                // Use the generated class to ensure it compiles and the function default, need to cast because return interface
+                // Use the generated class to ensure it compiles and the function default
                 @Suppress("unused") // Don't trigger unused warning error
-                val ref: _MyApiImpl = MyApi(httpClient = HttpClient()) as _MyApiImpl
+                val ref = MyApiImpl(_httpClient = HttpClient())
             """.trimIndent(),
         )
 

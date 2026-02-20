@@ -24,9 +24,7 @@ class HeaderMapTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
-            val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
-            )
+            val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             for (expectedLine in expectedHeadersArgumentText) {
                 actualSource.contains(expectedLine)
             }
@@ -59,9 +57,7 @@ class HeaderMapTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
-            val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
-            )
+            val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             for (expectedLine in expectedHeadersArgumentText) {
                 actualSource.contains(expectedLine)
             }

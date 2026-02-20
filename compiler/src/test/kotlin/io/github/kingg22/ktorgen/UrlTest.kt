@@ -22,7 +22,7 @@ class UrlTest {
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject
-                .generatedSourceFileWithPath("com.example.api._TestServiceImpl".toRelativePath())
+                .generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
                 .contains(expectedFunctionSource)
         }
     }
@@ -30,13 +30,13 @@ class UrlTest {
     @Test
     fun testFunctionWithGetAndPath() {
         val source = Source.kotlin(
-            "com.example.api.TestServiceWithPath.kt",
+            "com.example.api.TestService.kt",
             """
                 package com.example.api
                 import io.github.kingg22.ktorgen.http.GET
                 import io.github.kingg22.ktorgen.http.Path
 
-                interface TestServiceWithPath {
+                interface TestService {
                     @GET("user/{id}")
                     suspend fun test(@Path("id") userId: String): String
                 }
@@ -46,9 +46,7 @@ class UrlTest {
         val expectedFunctionText = "takeFrom(".stringTemplate($$"""user/${"$userId".encodeURLPath()}""") + ")"
 
         runKtorGenProcessor(source) { compilationResultSubject ->
-            val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceWithPathImpl".toRelativePath(),
-            )
+            val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             actualSource.contains(expectedFunctionText)
         }
     }
@@ -56,14 +54,14 @@ class UrlTest {
     @Test
     fun testFunctionWithGETAndPathWithInferredName() {
         val source = Source.kotlin(
-            "com.example.api.TestServiceWithPathInferredName.kt",
+            "com.example.api.TestService.kt",
             """
                 package com.example.api
 
                 import io.github.kingg22.ktorgen.http.GET
                 import io.github.kingg22.ktorgen.http.Path
 
-                interface TestServiceWithPathInferredName {
+                interface TestService {
                     @GET("user/{userId}")
                     suspend fun test(@Path userId: String): String
                 }
@@ -73,9 +71,7 @@ class UrlTest {
         val expectedFunctionText = "takeFrom(".stringTemplate($$"""user/${"$userId".encodeURLPath()}""") + ")"
 
         runKtorGenProcessor(source) { compilationResultSubject ->
-            val generated = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceWithPathInferredNameImpl".toRelativePath(),
-            )
+            val generated = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             generated.contains(expectedFunctionText)
         }
     }
@@ -83,14 +79,14 @@ class UrlTest {
     @Test
     fun testFunctionWithGetAndUrl() {
         val source = Source.kotlin(
-            "com.example.api.TestServiceWithUrl.kt",
+            "com.example.api.TestService.kt",
             """
                 package com.example.api
 
                 import io.github.kingg22.ktorgen.http.GET
                 import io.github.kingg22.ktorgen.http.Url
 
-                interface TestServiceWithUrl {
+                interface TestService {
                     @GET
                     suspend fun test(@Url url: String): String
                 }
@@ -100,9 +96,7 @@ class UrlTest {
         val expectedFunctionSource = "takeFrom(url)"
 
         runKtorGenProcessor(source) { compilationResultSubject ->
-            val generated = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceWithUrlImpl".toRelativePath(),
-            )
+            val generated = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             generated.contains(expectedFunctionSource)
         }
     }
@@ -111,12 +105,12 @@ class UrlTest {
     @Test
     fun testGetNoHavePathSuccess() {
         val source = Source.kotlin(
-            "com.example.api.TestServiceGetEmpty.kt",
+            "com.example.api.TestService.kt",
             """
                 package com.example.api
                 import io.github.kingg22.ktorgen.http.GET
 
-                interface TestServiceGetEmpty {
+                interface TestService {
                     @GET
                     suspend fun test(): String
                 }
@@ -126,7 +120,7 @@ class UrlTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject
-                .generatedSourceFileWithPath("com.example.api._TestServiceGetEmptyImpl".toRelativePath())
+                .generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
                 .contains("override suspend fun test(): String")
         }
     }
@@ -158,13 +152,13 @@ class UrlTest {
     @Test
     fun testFunctionWithGetAndAlreadyEncodedPath() {
         val source = Source.kotlin(
-            "com.example.api.TestServiceWithEncodedPath.kt",
+            "com.example.api.TestService.kt",
             """
                 package com.example.api
                 import io.github.kingg22.ktorgen.http.GET
                 import io.github.kingg22.ktorgen.http.Path
 
-                interface TestServiceWithEncodedPath {
+                interface TestService {
                     @GET("user/{id}")
                     suspend fun test(@Path("id", encoded = true) id: String): String
                 }
@@ -175,9 +169,7 @@ class UrlTest {
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
-            val actualSource = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceWithEncodedPathImpl".toRelativePath(),
-            )
+            val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             actualSource.contains(expectedFunctionText)
         }
     }

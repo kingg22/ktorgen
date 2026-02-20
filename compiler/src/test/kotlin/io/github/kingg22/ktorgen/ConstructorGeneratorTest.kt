@@ -12,10 +12,14 @@ class ConstructorGeneratorTest {
                 package com.example.api
 
                 import io.github.kingg22.ktorgen.core.KtorGen
+                import io.github.kingg22.ktorgen.core.KtorGenExperimental
+                import io.github.kingg22.ktorgen.core.KtorGenTopLevelFactory
                 import io.github.kingg22.ktorgen.http.GET
                 import io.ktor.client.HttpClient
 
                 @KtorGen
+                @KtorGenTopLevelFactory
+                @OptIn(KtorGenExperimental::class)
                 interface TestService {
                     val httpClient: HttpClient
                     val otraCosa: Boolean
@@ -29,10 +33,10 @@ class ConstructorGeneratorTest {
         )
 
         // Expect: top-level factory function has all constructor parameters including httpClient
-        val expectedFactoryLine = "_TestServiceImpl(httpClient, otraCosa, valorCambiante, token)"
+        val expectedFactoryLine = "TestServiceImpl(httpClient, otraCosa, valorCambiante, token)"
 
         // Expect: class has override properties (httpClient is override, not private)
-        val expectedClassHeader = "public class _TestServiceImpl"
+        val expectedClassHeader = "public class TestServiceImpl"
         val expectedOverrideHttpClient = "override val httpClient: HttpClient"
         val expectedOverrideOtraCosa = "override val otraCosa: Boolean"
         val expectedOverrideValorCambiante = "override var valorCambiante: Boolean?"
@@ -61,9 +65,13 @@ class ConstructorGeneratorTest {
                 package com.example.api
 
                 import io.github.kingg22.ktorgen.core.KtorGen
+                import io.github.kingg22.ktorgen.core.KtorGenExperimental
+                import io.github.kingg22.ktorgen.core.KtorGenTopLevelFactory
                 import io.github.kingg22.ktorgen.http.GET
 
                 @KtorGen
+                @KtorGenTopLevelFactory
+                @OptIn(KtorGenExperimental::class)
                 interface TestService {
                     val otraCosa: Boolean
                     var valorCambiante: Boolean?
@@ -74,9 +82,9 @@ class ConstructorGeneratorTest {
             """.trimIndent(),
         )
 
-        val expectedFactoryLine = "_TestServiceImpl(httpClient, otraCosa, valorCambiante)"
+        val expectedFactoryLine = "TestServiceImpl(httpClient, otraCosa, valorCambiante)"
 
-        val expectedClassHeader = "public class _TestServiceImpl"
+        val expectedClassHeader = "public class TestServiceImpl"
         val expectedPrivateHttpClient = "private val _httpClient: HttpClient"
         val nonExpectedOverrideHttpClient = "override val httpClient: HttpClient"
         val expectedOverrideOtraCosa = "override val otraCosa: Boolean"

@@ -25,12 +25,9 @@ class TagTest {
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
-            compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
-            ).let { actualSource ->
-                for (expectedLine in expectedHeadersArgumentText) {
-                    actualSource.contains(expectedLine)
-                }
+            val actualSource = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+            for (expectedLine in expectedHeadersArgumentText) {
+                actualSource.contains(expectedLine)
             }
         }
     }

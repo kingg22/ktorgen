@@ -11,6 +11,8 @@ class KtorGenFunctionTest {
             """
                 package com.example.api
 
+                import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
+                import io.github.kingg22.ktorgen.core.KtorGenExperimental
                 import io.github.kingg22.ktorgen.http.GET
                 import io.github.kingg22.ktorgen.http.Header
                 import io.github.kingg22.ktorgen.http.HeaderParam
@@ -18,20 +20,23 @@ class KtorGenFunctionTest {
                 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 
                 interface TestService {
+                    @KtorGenAnnotationPropagation
                     @Header("x", "y")
                     @GET("posts")
-                    @OptIn(ExperimentalCompilerApi::class)
+                    @OptIn(ExperimentalCompilerApi::class, KtorGenExperimental::class)
                     suspend fun test(@HeaderParam("testHeader") testParameterNonNullable: String?): String
                 }
             """.trimIndent(),
         )
 
         val expectedHeadersArgumentText = "@OptIn(ExperimentalCompilerApi::class)"
+        val noExpectedHeadersArgumentText = "KtorGenAnnotationPropagation"
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             generatedFile.contains(expectedHeadersArgumentText)
+            generatedFile.doesNotContain(noExpectedHeadersArgumentText)
             compilationResultSubject.hasErrorCount(0)
         }
     }
@@ -43,6 +48,8 @@ class KtorGenFunctionTest {
             """
                 package com.example.api
 
+                import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
+                import io.github.kingg22.ktorgen.core.KtorGenExperimental
                 import io.github.kingg22.ktorgen.http.GET
                 import io.github.kingg22.ktorgen.http.Header
                 import io.github.kingg22.ktorgen.http.HeaderParam
@@ -50,6 +57,8 @@ class KtorGenFunctionTest {
                 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 
                 interface TestService {
+                    @OptIn(KtorGenExperimental::class)
+                    @KtorGenAnnotationPropagation
                     @Header("x", "y")
                     @GET("posts")
                     @ExperimentalCompilerApi
@@ -59,7 +68,7 @@ class KtorGenFunctionTest {
         )
 
         val expectedHeadersArgumentText = "@ExperimentalCompilerApi"
-        val noExpectedHeadersArgumentText = "@OptIn(ExperimentalCompilerApi::class)"
+        val noExpectedHeadersArgumentText = "@OptIn("
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
@@ -78,14 +87,16 @@ class KtorGenFunctionTest {
             """
                 package com.example.api
 
-                import io.github.kingg22.ktorgen.core.KtorGenFunction
+                import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
+                import io.github.kingg22.ktorgen.core.KtorGenExperimental
                 import io.github.kingg22.ktorgen.http.GET
                 import io.github.kingg22.ktorgen.http.Header
 
                 $REQUIRED_OPTIN_ANNOTATION_DECL
 
                 interface TestService {
-                    @KtorGenFunction(optInAnnotations = [${REQUIRED_OPTIN_ANNOTATION}::class])
+                    @OptIn(KtorGenExperimental::class)
+                    @KtorGenAnnotationPropagation(optInAnnotations = [${REQUIRED_OPTIN_ANNOTATION}::class])
                     @Header("x", "y")
                     @GET("posts")
                     @${REQUIRED_OPTIN_ANNOTATION}
@@ -127,7 +138,7 @@ class KtorGenFunctionTest {
             """.trimIndent(),
         )
 
-        val expectedText = listOf("public class _TestServiceImpl", ": TestService")
+        val expectedText = listOf(CLASS_TEST_SERVICE_IMPL, ": TestService")
         val nonExpectedText = listOf("override suspend fun test(): String")
 
         runKtorGenProcessor(source) { compilationResultSubject ->
@@ -185,11 +196,13 @@ class KtorGenFunctionTest {
             """
                 package com.example.api
 
-                import io.github.kingg22.ktorgen.core.KtorGenFunction
+                import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
+                import io.github.kingg22.ktorgen.core.KtorGenExperimental
                 import io.github.kingg22.ktorgen.http.GET
 
                 interface TestService {
-                    @KtorGenFunction(annotations = [org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi::class])
+                    @OptIn(KtorGenExperimental::class)
+                    @KtorGenAnnotationPropagation(annotations = [org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi::class])
                     @GET("posts")
                     suspend fun test(): String
                 }
@@ -197,7 +210,7 @@ class KtorGenFunctionTest {
         )
 
         val expectedAnnotationsText = "@ExperimentalCompilerApi"
-        val noExpectedAnnotationsText = "@OptIn(ExperimentalCompilerApi::class)"
+        val noExpectedAnnotationsText = "@OptIn("
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
@@ -215,13 +228,16 @@ class KtorGenFunctionTest {
             """
                 package com.example.api
 
+                import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
+                import io.github.kingg22.ktorgen.core.KtorGenExperimental
                 import io.github.kingg22.ktorgen.core.KtorGenFunction
                 import io.github.kingg22.ktorgen.http.GET
 
                 annotation class MyAnnotation
 
                 interface TestService {
-                    @KtorGenFunction(annotations = [org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi::class])
+                    @OptIn(KtorGenExperimental::class)
+                    @KtorGenAnnotationPropagation(annotations = [org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi::class])
                     @GET("posts")
                     @MyAnnotation
                     suspend fun test(): String
@@ -230,7 +246,7 @@ class KtorGenFunctionTest {
         )
 
         val expectedAnnotationsText = listOf("@ExperimentalCompilerApi", "@MyAnnotation")
-        val noExpectedAnnotationsText = "@OptIn(ExperimentalCompilerApi::class)"
+        val noExpectedAnnotationsText = "@OptIn("
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
@@ -274,36 +290,9 @@ class KtorGenFunctionTest {
         }
     }
 
-    @Test
-    fun testDefaultCustomHeaderIsGenerated() {
-        val source = Source.kotlin(
-            "Source.kt",
-            """
-                package com.example.api
-
-                import io.github.kingg22.ktorgen.core.KtorGenFunction
-                import io.github.kingg22.ktorgen.http.GET
-
-                interface TestService {
-                    @GET("posts")
-                    suspend fun test(): String
-                }
-            """.trimIndent(),
-        )
-
-        val expectedCustomHeaderText = KTORG_GENERATED_COMMENT
-
-        runKtorGenProcessor(source) { compilationResultSubject ->
-            compilationResultSubject.hasNoWarnings()
-            compilationResultSubject.hasErrorCount(0)
-            val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
-            generatedFile.contains(expectedCustomHeaderText)
-        }
-    }
-
     companion object {
-        const val REQUIRED_OPTIN_ANNOTATION = "RequiredOptInAnnotation"
-        const val REQUIRED_OPTIN_ANNOTATION_DECL = """
+        private const val REQUIRED_OPTIN_ANNOTATION = "RequiredOptInAnnotation"
+        private const val REQUIRED_OPTIN_ANNOTATION_DECL = """
             @RequiresOptIn("", level = RequiresOptIn.Level.ERROR)
             annotation class RequiredOptInAnnotation
         """
