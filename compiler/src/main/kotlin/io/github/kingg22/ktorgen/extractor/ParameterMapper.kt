@@ -35,7 +35,7 @@ internal class ParameterMapper : DeclarationParameterMapper {
                     timer.addStep("Processed annotations")
                 }.asSequence(),
                 nonKtorgenAnnotations = annotations.asSequence(),
-                optInAnnotation = optIns.firstOrNull(),
+                optInAnnotation = optIns,
                 isHttpRequestBuilderLambda = isHttpRequestBuilderLambda(type).also {
                     timer.addStep("Processed is http builder lambda: $it")
                 },

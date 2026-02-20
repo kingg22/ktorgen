@@ -102,7 +102,7 @@ private val ktorGenParametersNames = ktorGenAnnotations.mapNotNull(KClass<*>::si
 internal fun extractAnnotationsFiltered(
     declaration: KSAnnotated,
     filter: (KSAnnotation) -> Boolean = { true },
-): Triple<Set<AnnotationSpec>, Set<AnnotationSpec>, List<KSAnnotated>> {
+): Triple<Set<AnnotationSpec>, AnnotationSpec?, List<KSAnnotated>> {
     val deferredSymbols = mutableListOf<KSAnnotated>()
 
     val (propagateAnnotations, optIn) = declaration.annotations
@@ -134,24 +134,23 @@ internal fun extractAnnotationsFiltered(
             it.typeName != KotlinOptInClassName
         }
 
-    return Triple(propagateAnnotations.toSet(), optIn.toSet(), deferredSymbols)
+    checkImplementation(optIn.size <= 1) {
+        "Found more than one optIn annotation: $optIn, on declaration: $declaration"
+    }
+
+    return Triple(propagateAnnotations.toSet(), optIn.singleOrNull(), deferredSymbols)
 }
 
 fun String.containsAnyOf(values: Iterable<String>, ignoreCase: Boolean = false): Boolean =
     values.any { this.contains(it, ignoreCase) }
 
 context(timer: DiagnosticSender)
-private fun mergeOptIns(
-    existing: Set<AnnotationSpec>,
-    extra: Set<AnnotationSpec>,
-    optInAnnotationSpec: AnnotationSpec?,
-): AnnotationSpec? {
-    val existingClasses = existing.flatMap { it.members }.toSet()
+private fun mergeOptIns(extra: Set<AnnotationSpec>, vararg optInAnnotationSpec: AnnotationSpec?): AnnotationSpec? {
     val extraClasses = extra.flatMap { it.members }.toSet()
-    val optInAnnotation = optInAnnotationSpec?.members ?: emptyList()
-    timer.addStep("Merging optIns, existing: $existingClasses, extra: $extraClasses, optIn: $optInAnnotation")
+    val optInAnnotation = optInAnnotationSpec.mapNotNull { it?.members }.flatten()
+    timer.addStep("Merging optIns, existing: $optInAnnotation, extra: $extraClasses")
 
-    val merged = (optInAnnotation + existingClasses + extraClasses).distinct().filterNot { codeBlock ->
+    val merged = (optInAnnotation + extraClasses).distinct().filterNot { codeBlock ->
         codeBlock.toString().containsAnyOf(ktorGenParametersNames)
     }
     timer.addStep("Merged optIns: $merged")
@@ -168,7 +167,7 @@ private fun mergeOptIns(
 
 private fun AnnotationsOptions.mergeAnnotations(
     extra: Set<AnnotationSpec>,
-    extraOptIns: Set<AnnotationSpec>,
+    vararg extraOptIns: AnnotationSpec,
 ): Set<AnnotationSpec> = (annotations + extra)
     .filterNot { ann ->
         extraOptIns.any { it.typeName == ann.typeName } || optIns.any { it.typeName == ann.typeName }
@@ -222,32 +221,42 @@ private fun KSAnnotated.extractAndMergeAnnotations(
     extractForFunction: Boolean = false,
 ): Pair<AnnotationsOptions, List<KSAnnotated>> {
     timer.addStep("Extracting annotations and optIns to propagate")
-    val (annotations, optIns, unresolvedSymbols) = extractAnnotationsFiltered(this)
+    val (annotations, optInAnnotation, unresolvedSymbols) = extractAnnotationsFiltered(this)
     val (functionAnnotations, functionOptIn, symbols) = if (extractForFunction) {
         extractAnnotationsFiltered(this) { it.isAllowedForFunction() }
     } else {
-        emptySet<AnnotationSpec>() to emptySet<AnnotationSpec>() to emptyList()
+        emptySet<AnnotationSpec>() to null to emptyList()
     }
 
     timer.addStep(
-        "${symbols.size} unresolved symbols of function annotations. Found ${functionAnnotations.size} annotations, ${functionOptIn.size} optIns",
+        "${symbols.size} unresolved symbols of function annotations. Found ${functionAnnotations.size} annotations, optIn: $functionOptIn",
     )
     timer.addStep(
-        "${unresolvedSymbols.size} unresolved symbols of interface annotations. Found ${annotations.size} annotations, ${optIns.size} optIns",
+        "${unresolvedSymbols.size} unresolved symbols of interface annotations. Found ${annotations.size} annotations, optIn: $optInAnnotation",
     )
     timer.addStep("Extracted annotations of declaration, merging optIns and options")
 
-    val mergedAnnotations = options.mergeAnnotations(annotations, optIns)
+    val mergedAnnotations = if (optInAnnotation != null) {
+        options.mergeAnnotations(annotations, optInAnnotation)
+    } else {
+        annotations
+    }
 
     val mergedOptIn =
-        mergeOptIns(optIns, options.optIns, mergedAnnotations.find { it.typeName == KotlinOptInClassName })
+        mergeOptIns(options.optIns, mergedAnnotations.find { it.typeName == KotlinOptInClassName }, optInAnnotation)
 
     return options.copy(
         annotations = mergedAnnotations.filterNot { ann -> ann.typeName == KotlinOptInClassName }.toSet(),
-        factoryFunctionAnnotations = (options.factoryFunctionAnnotations + functionAnnotations + functionOptIn)
-            .filterNot { ann ->
-                options.optIns.any { it.typeName == ann.typeName } || (optIns.any { it.typeName == ann.typeName })
-            }.toSet(),
+        factoryFunctionAnnotations = (options.factoryFunctionAnnotations + functionAnnotations).let { annotationSpecs ->
+            if (functionOptIn != null) {
+                annotationSpecs + functionAnnotations
+            } else {
+                annotationSpecs
+            }
+        }.filterNot { ann ->
+            options.optIns.any { it.typeName == ann.typeName } ||
+                (optInAnnotation != null && optInAnnotation.typeName == ann.typeName)
+        }.toSet(),
         optInAnnotation = mergedOptIn,
         optIns = if (mergedOptIn != null) emptySet() else options.optIns,
     ).also {
