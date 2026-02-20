@@ -12,10 +12,12 @@ import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticSender
+import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.annotations.KTORGEN_KMP_FACTORY
 import io.github.kingg22.ktorgen.requireNotNull
 
+@KtorGenWithoutCoverage // the current test framework / suite doesn't support KMP test cases
 internal class ExpectFunctionProcessor {
     /** Process all expect functions and generate actual implementations */
     context(_: DiagnosticSender)

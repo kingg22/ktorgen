@@ -13,6 +13,7 @@ import kotlin.math.roundToInt
 
 // Inspired on Paris Processor timer https://github.com/airbnb/paris/blob/d8b5edbc56253bcdd0d0c57930d2e91113dd0f37/paris-processor/src/main/java/com/airbnb/paris/processor/Timer.kt
 @ConsistentCopyVisibility // no copyable
+@KtorGenWithoutCoverage // unused
 internal data class HierarchyDiagnostic private constructor(private val root: Step) :
     DiagnosticSender by root,
     DiagnosticSender.DiagnosticHolder {
