@@ -1,6 +1,5 @@
 package io.github.kingg22.ktorgen.example
 
-import io.github.kingg22.ktorgen.core.KtorGen
 import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
 import io.github.kingg22.ktorgen.core.KtorGenExperimental
 import io.github.kingg22.ktorgen.core.KtorGenKmpFactory
