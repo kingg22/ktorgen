@@ -92,6 +92,7 @@ internal data class HierarchyDiagnostic private constructor(private val root: St
         messages.any(filter) ||
             children.any { it.containsMessagesRecursively(filter) }
 
+    @KtorGenWithoutCoverage // unused
     private class Step(val name: String, val type: StepType, val parent: Step? = null) : DiagnosticSender {
         private var startNanos: Long = 0
         private var endNanos: Long = 0
@@ -239,6 +240,7 @@ internal data class HierarchyDiagnostic private constructor(private val root: St
          */
     }
 
+    @KtorGenWithoutCoverage // unused
     private data class DiagnosticMessage(val type: MessageType, val message: String, private val symbol: KSNode?) {
         // invoke to get the info of location during initialization
         val generateSymbolInfo: String = run {
@@ -271,6 +273,7 @@ internal data class HierarchyDiagnostic private constructor(private val root: St
         }
     }
 
+    @KtorGenWithoutCoverage // unused
     private enum class MessageType(private val icon: String) {
         WARNING("⚠️"),
         ERROR("❌"),
@@ -280,6 +283,7 @@ internal data class HierarchyDiagnostic private constructor(private val root: St
         override fun toString(): String = "$icon $name"
     }
 
+    @KtorGenWithoutCoverage // unused
     private enum class StepType(val label: String, val icon: String) {
         ROOT("Processor", "⚙️"),
         PHASE("Phase", "ℹ️"),
