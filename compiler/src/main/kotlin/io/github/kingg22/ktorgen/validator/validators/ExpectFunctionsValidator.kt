@@ -1,10 +1,12 @@
 package io.github.kingg22.ktorgen.validator.validators
 
 import com.google.devtools.ksp.symbol.Modifier
+import io.github.kingg22.ktorgen.KtorGenWithoutCoverage
 import io.github.kingg22.ktorgen.validator.ValidationContext
 import io.github.kingg22.ktorgen.validator.ValidationResult
 import io.github.kingg22.ktorgen.validator.ValidatorStrategy
 
+@KtorGenWithoutCoverage // can't test KMP cases
 internal class ExpectFunctionsValidator : ValidatorStrategy {
     override val name: String = "Expect Functions"
 
