@@ -13,10 +13,12 @@ import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import io.github.kingg22.ktorgen.DiagnosticSender
 import io.github.kingg22.ktorgen.model.ClassData
+import io.github.kingg22.ktorgen.model.annotations.KTORGEN_KMP_FACTORY
+import io.github.kingg22.ktorgen.requireNotNull
 
 internal class ExpectFunctionProcessor {
     /** Process all expect functions and generate actual implementations */
-    context(_: DiagnosticSender,)
+    context(_: DiagnosticSender)
     fun processExpectFunctions(
         classData: ClassData,
         constructorSignature: List<TypeName>,
@@ -53,7 +55,7 @@ internal class ExpectFunctionProcessor {
     ): Boolean {
         if (constructorSignature.size != expectParamTypes.size) {
             logger.addError(
-                "Constructor mismatch for ${classData.generatedName}. Expect function '${func.simpleName.asString()}' has ${expectParamTypes.size} parameter(s) but generated constructor expects ${constructorSignature.size} parameter(s)",
+                "Constructor mismatch for ${classData.options.generatedName}. Expect function '${func.simpleName.asString()}' has ${expectParamTypes.size} parameter(s) but generated constructor expects ${constructorSignature.size} parameter(s)",
                 func,
             )
             return false
@@ -84,13 +86,15 @@ internal class ExpectFunctionProcessor {
         val pkg = func.packageName.asString()
 
         // Generate actual function
-        val implClassName = ClassName(classData.packageNameString, classData.generatedName)
+        val implClassName = ClassName(classData.packageNameString, classData.options.generatedName)
         val returnClassName = ClassName(classData.packageNameString, classData.interfaceName)
 
         val funBuilder = FunSpec.builder(name)
             .returns(returnClassName)
             .addModifiers(KModifier.ACTUAL)
-            .addOriginatingKSFile(func.containingFile!!)
+            .addOriginatingKSFile(
+                logger.requireNotNull(func.containingFile, "Expect function has no containing file: $name", func),
+            )
 
         // Add all modifiers except EXPECT, preserving order
         val modifiers = func.modifiers
@@ -99,7 +103,9 @@ internal class ExpectFunctionProcessor {
         modifiers.forEach { funBuilder.addModifiers(it) }
 
         // Add all annotations in the exact order they appear
-        func.annotations.forEach { annotation ->
+        for (annotation in func.annotations) {
+            // Skip the kmp factory annotation because is only a common source annotation
+            if (annotation.shortName.asString() == KTORGEN_KMP_FACTORY) continue
             funBuilder.addAnnotation(annotation.toAnnotationSpec(true))
         }
 
