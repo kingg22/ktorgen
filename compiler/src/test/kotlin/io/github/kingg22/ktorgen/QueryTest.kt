@@ -32,7 +32,7 @@ class QueryTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
+                TEST_SERVICE_IMPL_PATH,
             )
             for (expectedLine in expectedQueriesArgumentText) {
                 generatedFile.contains(expectedLine)
@@ -66,7 +66,7 @@ class QueryTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
+                TEST_SERVICE_IMPL_PATH,
             )
             for (expectedLine in expectedQueriesArgumentText) {
                 generatedFile.contains(expectedLine)
@@ -100,7 +100,7 @@ class QueryTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
+                TEST_SERVICE_IMPL_PATH,
             )
             for (expectedLine in expectedQueriesArgumentText) {
                 generatedFile.contains(expectedLine)
@@ -141,7 +141,7 @@ class QueryTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
+                TEST_SERVICE_IMPL_PATH,
             )
             for (expectedLine in expectedQueriesArgumentText) {
                 generatedFile.contains(expectedLine)
@@ -186,7 +186,7 @@ class QueryTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
+                TEST_SERVICE_IMPL_PATH,
             )
             for (expectedLine in expectedQueriesArgumentText) {
                 generatedFile.contains(expectedLine)

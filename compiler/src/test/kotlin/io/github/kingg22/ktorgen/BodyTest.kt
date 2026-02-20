@@ -48,9 +48,7 @@ class BodyTest {
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(0)
-            val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
-            )
+            val generatedFile = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             generatedFile.contains(expectedBodyDataArgumentText)
         }
     }
@@ -58,13 +56,13 @@ class BodyTest {
     @Test
     fun testFunctionWithBodyAndNotContentTypeHeader() {
         val source = Source.kotlin(
-            "TestServiceWithoutContentTypeHeader.kt",
+            "TestService.kt",
             """
                 package com.example.api
 
                 import io.github.kingg22.ktorgen.http.*
 
-                interface TestServiceWithoutContentTypeHeader {
+                interface TestService {
                     @POST
                     suspend fun test(@Body id: Int?): String
                 }
@@ -77,9 +75,9 @@ class BodyTest {
             compilationResultSubject.hasNoWarnings()
             compilationResultSubject.hasErrorCount(1)
             compilationResultSubject.hasErrorContaining(KtorGenLogger.CONTENT_TYPE_BODY_UNKNOWN.trim())
-            compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceWithoutContentTypeHeaderImpl".toRelativePath(),
-            ).contains(expectedBodyDataArgumentText)
+            compilationResultSubject
+                .generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+                .contains(expectedBodyDataArgumentText)
         }
     }
 
@@ -102,10 +100,9 @@ class BodyTest {
         val notExpectedBodyDataArgumentText = "setBody("
 
         runKtorGenProcessor(source) { compilationResultSubject ->
-            val generatedFile = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
-            )
-            generatedFile.doesNotContain(notExpectedBodyDataArgumentText)
+            compilationResultSubject
+                .generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
+                .doesNotContain(notExpectedBodyDataArgumentText)
         }
     }
 }

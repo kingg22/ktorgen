@@ -20,10 +20,14 @@ import org.junit.jupiter.api.Test as JupiterTest
  */
 fun runKtorGenProcessor(
     vararg sources: Source,
-    processorOptions: Map<String, String> = mapOf(strickCheckTypeToPair(ErrorsLoggingType.Errors)),
+    processorOptions: Map<String, String> = emptyMap(),
     kotlincArguments: List<String> = emptyList(),
+    ktorgenOptions: KtorGenOptions? = null,
     onCompilationResult: (CompilationResultSubject) -> Unit,
 ) {
+    val processorOptions =
+        (ktorgenOptions?.toMap() ?: mapOf(strickCheckTypeToPair(ErrorsLoggingType.Errors))) + processorOptions
+
     if (sources.all { it is RoomSource.KotlinSource }) {
         // Omit KAPT if all sources are Kotlin sources.
         runKspProcessorTest(
@@ -57,11 +61,11 @@ inline fun String.toRelativePath() = replace('.', File.separatorChar)
     .removeSuffix(File.separator)
     .replace("${File.separatorChar}${File.separatorChar}", File.separator) + ".kt"
 
-val TEST_SERVICE_IMPL_PATH = "com.example.api._TestServiceImpl".toRelativePath()
+val TEST_SERVICE_IMPL_PATH = "com.example.api.TestServiceImpl".toRelativePath()
 
 const val SOURCE_FILE_NAME = "Source.kt"
 
-const val CLASS_TEST_SERVICE_IMPL = "public class _TestServiceImpl"
+const val CLASS_TEST_SERVICE_IMPL = "public class TestServiceImpl"
 
 const val IMPLEMENT_TEST_SERVICE = ") : TestService"
 

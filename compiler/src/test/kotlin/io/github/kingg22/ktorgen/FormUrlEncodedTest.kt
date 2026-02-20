@@ -78,9 +78,7 @@ class FormUrlEncodedTest {
 
         runKtorGenProcessor(source) { compilationResultSubject ->
             compilationResultSubject.hasNoWarnings()
-            val generated = compilationResultSubject.generatedSourceFileWithPath(
-                "com.example.api._TestServiceImpl".toRelativePath(),
-            )
+            val generated = compilationResultSubject.generatedSourceFileWithPath(TEST_SERVICE_IMPL_PATH)
             generated.contains(expectedHeaderCode)
         }
     }
