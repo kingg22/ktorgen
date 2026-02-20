@@ -19,6 +19,7 @@ import io.github.kingg22.ktorgen.applyIf
 import io.github.kingg22.ktorgen.applyIfNotNull
 import io.github.kingg22.ktorgen.model.ClassData
 import io.github.kingg22.ktorgen.model.FunctionData
+import io.github.kingg22.ktorgen.model.KotlinOptInClassName
 import io.github.kingg22.ktorgen.model.ParameterData
 import io.github.kingg22.ktorgen.model.options.AnnotationsOptions
 import io.github.kingg22.ktorgen.work
@@ -114,7 +115,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
 
         // si tengo optIns pendientes y no hay optInAnnotation unificado → generar uno
         if (optIns.isNotEmpty() && optInAnnotation == null) {
-            annotations += AnnotationSpec.builder(ClassName("kotlin", "OptIn"))
+            annotations += AnnotationSpec.builder(KotlinOptInClassName)
                 .addMember(
                     optIns.joinToString { "%T::class" },
                     *optIns.map { it.typeName }.toTypedArray(),
@@ -190,7 +191,7 @@ internal class KotlinpoetGenerator : KtorGenGenerator {
     context(_: DiagnosticSender)
     private fun generateFactoryFunctions(classData: ClassData, constructorParams: List<ParameterSpec>): List<FunSpec> {
         val classAnnotations = classData.annotationsOptions.buildAnnotations()
-        val optInAnnotation = classAnnotations.firstOrNull { it.typeName == ClassName("kotlin", "OptIn") }
+        val optInAnnotation = classAnnotations.find { it.typeName == KotlinOptInClassName }
         val functionAnnotation =
             setOfNotNull(GeneratedAnnotation, optInAnnotation) + classData.annotationsOptions.factoryFunctionAnnotations
         val functionVisibilityModifier = KModifier.valueOf(

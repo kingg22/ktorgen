@@ -19,6 +19,7 @@ import io.github.kingg22.ktorgen.checkImplementation
 import io.github.kingg22.ktorgen.core.KtorGenAnnotationPropagation
 import io.github.kingg22.ktorgen.core.KtorGenVisibility
 import io.github.kingg22.ktorgen.core.KtorGenVisibilityControl
+import io.github.kingg22.ktorgen.model.KotlinOptInClassName
 import io.github.kingg22.ktorgen.model.annotations.KTORGEN_KMP_FACTORY
 import io.github.kingg22.ktorgen.model.annotations.ktorGenAnnotations
 import io.github.kingg22.ktorgen.model.options.AnnotationsOptions
@@ -97,7 +98,6 @@ internal inline fun <reified A : Annotation, R : Any> KSAnnotated.getAllAnnotati
 }
 
 private val ktorGenParametersNames = ktorGenAnnotations.mapNotNull(KClass<*>::simpleName) + KTORGEN_KMP_FACTORY
-private val KOTLIN_OPTIN_CLASSNAME = ClassName("kotlin", "OptIn")
 
 internal fun extractAnnotationsFiltered(
     declaration: KSAnnotated,
@@ -131,7 +131,7 @@ internal fun extractAnnotationsFiltered(
         .distinct()
         .partition {
             // true is simple annotation, false indicate optIn annotation
-            it.typeName != KOTLIN_OPTIN_CLASSNAME
+            it.typeName != KotlinOptInClassName
         }
 
     return Triple(propagateAnnotations.toSet(), optIn.toSet(), deferredSymbols)
@@ -160,7 +160,7 @@ private fun mergeOptIns(
         null
     } else {
         AnnotationSpec
-            .builder(KOTLIN_OPTIN_CLASSNAME)
+            .builder(KotlinOptInClassName)
             .apply { merged.forEach { addMember(it) } }
             .build()
     }
@@ -240,10 +240,10 @@ private fun KSAnnotated.extractAndMergeAnnotations(
     val mergedAnnotations = options.mergeAnnotations(annotations, optIns)
 
     val mergedOptIn =
-        mergeOptIns(optIns, options.optIns, mergedAnnotations.find { it.typeName == KOTLIN_OPTIN_CLASSNAME })
+        mergeOptIns(optIns, options.optIns, mergedAnnotations.find { it.typeName == KotlinOptInClassName })
 
     return options.copy(
-        annotations = mergedAnnotations.filterNot { ann -> ann.typeName == KOTLIN_OPTIN_CLASSNAME }.toSet(),
+        annotations = mergedAnnotations.filterNot { ann -> ann.typeName == KotlinOptInClassName }.toSet(),
         factoryFunctionAnnotations = (options.factoryFunctionAnnotations + functionAnnotations + functionOptIn)
             .filterNot { ann ->
                 options.optIns.any { it.typeName == ann.typeName } || (optIns.any { it.typeName == ann.typeName })

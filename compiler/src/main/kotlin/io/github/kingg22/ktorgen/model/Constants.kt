@@ -18,6 +18,7 @@ const val KTOR_CLIENT_REQUEST_PACKAGE = "io.ktor.client.request"
 
 // required imports
 const val KTOR_CLIENT_PART_DATA = "io.ktor.http.content.PartData"
+val KotlinOptInClassName = ClassName("kotlin", "OptIn")
 
 val HttpClientClassName = ClassName("io.ktor.client", "HttpClient")
 val HttpRequestBuilderTypeName = ClassName(KTOR_CLIENT_REQUEST_PACKAGE, "HttpRequestBuilder")
