@@ -82,14 +82,14 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
 
       - name: Upload MavenLocal directory
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: MavenLocal
           path: ~/.m2/repository/io/github/kingg22/
           if-no-files-found: error
 
       - name: Upload reports (if build failed)
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: reports
@@ -172,7 +172,7 @@ jobs:
           restore-keys: ${{ runner.os }}-konan
 
       - name: Download MavenLocal
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: MavenLocal
           path: ~/.m2/repository/io/github/kingg22/
@@ -198,7 +198,7 @@ jobs:
           ktorgen_samples_ksp_version: ${{ matrix.ksp }}
 
       - name: Upload reports (if build failed)
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: report-ktor-${{ matrix.ktor }}-kotlin-${{ matrix.kotlin }}-KSP-${{ matrix.ksp }}
