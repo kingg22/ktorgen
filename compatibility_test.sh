@@ -19,6 +19,7 @@ run_case() {
         ./gradlew clean kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock build --stacktrace --warning-mode summary
     then
       echo ">>>>>>>>>>>>>> Success compilation."
+      sleep 5
     else
       echo "<<<<<<<<<<<<<< Failure build" >&2
       exit 1
@@ -29,6 +30,7 @@ echo "Compatibility Matrix Testing for KtorGen"
 
 cd samples &> /dev/null && pwd
 
+# run_case 2.3.20 2.3.6 3.4.1 # Success
 # run_case 2.3.10 2.3.5 3.4.0 # Success
 # run_case 2.3.0 2.3.5 3.4.0 # Success
 # run_case 2.3.0 2.3.4 3.3.3 # Success
