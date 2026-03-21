@@ -23,7 +23,16 @@ java {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xcontext-parameters", "-Xcontext-sensitive-resolution")
+        freeCompilerArgs.addAll(
+            "-Xcontext-parameters",
+            "-Xcontext-sensitive-resolution",
+            "-Xno-param-assertions",
+            "-Xno-call-assertions",
+            "-Xno-receiver-assertions",
+        )
+        // The Kotlin Compiler adds intrinsic assertions which are only relevant
+        // when the code is consumed by Java users. Therefore, we can turn this off
+        // when code is being consumed by Kotlin users.
         optIn.addAll("kotlin.contracts.ExperimentalContracts", "io.github.kingg22.ktorgen.core.KtorGenExperimental")
         languageVersion.set(KotlinVersion.KOTLIN_2_2)
         apiVersion.set(languageVersion)
