@@ -25,7 +25,7 @@ Don't be afraid to try it out!
 
 > **Key context (previous summary):**
 >
-> * [**KtorGen** uses **Kotlin 2.2.20**](https://github.com/kingg22/ktorgen/blob/main/gradle/libs.versions.toml#L27)
+> * [**KtorGen** uses **Kotlin 2.3.10**](https://github.com/kingg22/ktorgen/blob/main/gradle/libs.versions.toml#L27)
 > (aligned with [androidx](https://github.com/androidx/androidx/blob/androidx-main/gradle/libs.versions.toml#L55)).
 > * The **JS/WASM** target is **strict** and sensitive to compilation incompatibilities.
 > * **Ktor Client** supports **JS/WASM** from version 3.x**.
@@ -37,6 +37,7 @@ Don't be afraid to try it out!
 
 | Kotlin | KSP          | Ktor  | Result    |
 |--------|--------------|-------|-----------|
+| 2.3.20 | 2.3.6        | 3.4.1 | ✅ Success |
 | 2.3.10 | 2.3.5        | 3.4.0 | ✅ Success |
 | 2.3.0  | 2.3.5        | 3.4.0 | ✅ Success |
 | 2.3.0  | 2.3.5        | 3.3.3 | ✅ Success |
