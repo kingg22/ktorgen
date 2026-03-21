@@ -23,7 +23,7 @@ java {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xcontext-parameters", "-Xcontext-sensitive-resolution", "-Xnested-type-aliases")
+        freeCompilerArgs.addAll("-Xcontext-parameters", "-Xcontext-sensitive-resolution")
         optIn.addAll("kotlin.contracts.ExperimentalContracts", "io.github.kingg22.ktorgen.core.KtorGenExperimental")
         languageVersion.set(KotlinVersion.KOTLIN_2_2)
         apiVersion.set(languageVersion)

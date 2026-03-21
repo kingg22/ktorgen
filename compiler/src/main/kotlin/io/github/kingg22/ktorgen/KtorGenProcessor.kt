@@ -391,6 +391,7 @@ internal class KtorGenProcessor(
         return classDataSet to kmpExpectFunctions
     }
 
-    private typealias ClassDataWithKmpExpectFunctions = Pair<Set<ClassData>, List<KSFunctionDeclaration>>
     private data class DeferredSymbolRef(val ownerClassFqName: String, val unresolvedSymbolFqNames: List<String>)
 }
+
+private typealias ClassDataWithKmpExpectFunctions = Pair<Set<ClassData>, List<KSFunctionDeclaration>>

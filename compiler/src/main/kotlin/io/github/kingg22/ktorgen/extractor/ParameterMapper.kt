@@ -1,6 +1,5 @@
 package io.github.kingg22.ktorgen.extractor
 
-import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
@@ -14,7 +13,7 @@ import io.github.kingg22.ktorgen.work
 
 internal class ParameterMapper : DeclarationParameterMapper {
     context(timer: DiagnosticSender)
-    override fun mapToModel(declaration: KSValueParameter): Pair<ParameterData?, List<KSAnnotated>> {
+    override fun mapToModel(declaration: KSValueParameter): ParameterDataOrDeferredSymbols {
         val paramName = declaration.name?.asString().orEmpty()
         return timer.work {
             val type = declaration.type.resolve()

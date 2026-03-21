@@ -28,10 +28,7 @@ import io.github.kingg22.ktorgen.work
 
 internal class FunctionMapper : DeclarationFunctionMapper {
     context(timer: DiagnosticSender)
-    override fun mapToModel(
-        declaration: KSFunctionDeclaration,
-        basePath: String,
-    ): DeclarationFunctionMapper.FunctionDataOrDeferredSymbols {
+    override fun mapToModel(declaration: KSFunctionDeclaration, basePath: String): FunctionDataOrDeferredSymbols {
         val name = declaration.simpleName.asString()
         val deferredSymbols = mutableListOf<KSAnnotated>()
         return timer.work {

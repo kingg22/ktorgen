@@ -35,7 +35,7 @@ internal class ClassMapper : DeclarationMapper {
     override fun mapToModel(
         declaration: KSClassDeclaration,
         expectFunctions: List<KSFunctionDeclaration>,
-    ): DeclarationMapper.ClassDataOrDeferredSymbols = timer.work {
+    ): ClassDataOrDeferredSymbols = timer.work {
         timer.require(
             !declaration.modifiers.contains(Modifier.EXTERNAL),
             KtorGenLogger.EXTERNAL_DECLARATION_NOT_ALLOWED,
