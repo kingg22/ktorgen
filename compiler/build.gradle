@@ -47,7 +47,7 @@ dependencies {
     implementation(projects.annotations)
     implementation(libs.kotlin.reflect)
     implementation(libs.ksp.api)
-    implementation(libs.kotlin.poet.ksp)
+    implementation(libs.kotlinpoet.ksp)
     implementation(libs.ktor.http)
 
     testImplementation(libs.androidx.room.compiler.testing)
