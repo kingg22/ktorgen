@@ -16,6 +16,53 @@
 
 ### Dependencies
 
+## [0.7.1] - 2026-07-05
+
+### Changed
+
+- Update compatibility matrix with new releases.
+- [Internal] Refactor subproject build to apply SonarQube and KtLint plugins.
+- [Internal] Use JDK 21 on GitHub Actions.
+- [Internal] Disable Kotlin null assertions in generated Java code.
+- [Internal] Skip renovate bot from SonarQube action.
+
+### Fixed
+
+- Use correct task import for `moduleName` assignment in annotation module. Modify metadata to ensure correct module names in generated code.
+Add explicit custom name for iOS targets to fix annotation module.
+
+### Dependencies
+
+- Update **AGP (Android Gradle Plugin)** to 9.2.1.
+- Update **Gradle** to 9.6.1.
+- Update **Kotlin** to 2.3.10.
+- Update build dependencies: AGP 9.2.0, Android SDK 37, Kotlin 2.3.20.
+- [internal] Update **KSP plugin** to 2.3.6.
+- [internal] Update **Ktor** to 3.4.1.
+- [internal] fix(deps): update Ktor Client Core to v3.4.0 by @renovate[bot]
+- [internal] fix(deps): update dependency zensical to v0.0.46 by @renovate[bot]
+- [internal] fix(deps): update dependency zensical to v0.0.28 by @renovate[bot]
+- [internal] chore(deps): update agp to v9.1.0 by @renovate[bot]
+- [internal] chore(deps): update gradle to v9.4.1 by @renovate[bot]
+- [internal] chore(deps): update dependency org.sonarqube to v7.2.3.7755 by @renovate[bot]
+- [internal] chore(deps): update dependency org.jlleitschuh.gradle.ktlint to v14.2.0 by @renovate[bot]
+- [internal] chore(deps): update actions/cache action to v6 by @renovate[bot]
+- [internal] chore(deps): update actions/checkout action to v7 by @renovate[bot]
+- [internal] chore(deps): update actions/configure-pages action to v6 by @renovate[bot]
+- [internal] chore(deps): update actions/deploy-pages action to v5 by @renovate[bot]
+- [internal] chore(deps): update actions/upload-pages-artifact action to v5 by @renovate[bot]
+- [internal] chore(deps): update astral-sh/setup-uv action to v8 by @renovate[bot]
+- [internal] chore(deps): update astral-sh/setup-uv action to v7.6.0 by @renovate[bot]
+- [internal] chore(deps): update softprops/action-gh-release action to v3 by @renovate[bot]
+- [internal] chore(deps): update softprops/action-gh-release action to v2.6.1 by @renovate[bot]
+- [internal] chore(deps): update gradle/actions action to v6 by @renovate[bot]
+- [internal] chore(deps): update gradle/actions action to v5.0.2 by @renovate[bot]
+- [internal] chore(deps): update github/codeql-action action to v4.36.3 by @renovate[bot]
+- [internal] chore(deps): update github/codeql-action action to v4.34.1 by @renovate[bot]
+- [internal] chore(deps): update github/codeql-action action to v4.34.0 by @renovate[bot]
+- [internal] chore(deps): update github artifact actions by @renovate[bot]
+- [internal] chore(deps): update rossjrw/pr-preview-action action to v1.8.1 by @renovate[bot]
+
 ## [0.7.0] - 2026-02-17
 
 ### Added
@@ -191,8 +238,9 @@ E.g. `sealed interface Foo` will generate `public class _FooImpl : Foo`. Instead
 
 - No direct security patches, but build pipelines now use **explicit action SHAs** and version-locked dependencies for safety.
 
-[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.7.0...HEAD
-[0.7.0]: https://github.com/kingg22/ktorgen/compare/0.7.0-RC...0.7.0
+[Unreleased]: https://github.com/kingg22/ktorgen/compare/0.7.1...HEAD
+[0.7.1]: https://github.com/kingg22/ktorgen/compare/0.7.0...0.7.1
+[0.7.0]: https://github.com/kingg22/ktorgen/compare/0.6.0...0.7.0
 [0.7.0-RC]: https://github.com/kingg22/ktorgen/compare/0.6.0...0.7.0-RC
 [0.6.0]: https://github.com/kingg22/ktorgen/compare/0.5.1...0.6.0
 [0.6.0-RC]: https://github.com/kingg22/ktorgen/compare/0.5.1...0.6.0-RC
