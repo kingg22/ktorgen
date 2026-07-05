@@ -71,22 +71,30 @@ kotlin {
     // Tiers are in accordance with <https://kotlinlang.org/docs/native-target-support.html>
     // Tier 1
     // iOS
-    iosArm64()
-    iosX64()
-    iosSimulatorArm64()
-    // macOs
-    macosX64()
-    macosArm64()
-    // Tier 2
-    // watchOS
-    watchosArm32()
-    watchosArm64()
-    watchosX64()
-    watchosSimulatorArm64()
-    // tvOS
-    tvosArm64()
-    tvosX64()
-    tvosSimulatorArm64()
+    List.of(
+        iosArm64(),
+        iosX64(),
+        iosSimulatorArm64(),
+        // macOs
+        macosX64(),
+        macosArm64(),
+        // Tier 2
+        // watchOS
+        watchosArm32(),
+        watchosArm64(),
+        watchosX64(),
+        watchosSimulatorArm64(),
+        // tvOS
+        tvosArm64(),
+        tvosX64(),
+        tvosSimulatorArm64(),
+        watchosDeviceArm64() // from tier 3
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ktorgen-annotations"
+            isStatic = true
+        }
+    }
     // linux
     linuxX64()
     linuxArm64()
@@ -98,7 +106,6 @@ kotlin {
     androidNativeX64()
     // windows
     mingwX64()
-    watchosDeviceArm64()
 
     dependencies {
         implementation(libs.jetbrains.annotations)
