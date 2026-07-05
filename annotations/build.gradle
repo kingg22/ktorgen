@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompile
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
@@ -89,8 +90,8 @@ kotlin {
         tvosX64(),
         tvosSimulatorArm64(),
         watchosDeviceArm64() // from tier 3
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
+    ).forEach { appleTarget ->
+        appleTarget.binaries.framework {
             baseName = "ktorgen-annotations"
             isStatic = true
         }
@@ -106,6 +107,17 @@ kotlin {
     androidNativeX64()
     // windows
     mingwX64()
+
+    metadata {
+        compilations.all {
+            def compilationName = name
+            compileTaskProvider.configure {
+                if (this instanceof KotlinCommonCompile) {
+                    moduleName = "${project.group}:${project.name}_$compilationName"
+                }
+            }
+        }
+    }
 
     dependencies {
         implementation(libs.jetbrains.annotations)
