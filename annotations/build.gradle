@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompile
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompileCommon
 
 plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
@@ -110,11 +110,11 @@ kotlin {
     mingwX64()
 
     metadata {
-        compilations.all {
+        compilations.configureEach {
             def compilationName = name
-            compileTaskProvider.configure {
-                if (this instanceof KotlinCommonCompile) {
-                    moduleName = "${project.group}:${project.name}_$compilationName"
+            compileTaskProvider.configure { task ->
+                if (task instanceof KotlinCompileCommon) {
+                    task.moduleName = "${project.group}:${project.name}_$compilationName"
                 }
             }
         }
